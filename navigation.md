@@ -1,6 +1,6 @@
 [Home](index.md)
 [Download](download.md)
-[My Lab]()
+[Lab]()
 
   * # Security Lab
   * [How the Attacker Works?](lab-scenario-1.md)
@@ -11,15 +11,14 @@
   * [Comming soon...](lab-scenario-2.md)
   * [Comming soon...](lab-scenario-2.md)
 
-[My Lab]()
+[Tutorial]()
 
-  * # Security Lab
-  * [How the Attacker Works?](lab-scenario-1.md)
+  * # Security Tutorial
   * [Comming soon...](coba-tabel.md)
   * [Comming soon...](lab-scenario-2.md)
   ----
-  * # Network Lab
+  * # Network Tutorial
   * [Comming soon...](lab-scenario-2.md)
   * [Comming soon...](lab-scenario-2.md)
 
-[About](download.md)
+[About](about.md)
