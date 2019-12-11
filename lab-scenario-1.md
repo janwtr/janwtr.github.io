@@ -9,19 +9,18 @@
    - Docker
 - Set all VM to "NAT networks" so Windows and Kali Linux able to communicate
 
-## The process:
-### Sysmon install and configure (Windows)
+## Sysmon install and configure (Windows)
 1. `git clone http://github.com/ion-storm/sysmon-config.git`
 2. `cd sysmon-config`
 3. `install sysmon.bat`
 4. Turn off Windows Defender or Security
 
 
-### Install and run Empire (Kali Linux)
+## Install and run Empire (Kali Linux)
 1. Install: <https://github.com/EmpireProject/Empire>
 2. Go to the Empire folder, to run tipe `./empire`
 
-### Run Listeners
+## Run Listeners
 1. `(Empire)> listeners`
 > Output: ![info output](img/listeners-output.PNG)
 2. `(Empire: listeners) > uselistener http`
@@ -35,18 +34,18 @@
 6. `(Empire:listeners) > listeners`
 > Output: ![listeners output](img/listeners-output-2.PNG)
 
-### Run the Stager
+## Run the Stager
 1. `(Empire) > usestager multi/launcher`
 2. `(Empire: stager/multi/launcher) > set Listener http`
 3. `(Empire: stager/multi/launcher) > execute`
 > Output: ![stager execute output](img/stager-execute-output.PNG)
 
-### Send agent to the victim
+## Send agent to the victim
 1. Disable Windows Security
 2. Copy all the agent (text) to the victim (Windows 10), use Windows PowerShell by Administrator privileges
 > Output: ![agents check in output](img/new-agent-check-in.PNG)
 
-### Run agents (stagers/launcher module?)
+## Run agents (stagers/launcher module?)
 1. `(Empire) > agents`
 > Output: ![agents output](img/agents-output.PNG)
 
@@ -67,7 +66,7 @@
 10. `[>] Module is not opsec safe, run? [y/N] y`
 > Output: ![execute modul output](img/execute-modul-pbf.PNG)
 
-### Using Beagle
+## Using Beagle
 1. Install and Run Docker (Kali Linux):
   1. Install: <https://medium.com/@airman604/installing-docker-in-kali-linux-2017-1-fbaa4d1447fe>
   2. `service docker start`
@@ -85,21 +84,16 @@
   5. upload sysmon log file
 4. Analizing the data graph
   1. Graph 1  
-    >![Beagle graph](img/beagle-graph.PNG)
+    > Display: ![Beagle graph](img/beagle-graph.PNG)
   2. Graph 2
-    >![Beagle graph](img/beagle-graph2.PNG)
+    > Display:![Beagle graph](img/beagle-graph2.PNG)
   3. Tree
-    >![Beagle graph](img/beagle-graph3.PNG)
+    > Display: ![Beagle graph](img/beagle-graph3.PNG)
   4. Timeline
-    >![Beagle graph](img/beagle-graph4.PNG)
+    > Display: ![Beagle graph](img/beagle-graph4.PNG)
 
 5. Analizing the data table
   1. File
-
-      | Header One     | Header Two     |
-      | :------------- | :------------- |
-      | Item One       | Item Two       |
-
 
     |extension|file_name|file_path|full_path|hashes|host|
     |--|--|--|--|--|--|
