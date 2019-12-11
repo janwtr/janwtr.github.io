@@ -70,7 +70,7 @@
 1. Install and Run Docker (Kali Linux):
   1. Install: <https://medium.com/@airman604/installing-docker-in-kali-linux-2017-1-fbaa4d1447fe>
   2. `service docker start`
-2. Intall and Run beagle
+2. Install and Run beagle
   1. `docker pull yampelo/beagle`
   2. `mkdir -p data/beagle`
   3. `docker run -v "$PWD/data/beagle":"/data/beagle" -p 8000:8000 yampelo/beagle` (sometime need to run twice)
@@ -82,7 +82,7 @@
   4. Open browser and go to <kali-linux-host:8000> to open Beagle
   ![Beagle app](img/beagle-upload.PNG)
   5. upload sysmon log file
-4. Analizing the data graph
+4. Analyzing the data graph
   1. Graph 1  
     > Display: ![Beagle graph](img/beagle-graph.PNG)
   2. Graph 2
@@ -92,7 +92,7 @@
   4. Timeline
     > Display: ![Beagle graph](img/beagle-graph4.PNG)
 
-5. Analizing the data table
+5. Analyzing the data table
   1. File
 
     |extension|file_name|file_path|full_path|hashes|host|
@@ -102,8 +102,8 @@
     |null|Microsoft.VisualStudio.LiveShare.DebuggerService.Server.resources.dll|C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\Extensions\Microsoft\LiveShare\it|C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\Extensions\Microsoft\LiveShare\it\Microsoft.VisualStudio.LiveShare.DebuggerService.Server.resources.dll|{}|null|
     |null|Microsoft.VisualStudio.LiveShare.Telemetry.dll|C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\Extensions\Microsoft\LiveShare|C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\Extensions\Microsoft\LiveShare\Microsoft.VisualStudio.LiveShare.Telemetry.dll|{}|null|
     |null|api-ms-win-crt-multibyte-l1-1-0.dll|C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\Extensions\Microsoft\LiveShare\Agent|C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\Extensions\Microsoft\LiveShare\Agent\api-ms-win-crt-multibyte-l1-1-0.dll|{}|null|
-    |null|__PSScriptPolicyTest_0sahvakt.ow1.ps1|C:\Users\User\AppData\Local\Temp|C:\Users\User\AppData\Local\Temp\__PSScriptPolicyTest_0sahvakt.ow1.ps1|{}|null|
-    |null|__PSScriptPolicyTest_nvnjonjs.4fc.psm1|C:\Users\User\AppData\Local\Temp|C:\Users\User\AppData\Local\Temp\__PSScriptPolicyTest_nvnjonjs.4fc.psm1|{}|null|
+    |null|\__PSScriptPolicyTest_0sahvakt.ow1.ps1|C:\Users\User\AppData\Local\Temp|C:\Users\User\AppData\Local\Temp\__PSScriptPolicyTest_0sahvakt.ow1.ps1|{}|null|
+    |null|\__PSScriptPolicyTest_nvnjonjs.4fc.psm1|C:\Users\User\AppData\Local\Temp|C:\Users\User\AppData\Local\Temp\__PSScriptPolicyTest_nvnjonjs.4fc.psm1|{}|null|
     |null|whoami.exe|C:\Windows\System32|C:\Windows\System32\whoami.exe|{"imphash":"7FF0758B766F747CE57DFAC70743FB88","md5":"2EEEEC89E705F73FFBCAE014E1828788","sha256":"A8A4C4719113B071BB50D67F6E12C188B92C70EEAFDFCD6F5DA69B6AAA99A7FD"}|WinDev1911Eval|
 
   2. Process
@@ -123,8 +123,8 @@
     |from|to|type|data|timestamp|
     |--|--|--|--|--|
     |powershell.exe|powershell.exe|Launched|{}|2019-12-10T11:46:23.000Z|
-    |powershell.exe|__PSScriptPolicyTest_0sahvakt.ow1.ps1|Accessed|{}|2019-12-10T11:46:24.000Z|
-    |powershell.exe|__PSScriptPolicyTest_nvnjonjs.4fc.psm1|Accessed|{}|2019-12-10T11:46:24.000Z|
+    |powershell.exe|\__PSScriptPolicyTest_0sahvakt.ow1.ps1|Accessed|{}|2019-12-10T11:46:24.000Z|
+    |powershell.exe|\__PSScriptPolicyTest_nvnjonjs.4fc.psm1|Accessed|{}|2019-12-10T11:46:24.000Z|
     |powershell.exe|10.0.2.4|tcp|{"payload":null,"port":"80","protocol":"tcp"}|2019-12-10T11:46:27.000Z|
     |powershell.exe|10.0.2.4|tcp|{"payload":null,"port":"80","protocol":"tcp"}|2019-12-10T11:46:28.000Z|
     |powershell.exe|10.0.2.4|tcp|{"payload":null,"port":"80","protocol":"tcp"}|2019-12-10T11:46:29.000Z|
@@ -259,7 +259,7 @@
     |whoami.exe|whoami.exe|File Of|{}|Unknown|
     |whoami.exe|whoami.exe|File Of|{}|Unknown|
 
-### Learn from others
+## Learn from others
 - [Threat Hunting via Sysmon](https://www.sans.org/cyber-security-summit/archives/file/summit-archive-1554993664.pdf)
 : System Monitor (Sysmon) is a Windows system service and device driver
 that, once installed on a system, remains resident across system reboots to
@@ -274,4 +274,4 @@ how intruders and malware operate on your network [continue...](https://www.sans
 : In recent sophisticated cyber attacks, it is common to observe lateral movement, where a malware- infected device is used as a stepping stone and further compromise other devices in the network. In order to investigate the compromised devices, it is necessary to retain detailed logs of the applications that run on the device on a daily basis. One of the well-known tools for this purpose is Sysmon [1] from Microsoft, which records various operations on the Windows OS (e.g. applications, registry entries, communication) in the event logs. Most commonly, analysts convert the logs into text format to search for specific items in the logs. However, it is a hectic and not-so-organised task when it comes to investigation over multiple devices. [continue...](https://blogs.jpcert.or.jp/en/2018/09/visualise-sysmon-logs-and-detect-suspicious-device-behaviour--sysmonsearch.html)
 - [Sysmon: how to set up, update and use?](https://cqureacademy.com/blog/server-monitoring/sysmon)
 : Sysmon can be useful for you because it provides a pretty detailed monitoring about what is happening in the operating system, starting from process monitoring, going through monitoring all the network and ending up with a discovery of the different types of exploitation techniques. [continue...](https://cqureacademy.com/blog/server-monitoring/sysmon)
-# End.
+## End.
