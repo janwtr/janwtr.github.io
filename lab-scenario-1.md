@@ -1,5 +1,5 @@
 # How the Attacker Works?
-## Tools and preparations:
+## Tools and preparations
 - Virtual Box with:
   - Windows
     - Sysmon
