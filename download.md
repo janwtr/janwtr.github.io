@@ -32,14 +32,14 @@ We use TeX Live (to handle LaTeX), in ubuntu, use this command to install:
    sudo apt-get textstudio
    ```
 
-   >For other distro look at ![this](https://www.tug.org/texlive/).
-   >Then install Text Studio anf follow the intructiions ![here](https://www.texstudio.org/)
+   >For other distro look at [this](https://www.tug.org/texlive/).
+   >Then install Text Studio anf follow the intructiions [here](https://www.texstudio.org/)
 
 #### In Windows OS
 ##### MikTeX
 
-   Download MikTeX ![here](https://miktex.org/) then follow the intructions.
+   Download MikTeX [here](https://miktex.org/) then follow the intructions.
     
 ##### TeXstudio
 
-   Download Tex Studio in download menu ![here](https://www.texstudio.org/)
+   Download Tex Studio in download menu [here](https://www.texstudio.org/)
