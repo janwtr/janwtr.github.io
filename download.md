@@ -1,16 +1,36 @@
 # Download page
-## Welcome to janwtr page
-Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+## Operating Sustem
+### Ubuntu
+One of the best Operating System in the world! I use this since Ubuntu 8.04 LTS (Hardy Heron) release (2008)
+For newest release dowload Ubuntu [here](https://ubuntu.com/download/desktop)
+### More Linux OS
+Other linux that I have interested for daily use, you can try [MX Linyx](https://mxlinux.org) and [Elementary OS](https://elementary.io/)
 
-## My first page
-- Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-- Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-- Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
-- Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+## Text Editor 
+### LaTeX and Text Studio
+I use this to writing book and paper.
+#### In linux OS
+We use TeX Live (to handle LaTeX), in ubuntu, use this command to install:
+1. Tex Live
 
-## Coba Tabel
-| Tables        | Are           | Cool  |
-| ------------- |:-------------:| -----:|
-| col 3 is      | right-aligned | $1600 |
-| col 2 is      | centered      |   $12 |
-| zebra stripes | are neat      |    $1 |
+    `sudo apt-get install texlive-latex-extra`
+
+2. Text Studio
+
+    ```
+    sudo add-apt-repository ppa:sunderme/texstudio
+    sudo apt-get update
+    sudo apt-get textstudio
+    ```
+
+For other distro look at [this](https://www.tug.org/texlive/).
+Then install Text Studio:
+
+#### In Windows OS
+1. Tex Live
+  
+  Download MikTex [here](https://miktex.org/) then follow the intructions.
+    
+2. Text Studio
+
+  Download Tex Studio in download menu [here](https://www.texstudio.org/)
