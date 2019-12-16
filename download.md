@@ -15,16 +15,16 @@ Other linux that I have interested for daily use, you can try [MX Linyx](https:/
 ### LaTeX and Text Studio
 ![Latex](https://www.latex-project.org/img/latex-project-logo.svg)
 ![MikTeX](https://miktex.org/images/header.png)
-![TeXstudio](https://www.texstudio.org/images/texstudio128x128.png
+![TeXstudio](https://www.texstudio.org/images/texstudio128x128.png)
 
 I use this to writing book and paper.
 #### In Ubuntu
 We use TeX Live (to handle LaTeX), in ubuntu, use this command to install:
-1. Tex Live
+##### Tex Live
 
    `sudo apt-get install texlive-latex-extra`
 
-2. TeXstudio
+##### TeXstudio
 
    ```
    sudo add-apt-repository ppa:sunderme/texstudio
@@ -32,14 +32,14 @@ We use TeX Live (to handle LaTeX), in ubuntu, use this command to install:
    sudo apt-get textstudio
    ```
 
-   >For other distro look at [this](https://www.tug.org/texlive/).
-   >Then install Text Studio anf follow the intructiions [here](https://www.texstudio.org/)
+   >For other distro look at ![this](https://www.tug.org/texlive/).
+   >Then install Text Studio anf follow the intructiions ![here](https://www.texstudio.org/)
 
 #### In Windows OS
-1. MikTeX
+##### MikTeX
 
-   Download MikTeX [here](https://miktex.org/) then follow the intructions.
+   Download MikTeX ![here](https://miktex.org/) then follow the intructions.
     
-2. TeXstudio
+##### TeXstudio
 
-   Download Tex Studio in download menu [here](https://www.texstudio.org/)
+   Download Tex Studio in download menu ![here](https://www.texstudio.org/)
