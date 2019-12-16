@@ -1,12 +1,12 @@
 # Download page
 ## Operating Sustem
-![Ubuntu](https://assets.ubuntu.com/v1/8dd99b80-ubuntu-logo14.png)
-![MX Linux](https://mxlinux.org/wp-content/uploads/2019/01/MX-Menu-icon-pyramids.svg)
-![elementary](https://elementary.io/images/icons/places/128/distributor-logo.svg)
 ### Ubuntu
+![Ubuntu](https://assets.ubuntu.com/v1/8dd99b80-ubuntu-logo14.png)
 One of the best Operating System in the world! I use this since Ubuntu 8.04 LTS (Hardy Heron) release (2008)
 For newest release dowload Ubuntu [here](https://ubuntu.com/download/desktop)
 ### More Linux OS
+![MX Linux](https://mxlinux.org/wp-content/uploads/2019/01/MX-Menu-icon-pyramids.svg)
+![elementary](https://elementary.io/images/icons/places/128/distributor-logo.svg)
 Other linux that I have interested for daily use, you can try [MX Linyx](https://mxlinux.org) and [Elementary OS](https://elementary.io/)
 
 ## Text Editor 
@@ -34,9 +34,7 @@ We use TeX Live (to handle LaTeX), in ubuntu, use this command to install:
 
 #### In Windows OS
 1. MikTeX
-  
-  Download MikTeX [here](https://miktex.org/) then follow the intructions.
+   Download MikTeX [here](https://miktex.org/) then follow the intructions.
     
 2. TeXstudio
-  
-  Download Tex Studio in download menu [here](https://www.texstudio.org/)
+   Download Tex Studio in download menu [here](https://www.texstudio.org/)
