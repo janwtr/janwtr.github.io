@@ -9,18 +9,18 @@
    
 2. More Linux OS
 
-   ![MX Linux](https://mxlinux.org/wp-content/uploads/2019/01/mxfcelogo-rounded.png)
    ![elementary](https://elementary.io/images/icons/places/128/distributor-logo.svg)
-
+   ![MX Linux](https://mxlinux.org/wp-content/uploads/2019/01/mxfcelogo-rounded.png)
+   
    Other linux that I have interested for daily use, you can try [MX Linyx](https://mxlinux.org) and [Elementary OS](https://elementary.io/)
 
 ## Text Editor 
 1. LaTeX and Text Studio
 
+   ![TeXstudio](https://www.texstudio.org/images/texstudio128x128.png)
    ![Latex](https://www.latex-project.org/img/latex-project-logo.svg)
    ![MikTeX](https://miktex.org/images/header.png)
-   ![TeXstudio](https://www.texstudio.org/images/texstudio128x128.png)
-
+   
    I use LaTeX to write book and paper.
 
 2. In Ubuntu
