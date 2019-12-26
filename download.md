@@ -10,7 +10,7 @@
 2. More Linux OS
 
    ![elementary](https://elementary.io/images/icons/places/128/distributor-logo.svg)
-   ![MX Linux](https://www.shoplinux.ca/wp-content/uploads/2018/12/mxlinuxnew.png)
+   ![MX Linux](https://mxlinux.org/wp-content/uploads/2019/01/MXStart.png)
    
    Other linux that I have interested for daily use, you can try [MX Linux](https://mxlinux.org) and [Elementary OS](https://elementary.io/)
 
