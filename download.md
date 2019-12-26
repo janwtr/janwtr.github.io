@@ -10,9 +10,9 @@
 2. More Linux OS
 
    ![elementary](https://elementary.io/images/icons/places/128/distributor-logo.svg)
-   ![MX Linux](https://mxlinux.org/wp-content/uploads/2019/01/mxfcelogo-rounded.png)
+   ![MX Linux](https://www.shoplinux.ca/wp-content/uploads/2018/12/mxlinuxnew.png)
    
-   Other linux that I have interested for daily use, you can try [MX Linyx](https://mxlinux.org) and [Elementary OS](https://elementary.io/)
+   Other linux that I have interested for daily use, you can try [MX Linux](https://mxlinux.org) and [Elementary OS](https://elementary.io/)
 
 ## Text Editor 
 1. LaTeX and Text Studio
