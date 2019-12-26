@@ -1,12 +1,14 @@
 # Download page
 ## Operating System
 1. Ubuntu
+
    ![Ubuntu](https://assets.ubuntu.com/v1/ad9a02ac-ubuntu-orange.gif)
 
    One of the best Operating System in the world! I have used this OS since Ubuntu 8.04 LTS (Hardy Heron) release (2008)
    For newest Ubuntu release, dowload [here](https://ubuntu.com/download/desktop)
    
 2. More Linux OS
+
    ![MX Linux](https://mxlinux.org/wp-content/uploads/2019/01/mxfcelogo-rounded.png)
    ![elementary](https://elementary.io/images/icons/places/128/distributor-logo.svg)
 
@@ -14,6 +16,7 @@
 
 ## Text Editor 
 1. LaTeX and Text Studio
+
    ![Latex](https://www.latex-project.org/img/latex-project-logo.svg)
    ![MikTeX](https://miktex.org/images/header.png)
    ![TeXstudio](https://www.texstudio.org/images/texstudio128x128.png)
