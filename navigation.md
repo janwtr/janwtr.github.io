@@ -25,7 +25,7 @@
 
   * # Security
   * [Advanced Encryption Standard (AES)](advanced-encryption-standard.md)
-  * [Comming soon...](comming-soon.md)
+  * [Istilah-istilah pada Vehicular Network](istilah-di-vehicular-network.md)
   ----
   * # Network
   * [Comming soon...](comming-soon.md)
