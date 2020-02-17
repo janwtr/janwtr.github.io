@@ -7,6 +7,7 @@
   - Kali Linux
    - Power Shell Empire
    - Docker
+   - Beagle
 - Set all VM to "NAT networks" so Windows and Kali Linux able to communicate
 
 ## Sysmon install and configure (Windows)
