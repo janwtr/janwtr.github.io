@@ -8,6 +8,6 @@ Save in C:\omnet, don't use any space in the name of directory
   1. From __mingw__, Run ```./configure``` then ```make```
 ## Check using sample
 ```cd sampless/aloha```
-```./aloha
+```./aloha```
 ## Run OMNet++
 From __mingw__ run ```omnetpp```
