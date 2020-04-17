@@ -6,3 +6,6 @@ Save in C:\omnet, don't use any space in the name of directory
 ## Configure and compile
 1. From C:\omnet, run ```mingwenv.cmd```
   1. From __mingw__, Run ```./configure``` then ```make```
+## Check using sample
+```cd sampless/aloha```
+```./aloha
