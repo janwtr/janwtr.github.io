@@ -9,3 +9,5 @@ Save in C:\omnet, don't use any space in the name of directory
 ## Check using sample
 ```cd sampless/aloha```
 ```./aloha
+## Run OMNet++
+From __mingw__ run ```omnetpp```
