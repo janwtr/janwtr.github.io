@@ -1,0 +1,10 @@
+# In Windows:
+Install VcXsrv 
+
+# In Ubuntu:
+$ sudo apt-get update
+$ sudo apt-get upgrade
+
+$ sudo apt-get install xfce4
+$ export DISPLAY=:0.0
+$ startxfce4
