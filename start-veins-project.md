@@ -13,4 +13,5 @@
     ```
 5. Jalankan Omnet++
 6. Import project yang sudah dibuat tadi dari __File-Import-General-Existing Project Into Workspase__
+1. Build all project
 
