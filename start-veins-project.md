@@ -12,5 +12,5 @@
     cookicutter cookiecutter-veins-project
     ```
 5. Jalankan Omnet++
-6. Import project yang sudah dibuat tadi dari File-Import-General-Existing Project Into Workspase
+6. Import project yang sudah dibuat tadi dari __File-Import-General-Existing Project Into Workspase__
 
