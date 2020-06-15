@@ -6,8 +6,11 @@
 sudo apt-get update
 sudo apt-get install cookicutter
 ```
-1. Unduh https://github.com/veins/cookiecutter-veins-project
+1. Unduh project template https://github.com/veins/cookiecutter-veins-project
 1. Membuat project
 ```
 cookicutter cookiecutter-veins-project
 ```
+1. Jalankan Omnet++
+1. Import project yang sudah dibuat tadi dari File-Import-General-Existing Project Into Workspase
+
