@@ -18,7 +18,7 @@
   * [Comming soon...](comming-soon.md)
   ----
   * # Network
-  * [Comming soon...](comming-soon.md)
+  * [Mulai membuat projek Veins](start-veins-project.md)
   * [Comming soon...](comming-soon.md)
   
 [Learn]()
