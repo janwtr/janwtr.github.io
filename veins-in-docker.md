@@ -8,7 +8,12 @@
 1. SUMO 1.2.0 [https://sourceforge.net/projects/sumo/files/sumo/](https://sourceforge.net/projects/sumo/files/sumo/)
 ## Langakah
 ### Pasang Docker Desktop
-Dokumentasi ada di [https://docs.docker.com/docker-for-windows/install/](https://docs.docker.com/docker-for-windows/install/), setelah diunduh tinggal klik instal dan ikuti petujuknya.
+1. Dokumentasi ada di [https://docs.docker.com/docker-for-windows/install/](https://docs.docker.com/docker-for-windows/install/), setelah diunduh tinggal klik instal dan ikuti petujuknya.
+1. Pastikan docker sudah "running"
+
+### Install VcXsrv Windows X Server
+1. Jalankan instalasi seperti biasa sampai pada tampilan __Extra Settings__
+1. Ketika sampai pada __Extra Settings__ beri centang apda __Disable Access control__, lanjuttkan dengan klik __Next__ sampai finish
 
 ### Pasang OMNeT++
 1. Jalankan command promt dan ketikkan perintah
@@ -21,31 +26,28 @@ Dokumentasi ada di [https://docs.docker.com/docker-for-windows/install/](https:/
     ```
 1. Jalankan container OMNet dengan mode interaktif (menampilkan bash shell), sekaligus meberi nama container sebagai "veins"
     ```
-    > docker run --interactive --tty --name veins omnetpp/omnetpp-gui:u18.04-5.6.2 bash
+    > docker run --rm -it -e DISPLAY=192.168.1.8:0.0 omnetpp/omnetpp-gui:u18.04-5.6.2
     ```
+    1. Jika ingin menggunakan container lagi yang sama
+        ```
+        > docker run -it -e DISPLAY=192.168.1.8:0.0 --name veins omnetpp/omnetpp-gui:u18.04-5.6.2
+        ```
+    1. Menjalankan container lagi
+        ```
+        > docker start -i veins
+        ```    
+    
 1. Selanjutnya akan masuk kedalam container "veins" dengan tampilan sebagai berikut
     ```
     omnetpp-gui-5.6.2:/root/models$
     ```
-1. Update ubuntu terlebih dulu (omnetpp-gui images berbasis ubuntu)
+1. Menjalankan OMNet++
     ```
-    $ apt update
+    $ omnetpp
     ```
-1. Install xfce4 untuk Desktop Environment di linux
-    ```
-    $ apt install xfce4
-    ```    
-1. Tambahkan "export DISPLAY=:0.0" pada .bashrc
-    ```
-    $ cd ~
-    $ cat >>.bashrc
-    export DISPLAY=:0.0
-    ```
-    tekan __Ctrl+D__ untuk selesai
+    Maka akan menampilkan GUI OMNet++
     
 
-1. Menjalankan lagi container yang telah dibuat
-    ```
-    docker start -i veins
-    ```
-## Tidak berhasil
+### 
+
+
