@@ -48,6 +48,10 @@
     Maka akan menampilkan GUI OMNet++
     
 
-### 
+### Install Veins
+1. Petunjuk ada di https://veins.car2x.org/tutorial/
+
+### Instal Sumo
+1.Petunjukk ada di https://sumo.dlr.de/docs/Downloads.php#sumo_-_alternative_download_and_older_releases
 
 
