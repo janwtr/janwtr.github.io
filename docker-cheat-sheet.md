@@ -40,5 +40,8 @@
   - `CMD` menentukan perintah apa yang harus dijalankan dalam container.
   
 -  Intruksi-instruksi Dockerfiles
+
   Source [https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#dockerfile-instructions](Best practices for writing Dockerfiles)
+  
+  [https://docs.docker.com/engine/reference/builder/](https://docs.docker.com/engine/reference/builder/)
   
