@@ -1,6 +1,6 @@
 [gimmick:theme](flatly)
+
 [Home](index.md)
-[Download](download.md)
 
 [Lab]()
 
@@ -23,4 +23,5 @@
   * # Tools
   * [Docker Cheatsheet](docker-cheatsheet.md)
   * [Ubuntu (wsl) in Windows](ubuntu-in-windows.md)
-  ----
+
+[Download](download.md)
