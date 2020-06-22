@@ -3,6 +3,7 @@
 ## Membuat tempat penyimpanan data dalam docker
 - Docker memiliki dua opsi tempat untuk menyimpan file di mesin host, sehingga file tetap ada bahkan setelah kontainer berhenti: volumes, dan bind mounts
 - Menjalankan container dengan __bind mounts__
+  
   Source [https://docs.docker.com/storage/bind-mounts/](https://docs.docker.com/storage/bind-mounts/)
   ```
   $ docker run -d \
@@ -12,6 +13,7 @@
   nginx:latest
   ```
 - Menjalankan container dengan __volumes__
+  
   Source [https://docs.docker.com/storage/volumes/](https://docs.docker.com/storage/volumes/)
   ```
   $ docker run -d \
@@ -19,3 +21,7 @@
   --mount source=myvol2,target=/app \
   nginx:latest
   ```
+## Build and Run docker
+- Best practices for writing Dockerfiles
+  
+  Source [https://docs.docker.com/develop/develop-images/dockerfile_best-practices/](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/)
