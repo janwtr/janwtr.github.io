@@ -25,3 +25,20 @@
 - Best practices for writing Dockerfiles
   
   Source [https://docs.docker.com/develop/develop-images/dockerfile_best-practices/](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/)
+  
+  Contoh `Dockfile`:
+  ```
+  FROM ubuntu:18.04
+  COPY . /app
+  RUN make /app
+  CMD python /app/app.py
+  ```
+  
+  - `FROM` membuat layer dari `ubuntu:18.04` Docker images
+  - `COPY` menambahkan file dari direktori klien Docker saat ini.
+  - `RUN` membangun aplikasi dengan make.
+  - `CMD` menentukan perintah apa yang harus dijalankan dalam container.
+  
+-  Intruksi-instruksi Dockerfiles
+  Source [https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#dockerfile-instructions](Best practices for writing Dockerfiles)
+  
