@@ -1,0 +1,21 @@
+# Docker Cheat Sheet
+
+## Membuat tempat penyimpanan data dalam docker
+- Docker memiliki dua opsi tempat untuk menyimpan file di mesin host, sehingga file tetap ada bahkan setelah kontainer berhenti: volumes, dan bind mounts
+- Menjalankan container dengan __bind mounts__
+  Source [https://docs.docker.com/storage/bind-mounts/](https://docs.docker.com/storage/bind-mounts/)
+  ```
+  $ docker run -d \
+  -it \
+  --name devtest \
+  --mount type=bind,source="$(pwd)"/target,target=/app \
+  nginx:latest
+  ```
+- Menjalankan container dengan __volumes__
+  Source [https://docs.docker.com/storage/volumes/](https://docs.docker.com/storage/volumes/)
+  ```
+  $ docker run -d \
+  --name devtest \
+  --mount source=myvol2,target=/app \
+  nginx:latest
+  ```
