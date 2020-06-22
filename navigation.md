@@ -23,5 +23,4 @@
   * # Tools
   * [Docker Cheatsheet](docker-cheatsheet.md)
   * [Ubuntu (wsl) in Windows](ubuntu-in-windows.md)
-
-[About](about.md)
+  ----
