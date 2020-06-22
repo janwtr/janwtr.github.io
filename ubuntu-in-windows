@@ -1,7 +1,11 @@
 # In Windows:
-Install VcXsrv 
+- Install VcXsrv 
+  
+  Download: [https://sourceforge.net/projects/vcxsrv/](https://sourceforge.net/projects/vcxsrv/)
+  
+  Ikuti petunjukk instalasi
 
-# In Ubuntu:
+# In Ubuntu (wsl):
 $ sudo apt-get update
 $ sudo apt-get upgrade
 
