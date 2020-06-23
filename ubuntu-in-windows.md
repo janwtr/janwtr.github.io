@@ -1,11 +1,12 @@
-# In Windows:
+# Run Ubuntu desktop in Windows 10
+## In Windows:
 - Install VcXsrv 
   
   Download: [https://sourceforge.net/projects/vcxsrv/](https://sourceforge.net/projects/vcxsrv/)
   
   Ikuti petunjukk instalasi
 
-# In Ubuntu (wsl):
+## In Ubuntu (wsl):
 $ sudo apt-get update
 $ sudo apt-get upgrade
 
