@@ -2,8 +2,9 @@
 
 ## Lingkungan
 1. Sistem Operasi Windows 10
-1. MiKTex (https://miktex.org/download)[https://miktex.org/download]
-1. TeXstudio 2.12.22 (https://www.texstudio.org/)[https://www.texstudio.org/]
+1. MiKTex [https://miktex.org/download](https://miktex.org/download)
+  1. Instalasi di `D:\LaTeX\`
+1. TeXstudio 2.12.22 [https://www.texstudio.org/](https://www.texstudio.org/)
 
 ## konfigurasi pada TextStudio
 1. LaTeX: `"D:\LaTeX\MikTex\texmfs\install\miktex\bin\miktex\texmfs\install\miktex\bin\latex.exe" -interaction=nonstopmode %.tex`
