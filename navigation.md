@@ -21,7 +21,7 @@
   * [Mulai membuat projek Veins](tutorial/start-veins-project.md) 
   ----
   * # Tools
-  * [Docker Cheatsheet](docker-cheatsheet.md)
-  * [Ubuntu (wsl) in Windows](ubuntu-in-windows.md)
+  * [Docker Cheatsheet](tools/docker-cheatsheet.md)
+  * [Ubuntu (wsl) in Windows](tools/ubuntu-in-windows.md)
 
 [Download](download.md)
