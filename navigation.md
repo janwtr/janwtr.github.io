@@ -13,8 +13,7 @@
 [Learn]()
 
   * # Security
-  * [Advanced Encryption Standard (AES)](security/advanced-encryption-standard.md)
-  * [Standarisasi Intelegent Transport System ITS](standarisasi-its.md)  
+  * [Advanced Encryption Standard (AES)](security/advanced-encryption-standard.md)  
   ----
   * # Network
   * [Istilah-istilah pada Vehicular Network](network/istilah-di-vehicular-network.md)
