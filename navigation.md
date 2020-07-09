@@ -14,6 +14,7 @@
 
   * # Security
   * [Advanced Encryption Standard (AES)](security/advanced-encryption-standard.md)  
+  * [Security Credential Management System (SCMS)](security/scms.md)
   ----
   * # Network
   * [Istilah-istilah pada Vehicular Network](network/istilah-di-vehicular-network.md)
