@@ -1,4 +1,4 @@
-janwtr.githuo.io
+janwtr.github.io
 ======
 
 My note
