@@ -31,9 +31,9 @@
   
   * # Editor
   * [Vi/Vi](cheatsheet/vim.md)
+  * [WSL](cheatsheet/wsl.md)
   * [Git (not yet)]()
   * [Docker (not yet)]()
-  * [WSL (not yet)]()
   * [Shell (not yet)]()
   * [Ubuntu (not yet)]()
   * [Python (not yet)]()
