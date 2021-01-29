@@ -26,5 +26,14 @@
   * [Docker Cheatsheet](tools/docker-cheatsheet.md)
   * [Ubuntu (wsl) in Windows](tools/ubuntu-in-windows.md)
   * [Data Mining](tutorial/datamining.md)
+  
+[Cheat Sheet]()
 
+  * [Vi/Vi](cheatsheet/vim.md)
+  * [Git (not yet)}()]
+  * [Docker (not yet)}()]
+  * [WSL (not yet)}()]
+  * [Shell (not yet)}()] 
+  * [Ubuntu (not yet)}()]
+  * [Pyton (not yet)}()]
 [Download](download.md)
