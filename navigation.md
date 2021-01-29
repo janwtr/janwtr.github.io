@@ -30,10 +30,10 @@
 [Cheat Sheet]()
 
   * [Vi/Vi](cheatsheet/vim.md)
-  * [Git (not yet)}()]
-  * [Docker (not yet)}()]
-  * [WSL (not yet)}()]
-  * [Shell (not yet)}()] 
-  * [Ubuntu (not yet)}()]
-  * [Python (not yet)}()]
+  * [Git (not yet)]()
+  * [Docker (not yet)]()
+  * [WSL (not yet)]()
+  * [Shell (not yet)]()]
+  * [Ubuntu (not yet)]()
+  * [Python (not yet)]()
 [Download](download.md)
