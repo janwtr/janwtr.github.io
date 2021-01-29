@@ -2,7 +2,7 @@
 
 ## Basic Usage
 Command | Description
---------|------------
+-------:|------------
 `` vim or vi `` | Run vim and open the given filename.
 `` :w `` | Save file.
 `` :x `` | or SHIFT ZZ
@@ -13,14 +13,14 @@ Save and exit.
 
 ## Search and Replace
 Command | Description
---------|------------
+-------:|------------
 `` /pattern `` | Search for pattern.
 `` n `` | Find the next occurrence of pattern.
 `` :%s/pattern/replace/g `` | Replace every occurrence of pattern with replace..
 
 ## Movement
 Command | Description
---------|------------
+-------:|------------
 `` h `` | Move left one character.
 `` j `` | Move down one character.
 `` k `` | Move up one character.
@@ -41,7 +41,7 @@ Command | Description
 
 ## Deleting
 Command | Description
---------|------------
+-------:|------------
 `` x `` | Delete a single character.
 `` D `` | Delete the rest of the line.
 `` dd `` | Delete the entire current line.
@@ -51,7 +51,7 @@ Command | Description
 
 ## Cut and Paste
 Command | Description
---------|------------
+-------:|------------
 `` p `` | Paste the clipboard contents.
 `` yy `` | Yank (copy) a line.
 `` yw `` | Yank a word.
@@ -59,7 +59,7 @@ Command | Description
 
 ## Entering Insert mode
 Command | Description
---------|------------
+-------:|------------
 `` i `` | At the cursor.
 `` a `` | After the cursor.
 `` I `` | Before the current line.
