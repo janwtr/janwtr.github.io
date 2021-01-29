@@ -35,5 +35,5 @@
   * [WSL (not yet)}()]
   * [Shell (not yet)}()] 
   * [Ubuntu (not yet)}()]
-  * [Pyton (not yet)}()]
+  * [Python (not yet)}()]
 [Download](download.md)
