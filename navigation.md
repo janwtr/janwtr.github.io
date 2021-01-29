@@ -30,7 +30,7 @@
 [Cheat Sheet]()
   
   * # Editor
-  * [Vi/Vi](cheatsheet/vim.md)
+  * [Vi/Vim](cheatsheet/vim.md)
   * [WSL](cheatsheet/wsl.md)
   * [Git (not yet)]()
   * [Docker (not yet)]()
