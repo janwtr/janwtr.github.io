@@ -1,4 +1,4 @@
 # About page
 ## Welcome to janwtr page
 Semoga bermanfaat...
-![](img\bridge.png)
+![](img/ninja.png)
