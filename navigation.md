@@ -32,7 +32,7 @@
   * # Editor
   * [Vi/Vim](cheatsheet/vim.md)
   * [WSL](cheatsheet/wsl.md)
-  * [Git (not yet)]()
+  * [Git](cheatsheet/git.md)
   * [Docker (not yet)]()
   * [Shell (not yet)]()
   * [Ubuntu (not yet)]()
