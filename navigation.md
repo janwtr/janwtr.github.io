@@ -23,7 +23,6 @@
   * [Intalasi Veins 5.0 di Docker](network/veins-in-docker.md)
   ----
   * # Tools
-  * [Docker Cheatsheet](tools/docker-cheatsheet.md)
   * [Ubuntu (wsl) in Windows](tools/ubuntu-in-windows.md)
   * [Data Mining](tutorial/datamining.md)
   
@@ -33,7 +32,7 @@
   * [Vi/Vim](cheatsheet/vim.md)
   * [WSL](cheatsheet/wsl.md)
   * [Git](cheatsheet/git.md)
-  * [Docker (not yet)]()
+  * [Docker](cheatsheet/docker.md)
   * [Shell (not yet)]()
   * [Ubuntu (not yet)]()
   * [Python (not yet)]()
