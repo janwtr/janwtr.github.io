@@ -6,7 +6,7 @@ Command | Description
 `` vim or vi `` | Run vim and open the given filename.
 `` :w `` | Save file.
 `` :x `` | or SHIFT ZZ
-Save and exit.
+``:wq`` | Save and exit.
 `` :q `` | Exit if no changes have been made.
 `` :q! `` | Exit and undo any changes made.
 `` :set nu `` | Display line numbers.
