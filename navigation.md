@@ -33,6 +33,7 @@
   * [WSL](cheatsheet/wsl.md)
   * [Git](cheatsheet/git.md)
   * [Docker](cheatsheet/docker.md)
+  * [Docker](cheatsheet/cmake.md)
   * [Shell (not yet)]()
   * [Ubuntu (not yet)]()
   * [Python (not yet)]()
