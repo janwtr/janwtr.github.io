@@ -34,6 +34,7 @@
   * [Git](cheatsheet/git.md)
   * [Docker](cheatsheet/docker.md)
   * [CMake](cheatsheet/cmake.md)
+  * [GDB](cheatsheet/gdb.md)
   * [Shell (not yet)]()
   * [Ubuntu (not yet)]()
   * [Python (not yet)]()
