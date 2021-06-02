@@ -1,0 +1,26 @@
+@startuml
+start
+:create a new directory
+**mkdir some-project**;
+:create a new repository
+**git init**;
+if (checkout a repository) then (local)
+    :copy from local repository
+    **git clone /path/repository** ;
+else (remote)
+    :copy from remote server
+    **git clone username@host:/path/repository** ;
+endif
+:add changes  to the Index
+**git add <filename> **
+**git add * **;
+:commit these changes to the HEAD
+**git commit -m "Commit message"**;
+:pushing changes
+**git push origin master**;
+if (connect to a remote server) then (yes) 
+    :**git remote add origin <server> **;
+endif
+
+stop
+@enduml

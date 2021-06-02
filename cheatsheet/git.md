@@ -88,5 +88,6 @@ Command | Description
 ``git stash pop`` | write working from top of stash stack
 ``git stash drop`` | discard the changes from top of stash stack
 
-
+## Simple workflow
+![](git.png)
 
