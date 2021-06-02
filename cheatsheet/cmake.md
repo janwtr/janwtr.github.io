@@ -18,8 +18,17 @@ add_executable(Tutorial tutorial.cxx)
     ```
     cmake \home\jan\Project
     ```
+    atau
+    ```
+    cmake ..
+    ```
     `CMakeLists.txt` tidak perlu dituliskan, cmake akan otomatis mencari file tersebut.
     di dalam `\home\jan\Project_build` akan dihasilkan file-file konfigurasi cmake yang siap untuk dilakukan Build System.
+    
+    Jika ingin menggulakukan _debuging_ gunakan:
+    ```
+    cmake -DCMAKE_BUILD_TYPE="Debug" ..
+    ```
 2. Call the build system
     
     Dari `\home\jan\Project_build`, jalankan
@@ -27,6 +36,7 @@ add_executable(Tutorial tutorial.cxx)
     cmake --build .
     ```
     artinya cmake akan melakukan _build_ berdasarkan file-file konfigurasi didirektori tersebut (ditunjukkan dengan tanda `.`).
+
 
 ## Tutorial Yang Berguna
 Selanjutnya bisa mengikuti tutorial CMake berikut: https://cmake.org/cmake/help/v3.20/guide/tutorial/index.html#id1
