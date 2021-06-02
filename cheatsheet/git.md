@@ -91,3 +91,6 @@ Command | Description
 ## Simple workflow
 ![](git.png)
 
+## More help
+- [https://rogerdudler.github.io/git-guide/](https://rogerdudler.github.io/git-guide/)
+
