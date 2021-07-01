@@ -38,5 +38,7 @@
   * [Shell (not yet)]()
   * [Ubuntu (not yet)]()
   * [Python (not yet)]()
+  * # Tips and Trick
+  * [Ganti Baris Bash Terminal](tips/ganti-baris-bash-terminal.md)
   
 [Download](download.md)
