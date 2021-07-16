@@ -14,4 +14,7 @@ Spectre is a side-channel attack that leverage speculative execution to get sens
 
 [![Spectre: Secrets, Side-Channels, Sandboxes, and Security](https://lh3.googleusercontent.com/z6Sl4j9zQ88oUKNy0G3PAMiVwy8DzQLh_ygyvBXv0zVNUZ_wQPN_n7EAR2By3dhoUpX7kTpaHjRPni1MHwKpaBJbpNqdEsHZsH4q)](https://youtu.be/Phmt8UrofDY) 
 
+## Memory Vulnerabilities and Cache Attacks
+
+[![Spectre: Secrets, Side-Channels, Sandboxes, and Security](https://lh3.googleusercontent.com/z6Sl4j9zQ88oUKNy0G3PAMiVwy8DzQLh_ygyvBXv0zVNUZ_wQPN_n7EAR2By3dhoUpX7kTpaHjRPni1MHwKpaBJbpNqdEsHZsH4q)](https://d18ky98rnyall9.cloudfront.net/week4_02.cd93bd10a3bf11e4b34961d14ef60801/full/360p/index.webm?Expires=1626480000&Signature=BTFwA5gFtjGQijFqShfaNse6AejK4uDJ9sD0OZuekNPhLPvcG8Jcz3kQCKfMAK1F9pc9DSO5KOFeCeSbrVGGyz75-7zoOIOTM9IRhYxgiayQHQBiIeIB9eds~6KwuAgKlDqDigv63u37G8U6-gCBB8l3Cie92Xlzko8RpGxmCNk_&Key-Pair-Id=APKAJLTNE6QMUY6HBC5A)
  
