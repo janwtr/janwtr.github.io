@@ -14,4 +14,5 @@
   - https://www.sae.org/standards/ground-vehicle/?categories=%2Fworkflow%2Fpublished%2Fstandards%2Fground-vehicle&search=V2X
 4. 3GPP
   - https://www.3gpp.org/v2x
+  - https://5gaa.org/
 
