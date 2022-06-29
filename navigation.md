@@ -23,6 +23,9 @@
   * [Steps to install OMNeT++](network/install-omnetpp.md)
   * [Intalasi Veins 5.0 di Docker](network/veins-in-docker.md)
   ----
+  * # V2X
+  * [V2X Standarization](v2x/v2x-standarization.md)
+  ----
   * # Tools
   * [Ubuntu (wsl) in Windows](tools/ubuntu-in-windows.md)
   * [Data Mining](tutorial/datamining.md)
