@@ -6,7 +6,8 @@
   - https://standards.ieee.org/ieee/1609.11/4950/
   - https://vtsociety.org/membership/standards/rtsc-and-vtits-published-standards#it
 2. ETSI
-  ETSI ITS family standart was inisiated in 2006
+
+  ETSI ITS family standard was inisiated in 2006
   - https://www.etsi.org/technologies/automotive-intelligent-transport
   - https://www.etsi.org/technologies/5g
 3. SAE
