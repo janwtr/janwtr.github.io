@@ -91,6 +91,10 @@ Command | Description
 ## Simple workflow
 ![](git.png)
 
+## Checking for existing SSH keys
+``ls -al ~/.ssh``
+
 ## More help
 - [https://rogerdudler.github.io/git-guide/](https://rogerdudler.github.io/git-guide/)
+
 
