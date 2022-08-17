@@ -91,9 +91,11 @@ Command | Description
 ## Simple workflow
 ![](git.png)
 
-## Checking for existing SSH keys
+## SSH Keys
+1. Checking for existing SSH keys
 ``ls -al ~/.ssh``
-
+2. Generating a new SSH key
+``ssh-keygen -t ed25519 -C "your_email@example.com"``
 ## More help
 - [https://rogerdudler.github.io/git-guide/](https://rogerdudler.github.io/git-guide/)
 
