@@ -1,6 +1,6 @@
 ## Page
 
-[janwtr.github.io](janwtr.github.io)
+[janwtr.github.io](https://janwtr.github.io)
 
 ## Cara menambahkan catatan
 
