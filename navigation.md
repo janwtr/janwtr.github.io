@@ -1,3 +1,5 @@
+# JAN
+
 [gimmick:theme](flatly)
 
 [Home](index.md)
@@ -20,14 +22,15 @@
 
   ----
   * # Network
-  * [Istilah-istilah pada Vehicular Network](network/istilah-di-vehicular-network.md)
-  * [Mulai membuat projek Veins](tutorial/start-veins-project.md) 
-  * [Steps to install OMNeT++](network/install-omnetpp.md)
-  * [Intalasi Veins 5.0 di Docker](network/veins-in-docker.md)
 
   ----
-  * # V2X
+  * # Vehicle to Everything (V2X)
   * [V2X Standarization](v2x/v2x-standarization.md)
+  * [Istilah-istilah pada Vehicular Network](v2x/istilah-di-vehicular-network.md)
+  * [Mulai membuat projek Veins](v2x/start-veins-project.md) 
+  * [Steps to install OMNeT++](v2x/install-omnetpp.md)
+  * [Intalasi Veins 5.0 di Docker](v2x/veins-in-docker.md)
+  * [Mulai membuat projek Veins](v2x/start-veins-project.md) 
 
   ----
   * # Tools
