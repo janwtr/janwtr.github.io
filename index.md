@@ -1,4 +1,5 @@
-# About page
-## Welcome to janwtr page
-Semoga bermanfaat...
+# Welcome to my page
+
+This is my small notes that might be useful later.
+
 ![](img/ninja.png)
