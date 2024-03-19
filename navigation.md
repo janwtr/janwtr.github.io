@@ -24,6 +24,10 @@
   * # Network
 
   ----
+  * # Data Structure
+  * [Kompleksitas Algoritma](tutorial/kompleksitasalgoritma.md)
+
+  ----
   * # Vehicle to Everything (V2X)
   * [V2X Standarization](v2x/v2x-standarization.md)
   * [Istilah-istilah pada Vehicular Network](v2x/istilah-di-vehicular-network.md)
