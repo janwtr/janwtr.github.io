@@ -51,20 +51,12 @@
 
 **Kesimpulan:**
 
-* Video ini memberikan pengenalan dasar tentang IoT.
-* Video selanjutnya akan membahas sensor dan pembuatan sistem IoT dasar dengan Raspberry Pi Pico.
+* Memberikan pengenalan dasar tentang IoT.
+* Selanjutnya akan membahas sensor dan pembuatan sistem IoT dasar dengan Raspberry Pi Pico.
 
 **Tambahan:**
 
-* Video ini menyebutkan beberapa contoh aplikasi IoT di rumah dan industri.
-* Video ini menekankan pentingnya koneksi internet dalam sistem IoT.
-* Video ini menjelaskan perbedaan antara sistem kontrol tradisional dan sistem IoT.
+* Menyebutkan beberapa contoh aplikasi IoT di rumah dan industri.
+* Menekankan pentingnya koneksi internet dalam sistem IoT.
+* Menjelaskan perbedaan antara sistem kontrol tradisional dan sistem IoT.
 
-**Sumber:**
-
-* Transkrip pidato dari pakar IoT
-
-**Catatan:**
-
-* Ringkasan ini hanya memuat poin-poin penting dari video.
-* Untuk informasi lebih lengkap, silakan tonton video aslinya.
