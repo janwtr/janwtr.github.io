@@ -12,7 +12,6 @@
   ----
   * # Network
   * [Comming soon...](comming-soon.md)
-  * [PSJM](network/index.html)
   
 [Learn]()
 
@@ -23,6 +22,7 @@
 
   ----
   * # Network
+  * [PSJM](network/index.html)
 
   ----
   * # Data Structure
