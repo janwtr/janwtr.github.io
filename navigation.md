@@ -12,7 +12,7 @@
   ----
   * # Network
   * [Comming soon...](comming-soon.md)
-  * [psjm](network/index.html)
+  * [PSJM](network/index.html)
   
 [Learn]()
 
