@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pemetaan Lapisan OSI &amp; TCP/IP</title>
+<style>
+  :root{
+    --ink:#1b2430; --bg:#f5f3ee; --surface:#ffffff; --border:#d8d3c8;
+    --accent:#2f6f6b; --accent-2:#c96a2e; --good:#2f7d4f; --bad:#b3423a;
+    --muted:#6b6558;
+    --font-display:'IBM Plex Sans',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    --font-body:'IBM Plex Sans',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ink:#e7e5df; --bg:#12181d; --surface:#1a2229; --border:#2b343c;
+      --accent:#5fd0c4; --accent-2:#f0a35c; --good:#5bc98a; --bad:#e2756c; --muted:#9aa0a6;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#e7e5df; --bg:#12181d; --surface:#1a2229; --border:#2b343c;
+    --accent:#5fd0c4; --accent-2:#f0a35c; --good:#5bc98a; --bad:#e2756c; --muted:#9aa0a6;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);line-height:1.5;}
+  .wrap{max-width:980px;margin:0 auto;padding:2rem 1.25rem 4rem;}
+  header{margin-bottom:1.75rem;}
+  .eyebrow{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:0 0 .4rem;}
+  h1{font-family:var(--font-display);font-weight:700;font-size:clamp(1.5rem,3.2vw,2.1rem);margin:0 0 .5rem;text-wrap:balance;}
+  .lede{color:var(--muted);max-width:62ch;margin:0;}
+  .tabs{display:flex;gap:.5rem;margin:1.5rem 0 1.25rem;border-bottom:1px solid var(--border);}
+  .tab{font-family:var(--font-body);font-weight:600;font-size:.92rem;padding:.6rem 1rem;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);cursor:pointer;}
+  .tab[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent);}
+  .board{display:grid;grid-template-columns:1fr;gap:1.5rem;}
+  @media(min-width:720px){.board{grid-template-columns:220px 1fr;}}
+  .pool{display:flex;flex-wrap:wrap;gap:.55rem;align-content:flex-start;padding:1rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;min-height:120px;}
+  .pool h2, .stack h2{font-family:var(--font-mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:0 0 .75rem;}
+  .chip{font-family:var(--font-mono);font-size:.85rem;font-weight:600;background:var(--bg);border:1.5px solid var(--accent-2);color:var(--ink);border-radius:7px;padding:.4rem .65rem;cursor:grab;user-select:none;touch-action:none;transition:box-shadow .15s,transform .1s;}
+  .chip:active{cursor:grabbing;}
+  .chip.dragging{opacity:.85;box-shadow:0 8px 22px rgba(0,0,0,.18);z-index:50;}
+  .chip.placed-correct{border-color:var(--good);}
+  .chip.placed-wrong{border-color:var(--bad);}
+  .stack{display:flex;flex-direction:column;gap:.5rem;padding:1rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;}
+  .layer{position:relative;border:1.5px dashed var(--border);border-radius:8px;min-height:56px;padding:.5rem .7rem;display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;}
+  .layer.dragover{border-color:var(--accent);background:color-mix(in srgb, var(--accent) 10%, var(--surface));}
+  .layer-label{font-weight:700;font-size:.88rem;position:absolute;top:.4rem;right:.6rem;color:var(--muted);pointer-events:none;}
+  .layer-name{font-weight:700;font-size:.92rem;margin-right:.5rem;}
+  .layer-desc{font-size:.78rem;color:var(--muted);width:100%;margin-top:.15rem;}
+  .toolbar{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-top:1.5rem;}
+  button.action{font-family:var(--font-body);font-weight:600;font-size:.85rem;border:1px solid var(--border);background:var(--surface);color:var(--ink);padding:.55rem 1rem;border-radius:8px;cursor:pointer;}
+  button.action.primary{background:var(--accent);border-color:var(--accent);color:var(--bg);}
+  .score{font-family:var(--font-mono);font-size:.85rem;color:var(--muted);margin-left:auto;}
+  .score b{color:var(--ink);}
+  footer{margin-top:2rem;font-size:.8rem;color:var(--muted);border-top:1px solid var(--border);padding-top:1rem;}
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">PSJM · Bab 5 · Modul 5</p>
+    <h1>Pemetaan Lapisan OSI &amp; TCP/IP</h1>
+    <p class="lede">Seret setiap protokol ke lapisan model referensi yang tepat. Cocokkan minimal lima protokol umum ke lapisan OSI/TCP-IP sesuai Sub-CPMK Minggu 5.</p>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-mode="osi">Model OSI (7 lapisan)</button>
+    <button class="tab" role="tab" aria-selected="false" data-mode="tcpip">Model TCP/IP (4 lapisan)</button>
+  </div>
+
+  <div class="board">
+    <div class="pool" id="pool" aria-label="Kumpulan protokol">
+      <h2>Protokol</h2>
+      <div id="chipHost"></div>
+    </div>
+    <div class="stack" id="stack" aria-label="Lapisan model referensi">
+      <h2 id="stackTitle">Model OSI</h2>
+      <div id="layerHost"></div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <button class="action primary" id="checkBtn">Periksa jawaban</button>
+    <button class="action" id="resetBtn">Ulangi</button>
+    <button class="action" id="answerBtn">Tampilkan kunci jawaban</button>
+    <span class="score">Benar: <b id="scoreVal">0</b> / <span id="scoreMax">8</span></span>
+  </div>
+
+  <footer>
+    Alat ini dibuat khusus untuk PSJM Bab 5 (Communication Principles). Jalankan berulang sebagai latihan formatif sebelum kuis/Checkpoint. Tidak menyimpan data ke server mana pun — seluruh proses berjalan di peramban Anda.
+  </footer>
+</div>
+
+<script>
+(function(){
+  const PROTOCOLS = [
+    {id:'ethernet', label:'Ethernet', osi:'datalink', tcpip:'access'},
+    {id:'ip', label:'IP', osi:'network', tcpip:'internet'},
+    {id:'arp', label:'ARP', osi:'datalink', tcpip:'access'},
+    {id:'tcp', label:'TCP', osi:'transport', tcpip:'transport'},
+    {id:'udp', label:'UDP', osi:'transport', tcpip:'transport'},
+    {id:'http', label:'HTTP', osi:'application', tcpip:'application'},
+    {id:'dns', label:'DNS', osi:'application', tcpip:'application'},
+    {id:'ftp', label:'FTP', osi:'application', tcpip:'application'},
+  ];
+
+  const OSI_LAYERS = [
+    {id:'physical', name:'1. Physical', desc:'Transmisi bit mentah melalui media fisik'},
+    {id:'datalink', name:'2. Data Link', desc:'Pengiriman frame dalam satu jaringan lokal (MAC address)'},
+    {id:'network', name:'3. Network', desc:'Pengiriman paket antar jaringan (alamat IP)'},
+    {id:'transport', name:'4. Transport', desc:'Menjamin data sampai utuh & berurutan, atau secepat mungkin'},
+    {id:'session', name:'5. Session', desc:'Mengelola sesi komunikasi antar aplikasi'},
+    {id:'presentation', name:'6. Presentation', desc:'Menerjemahkan format data (enkripsi/kompresi)'},
+    {id:'application', name:'7. Application', desc:'Tempat aplikasi pengguna berinteraksi dengan jaringan'},
+  ];
+  const TCPIP_LAYERS = [
+    {id:'access', name:'1. Network Access', desc:'Gabungan Physical + Data Link (OSI)'},
+    {id:'internet', name:'2. Internet', desc:'Setara Network (OSI) — alamat IP bekerja di sini'},
+    {id:'transport', name:'3. Transport', desc:'Setara Transport (OSI) — TCP & UDP'},
+    {id:'application', name:'4. Application', desc:'Gabungan Session + Presentation + Application (OSI)'},
+  ];
+
+  let mode = 'osi';
+  let placements = {}; // protocolId -> layerId
+  let checked = false;
+
+  const chipHost = document.getElementById('chipHost');
+  const layerHost = document.getElementById('layerHost');
+  const stackTitle = document.getElementById('stackTitle');
+  const scoreVal = document.getElementById('scoreVal');
+  const scoreMax = document.getElementById('scoreMax');
+
+  function layersFor(m){ return m === 'osi' ? OSI_LAYERS : TCPIP_LAYERS; }
+  function correctFor(m, p){ return m === 'osi' ? p.osi : p.tcpip; }
+
+  function render(){
+    stackTitle.textContent = mode === 'osi' ? 'Model OSI' : 'Model TCP/IP';
+    scoreMax.textContent = PROTOCOLS.length;
+    document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', t.dataset.mode === mode ? 'true':'false'));
+
+    // layers
+    layerHost.innerHTML = '';
+    layersFor(mode).forEach(layer => {
+      const div = document.createElement('div');
+      div.className = 'layer';
+      div.dataset.layerId = layer.id;
+      div.innerHTML = `<span class="layer-name">${layer.name}</span><span class="layer-desc">${layer.desc}</span>`;
+      layerHost.appendChild(div);
+    });
+
+    // chips: place in pool or in their target layer div if already placed
+    chipHost.innerHTML = '';
+    PROTOCOLS.forEach(p => {
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.textContent = p.label;
+      chip.dataset.id = p.id;
+      chip.setAttribute('tabindex','0');
+      const placedLayer = placements[p.id];
+      if (checked) {
+        const correct = correctFor(mode, p) === placedLayer;
+        if (correct) chip.classList.add('placed-correct');
+        else if (placedLayer) chip.classList.add('placed-wrong');
+      }
+      if (placedLayer) {
+        const target = layerHost.querySelector(`[data-layer-id="${placedLayer}"]`);
+        if (target) target.appendChild(chip); else chipHost.appendChild(chip);
+      } else {
+        chipHost.appendChild(chip);
+      }
+      attachDrag(chip);
+    });
+    updateScore();
+  }
+
+  function updateScore(){
+    let n = 0;
+    PROTOCOLS.forEach(p => { if (placements[p.id] === correctFor(mode, p)) n++; });
+    scoreVal.textContent = n;
+  }
+
+  function attachDrag(chip){
+    let dragging = false, offsetX=0, offsetY=0, ghost=null;
+    function start(clientX, clientY){
+      dragging = true; checked = false;
+      chip.classList.add('dragging');
+      chip.classList.remove('placed-correct','placed-wrong');
+      const r = chip.getBoundingClientRect();
+      offsetX = clientX - r.left; offsetY = clientY - r.top;
+      document.body.appendChild(chip);
+      chip.style.position='fixed'; chip.style.left = r.left+'px'; chip.style.top = r.top+'px'; chip.style.width = r.width+'px';
+      move(clientX, clientY);
+    }
+    function move(clientX, clientY){
+      if(!dragging) return;
+      chip.style.left = (clientX-offsetX)+'px';
+      chip.style.top = (clientY-offsetY)+'px';
+      document.querySelectorAll('.layer').forEach(l=>l.classList.remove('dragover'));
+      const el = document.elementFromPoint(clientX, clientY);
+      const layer = el && el.closest('.layer');
+      if(layer) layer.classList.add('dragover');
+    }
+    function end(clientX, clientY){
+      if(!dragging) return;
+      dragging = false;
+      chip.classList.remove('dragging');
+      chip.style.position=''; chip.style.left=''; chip.style.top=''; chip.style.width='';
+      document.querySelectorAll('.layer').forEach(l=>l.classList.remove('dragover'));
+      const el = document.elementFromPoint(clientX, clientY);
+      const layer = el && el.closest('.layer');
+      if(layer){
+        placements[chip.dataset.id] = layer.dataset.layerId;
+      } else if (el && el.closest('#pool')) {
+        delete placements[chip.dataset.id];
+      }
+      render();
+    }
+    chip.addEventListener('mousedown', e=>{ e.preventDefault(); start(e.clientX,e.clientY);
+      function mm(ev){ move(ev.clientX, ev.clientY); }
+      function mu(ev){ document.removeEventListener('mousemove',mm); document.removeEventListener('mouseup',mu); end(ev.clientX, ev.clientY); }
+      document.addEventListener('mousemove',mm); document.addEventListener('mouseup',mu);
+    });
+    chip.addEventListener('touchstart', e=>{ const t=e.touches[0]; start(t.clientX,t.clientY);
+      function tm(ev){ const t=ev.touches[0]; move(t.clientX,t.clientY); ev.preventDefault(); }
+      function te(ev){ document.removeEventListener('touchmove',tm); document.removeEventListener('touchend',te); const t=ev.changedTouches[0]; end(t.clientX,t.clientY); }
+      document.addEventListener('touchmove',tm,{passive:false}); document.addEventListener('touchend',te);
+    }, {passive:true});
+  }
+
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => { mode = tab.dataset.mode; checked=false; render(); });
+  });
+  document.getElementById('checkBtn').addEventListener('click', () => { checked = true; render(); });
+  document.getElementById('resetBtn').addEventListener('click', () => { placements = {}; checked=false; render(); });
+  document.getElementById('answerBtn').addEventListener('click', () => {
+    PROTOCOLS.forEach(p => { placements[p.id] = correctFor(mode, p); });
+    checked = true; render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

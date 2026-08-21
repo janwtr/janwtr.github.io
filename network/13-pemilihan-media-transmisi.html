@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skenario Pemilihan Media Transmisi</title>
+<style>
+  :root{
+    --ink:#1b2430; --bg:#f5f3ee; --surface:#ffffff; --border:#d8d3c8;
+    --accent:#2f6f6b; --accent-2:#c96a2e; --muted:#6b6558; --good:#2f7d4f; --bad:#b3423a;
+    --copper:#b5773a; --fiber:#3b6ea5; --wireless:#7a5ba8;
+    --font-display:'IBM Plex Sans',system-ui,sans-serif; --font-body:'IBM Plex Sans',system-ui,sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){ --ink:#e7e5df; --bg:#12181d; --surface:#1a2229; --border:#2b343c; --accent:#5fd0c4; --accent-2:#f0a35c; --muted:#9aa0a6; --good:#5bc98a; --bad:#e2756c; }
+  }
+  :root[data-theme="dark"]{ --ink:#e7e5df; --bg:#12181d; --surface:#1a2229; --border:#2b343c; --accent:#5fd0c4; --accent-2:#f0a35c; --muted:#9aa0a6; --good:#5bc98a; --bad:#e2756c; }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);line-height:1.5;}
+  .wrap{max-width:900px;margin:0 auto;padding:2rem 1.25rem 4rem;}
+  .eyebrow{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:0 0 .4rem;}
+  h1{font-family:var(--font-display);font-weight:700;font-size:clamp(1.5rem,3.2vw,2.1rem);margin:0 0 .5rem;text-wrap:balance;}
+  .lede{color:var(--muted);max-width:66ch;margin:0 0 1.5rem;}
+  .scenarios{display:flex;flex-direction:column;gap:.6rem;margin-bottom:1.5rem;}
+  .scenario{background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:.75rem 1rem;font-size:.92rem;cursor:pointer;transition:border-color .15s;}
+  .scenario.selected{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);}
+  .scenario.solved{opacity:.6;cursor:default;}
+  .scenario .tag{display:inline-block;font-family:var(--font-mono);font-size:.72rem;font-weight:700;padding:.15rem .5rem;border-radius:12px;margin-left:.5rem;}
+  .buckets{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;}
+  @media(max-width:640px){.buckets{grid-template-columns:1fr;}}
+  .bucket{border:2px dashed var(--border);border-radius:10px;padding:1rem;min-height:120px;text-align:center;cursor:pointer;transition:border-color .15s;}
+  .bucket h3{margin:0 0 .5rem;font-size:.95rem;}
+  .bucket.copper{border-color:color-mix(in srgb, var(--copper) 50%, var(--border));}
+  .bucket.fiber{border-color:color-mix(in srgb, var(--fiber) 50%, var(--border));}
+  .bucket.wireless{border-color:color-mix(in srgb, var(--wireless) 50%, var(--border));}
+  .bucket .hint{font-size:.75rem;color:var(--muted);}
+  .bucket .placed{font-size:.78rem;text-align:left;background:var(--bg);border-radius:6px;padding:.35rem .5rem;margin-top:.4rem;}
+  .toolbar{display:flex;gap:.6rem;align-items:center;margin-top:1.5rem;flex-wrap:wrap;}
+  button.action{font-weight:600;font-size:.88rem;border:1px solid var(--border);background:var(--surface);color:var(--ink);padding:.6rem 1.1rem;border-radius:8px;cursor:pointer;}
+  button.action.primary{background:var(--accent);border-color:var(--accent);color:var(--bg);}
+  .score{font-family:var(--font-mono);font-size:.85rem;color:var(--muted);margin-left:auto;}
+  .score b{color:var(--ink);}
+  .flash{animation:shake .3s;}
+  @keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-5px);}75%{transform:translateX(5px);}}
+  footer{margin-top:2rem;font-size:.8rem;color:var(--muted);border-top:1px solid var(--border);padding-top:1rem;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">PSJM · Bab 6 · Modul 6</p>
+  <h1>Skenario Pemilihan Media Transmisi</h1>
+  <p class="lede">Pilih satu skenario di bawah, lalu klik jenis media transmisi yang paling sesuai. Pertimbangkan jarak, kecepatan, gangguan elektromagnetik, dan biaya seperti dijelaskan pada Bab 6.</p>
+
+  <div class="scenarios" id="scenarios"></div>
+
+  <div class="buckets" id="buckets">
+    <div class="bucket copper" data-media="copper"><h3>Tembaga</h3><div class="hint">Twisted-pair / coaxial</div><div class="placedHost"></div></div>
+    <div class="bucket fiber" data-media="fiber"><h3>Fiber Optik</h3><div class="hint">Serat kaca/plastik</div><div class="placedHost"></div></div>
+    <div class="bucket wireless" data-media="wireless"><h3>Nirkabel</h3><div class="hint">Gelombang elektromagnetik</div><div class="placedHost"></div></div>
+  </div>
+
+  <div class="toolbar">
+    <button class="action primary" id="resetBtn">Ulangi</button>
+    <button class="action" id="revealBtn">Tampilkan semua jawaban</button>
+    <span class="score">Benar: <b id="scoreVal">0</b> / <span id="scoreMax"></span></span>
+  </div>
+
+  <footer>PSJM Bab 6 — Network Media. Ingat: perancang jaringan yang baik biasanya mengombinasikan lebih dari satu jenis media dalam satu jaringan, sesuai kebutuhan tiap segmen.</footer>
+</div>
+
+<script>
+(function(){
+  const SCENARIOS = [
+    {id:'s1', text:'Jalur backbone antar dua gedung kampus yang berjarak jauh, butuh kecepatan tinggi dan minim gangguan.', media:'fiber'},
+    {id:'s2', text:'Sambungan LAN di dalam satu ruangan kelas, dengan anggaran terbatas.', media:'copper'},
+    {id:'s3', text:'Ruang rapat dengan banyak peserta membawa laptop/ponsel sendiri, membutuhkan mobilitas tinggi.', media:'wireless'},
+    {id:'s4', text:'Instalasi TV kabel dan internet rumahan generasi lama yang sudah terpasang.', media:'copper'},
+    {id:'s5', text:'Ruangan dekat mesin pabrik dengan interferensi elektromagnetik tinggi, butuh koneksi tetap stabil.', media:'fiber'},
+    {id:'s6', text:'Perangkat IoT/sensor yang berpindah-pindah lokasi dan sulit dijangkau kabel.', media:'wireless'},
+  ];
+  const MEDIA_NAME = {copper:'Tembaga', fiber:'Fiber Optik', wireless:'Nirkabel'};
+  const MEDIA_COLOR_VAR = {copper:'--copper', fiber:'--fiber', wireless:'--wireless'};
+
+  let selected = null;
+  let solved = {}; // scenario id -> media chosen (only set when correct)
+
+  const scenariosEl = document.getElementById('scenarios');
+  const scoreVal = document.getElementById('scoreVal');
+  document.getElementById('scoreMax').textContent = SCENARIOS.length;
+
+  function render(){
+    scenariosEl.innerHTML = SCENARIOS.map(s=>{
+      const isSolved = solved[s.id];
+      const cls = ['scenario'];
+      if(isSolved) cls.push('solved');
+      if(selected===s.id) cls.push('selected');
+      const tag = isSolved ? `<span class="tag" style="background:color-mix(in srgb, var(${MEDIA_COLOR_VAR[isSolved]}) 25%, transparent); color:var(${MEDIA_COLOR_VAR[isSolved]})">${MEDIA_NAME[isSolved]}</span>` : '';
+      return `<div class="${cls.join(' ')}" data-id="${s.id}">${s.text}${tag}</div>`;
+    }).join('');
+    scenariosEl.querySelectorAll('.scenario').forEach(el=>{
+      if(el.classList.contains('solved')) return;
+      el.addEventListener('click', ()=>{ selected = el.dataset.id; render(); });
+    });
+
+    document.querySelectorAll('.bucket .placedHost').forEach(el=> el.innerHTML='');
+    Object.keys(solved).forEach(sid=>{
+      const media = solved[sid];
+      const scenario = SCENARIOS.find(x=>x.id===sid);
+      const host = document.querySelector(`.bucket[data-media="${media}"] .placedHost`);
+      if(host){
+        const div = document.createElement('div');
+        div.className = 'placed';
+        div.textContent = scenario.text;
+        host.appendChild(div);
+      }
+    });
+
+    scoreVal.textContent = Object.keys(solved).length;
+  }
+
+  document.getElementById('buckets').addEventListener('click', e=>{
+    const bucket = e.target.closest('.bucket');
+    if(!bucket || !selected) return;
+    const scenario = SCENARIOS.find(s=>s.id===selected);
+    if(scenario.media === bucket.dataset.media){
+      solved[selected] = bucket.dataset.media;
+      selected = null;
+      render();
+    } else {
+      bucket.classList.add('flash');
+      setTimeout(()=>bucket.classList.remove('flash'), 300);
+    }
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', ()=>{ solved={}; selected=null; render(); });
+  document.getElementById('revealBtn').addEventListener('click', ()=>{ SCENARIOS.forEach(s=> solved[s.id]=s.media); selected=null; render(); });
+
+  render();
+})();
+</script>
+</body>
+</html>

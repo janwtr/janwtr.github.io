@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Enkapsulasi &amp; Dekapsulasi Data</title>
+<style>
+  :root{
+    --ink:#1b2430; --bg:#f5f3ee; --surface:#ffffff; --border:#d8d3c8;
+    --accent:#2f6f6b; --accent-2:#c96a2e; --muted:#6b6558;
+    --l-app:#c96a2e; --l-trans:#2f6f6b; --l-net:#3b6ea5; --l-link:#7a5ba8; --l-phys:#6b6558;
+    --font-display:'IBM Plex Sans',system-ui,sans-serif; --font-body:'IBM Plex Sans',system-ui,sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){ --ink:#e7e5df; --bg:#12181d; --surface:#1a2229; --border:#2b343c; --accent:#5fd0c4; --accent-2:#f0a35c; --muted:#9aa0a6; }
+  }
+  :root[data-theme="dark"]{ --ink:#e7e5df; --bg:#12181d; --surface:#1a2229; --border:#2b343c; --accent:#5fd0c4; --accent-2:#f0a35c; --muted:#9aa0a6; }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);line-height:1.5;}
+  .wrap{max-width:820px;margin:0 auto;padding:2rem 1.25rem 4rem;}
+  .eyebrow{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:0 0 .4rem;}
+  h1{font-family:var(--font-display);font-weight:700;font-size:clamp(1.5rem,3.2vw,2.1rem);margin:0 0 .5rem;text-wrap:balance;}
+  .lede{color:var(--muted);max-width:64ch;margin:0 0 1.75rem;}
+  .stage{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:2rem 1.5rem;min-height:220px;display:flex;align-items:center;justify-content:center;}
+  .packet{display:flex;align-items:stretch;font-family:var(--font-mono);font-size:.82rem;font-weight:700;border-radius:8px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,.08);}
+  .env{display:flex;align-items:center;justify-content:center;padding:.9rem .6rem;color:#fff;white-space:nowrap;transition:all .4s ease;}
+  .env.data{background:#8a8272;color:#fff;}
+  .env.app{background:var(--l-app);}
+  .env.trans{background:var(--l-trans);}
+  .env.net{background:var(--l-net);}
+  .env.link{background:var(--l-link);}
+  .caption{text-align:center;margin-top:1.25rem;font-size:.95rem;min-height:2.6em;}
+  .caption b{color:var(--accent-2);}
+  .progress{display:flex;gap:.4rem;justify-content:center;margin-top:1.25rem;}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--border);}
+  .dot.active{background:var(--accent);}
+  .toolbar{display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap;margin-top:1.5rem;}
+  button.action{font-weight:600;font-size:.88rem;border:1px solid var(--border);background:var(--surface);color:var(--ink);padding:.6rem 1.1rem;border-radius:8px;cursor:pointer;}
+  button.action.primary{background:var(--accent);border-color:var(--accent);color:var(--bg);}
+  .legend{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;margin-top:1.5rem;font-size:.78rem;color:var(--muted);}
+  .legend span{display:inline-flex;align-items:center;gap:.35rem;}
+  .swatch{width:10px;height:10px;border-radius:2px;display:inline-block;}
+  footer{margin-top:2rem;font-size:.8rem;color:var(--muted);border-top:1px solid var(--border);padding-top:1rem;}
+  @media (prefers-reduced-motion:reduce){.env{transition:none;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">PSJM · Bab 9 · Modul 8</p>
+  <h1>Enkapsulasi &amp; Dekapsulasi Data</h1>
+  <p class="lede">Ikuti data sebuah permintaan halaman web saat "dibungkus" lapis demi lapis menuju media fisik, lalu "dibuka" kembali di sisi penerima — persis proses yang dijelaskan pada Bab 9.</p>
+
+  <div class="stage" id="stage"></div>
+  <p class="caption" id="caption"></p>
+  <div class="progress" id="progress"></div>
+
+  <div class="toolbar">
+    <button class="action" id="prevBtn">&larr; Sebelumnya</button>
+    <button class="action primary" id="nextBtn">Selanjutnya &rarr;</button>
+    <button class="action" id="resetBtn">Ulangi dari awal</button>
+    <button class="action" id="directionBtn">Mode: Enkapsulasi</button>
+  </div>
+
+  <div class="legend">
+    <span><i class="swatch" style="background:#8a8272"></i>Data mentah</span>
+    <span><i class="swatch" style="background:#c96a2e"></i>Header Application</span>
+    <span><i class="swatch" style="background:#2f6f6b"></i>Header Transport (TCP/UDP)</span>
+    <span><i class="swatch" style="background:#3b6ea5"></i>Header IP</span>
+    <span><i class="swatch" style="background:#7a5ba8"></i>Header Ethernet + FCS</span>
+  </div>
+
+  <footer>PSJM Bab 9 — Fungsi Internet Protocol dan Enkapsulasi Data. Gunakan tombol "Mode" untuk beralih antara arah enkapsulasi (pengirim) dan dekapsulasi (penerima).</footer>
+</div>
+
+<script>
+(function(){
+  const encapSteps = [
+    {envs:['data'], caption:'<b>Application layer</b> — data asli, misalnya isi permintaan halaman web, belum dibungkus apa pun.'},
+    {envs:['app','data'], caption:'<b>Ditambahkan header Application</b> — informasi lapisan aplikasi (mis. HTTP) dibungkus di depan data.'},
+    {envs:['trans','app','data'], caption:'<b>Menjadi segmen</b> — header Transport (TCP/UDP) ditambahkan, membungkus hasil sebelumnya.'},
+    {envs:['net','trans','app','data'], caption:'<b>Menjadi paket</b> — header IP ditambahkan berisi alamat IP sumber &amp; tujuan.'},
+    {envs:['link','net','trans','app','data'], caption:'<b>Menjadi frame</b> — header Ethernet (+ FCS) ditambahkan berisi alamat MAC sumber &amp; tujuan, siap dikirim melalui media fisik.'},
+  ];
+  // decapsulation is just the reverse order/labels
+  const decapSteps = [
+    {envs:['link','net','trans','app','data'], caption:'<b>Frame diterima</b> dari media fisik oleh perangkat penerima.'},
+    {envs:['net','trans','app','data'], caption:'<b>Header Ethernet dibuka</b> — perangkat memeriksa alamat MAC tujuan, lalu melepas header ini.'},
+    {envs:['trans','app','data'], caption:'<b>Header IP dibuka</b> — perangkat memeriksa alamat IP tujuan, lalu melepas header ini.'},
+    {envs:['app','data'], caption:'<b>Header Transport dibuka</b> — data diserahkan ke proses/aplikasi yang tepat berdasarkan nomor port.'},
+    {envs:['data'], caption:'<b>Header Application dibuka</b> — aplikasi penerima (mis. peramban web) kini memiliki data asli yang sama dengan yang dikirim pengirim.'},
+  ];
+  const labels = {data:'DATA', app:'APP', trans:'TRANS', net:'IP', link:'ETH'};
+
+  let mode = 'encap'; // encap | decap
+  let idx = 0;
+
+  const stage = document.getElementById('stage');
+  const caption = document.getElementById('caption');
+  const progress = document.getElementById('progress');
+  const directionBtn = document.getElementById('directionBtn');
+
+  function steps(){ return mode==='encap' ? encapSteps : decapSteps; }
+
+  function render(){
+    const s = steps()[idx];
+    stage.innerHTML = '<div class="packet">' + s.envs.map(e=>`<div class="env ${e}">${labels[e]}</div>`).join('') + '</div>';
+    caption.innerHTML = s.caption;
+    progress.innerHTML = steps().map((_,i)=>`<span class="dot ${i===idx?'active':''}"></span>`).join('');
+    directionBtn.textContent = 'Mode: ' + (mode==='encap' ? 'Enkapsulasi' : 'Dekapsulasi');
+  }
+
+  document.getElementById('nextBtn').addEventListener('click', ()=>{ idx = Math.min(idx+1, steps().length-1); render(); });
+  document.getElementById('prevBtn').addEventListener('click', ()=>{ idx = Math.max(idx-1, 0); render(); });
+  document.getElementById('resetBtn').addEventListener('click', ()=>{ idx = 0; render(); });
+  directionBtn.addEventListener('click', ()=>{ mode = mode==='encap' ? 'decap' : 'encap'; idx = 0; render(); });
+
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kalkulator Subnetting &amp; Penyederhana IPv6</title>
+<style>
+  :root{
+    --ink:#1b2430; --bg:#f5f3ee; --surface:#ffffff; --border:#d8d3c8;
+    --accent:#2f6f6b; --accent-2:#c96a2e; --good:#2f7d4f; --bad:#b3423a; --muted:#6b6558;
+    --font-display:'IBM Plex Sans',system-ui,sans-serif; --font-body:'IBM Plex Sans',system-ui,sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ink:#e7e5df; --bg:#12181d; --surface:#1a2229; --border:#2b343c;
+      --accent:#5fd0c4; --accent-2:#f0a35c; --good:#5bc98a; --bad:#e2756c; --muted:#9aa0a6;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#e7e5df; --bg:#12181d; --surface:#1a2229; --border:#2b343c;
+    --accent:#5fd0c4; --accent-2:#f0a35c; --good:#5bc98a; --bad:#e2756c; --muted:#9aa0a6;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);line-height:1.5;}
+  .wrap{max-width:840px;margin:0 auto;padding:2rem 1.25rem 4rem;}
+  .eyebrow{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:0 0 .4rem;}
+  h1{font-family:var(--font-display);font-weight:700;font-size:clamp(1.5rem,3.2vw,2.1rem);margin:0 0 .5rem;text-wrap:balance;}
+  .lede{color:var(--muted);max-width:64ch;margin:0 0 1.5rem;}
+  .tabs{display:flex;gap:.5rem;border-bottom:1px solid var(--border);margin-bottom:1.5rem;}
+  .tab{font-weight:600;font-size:.92rem;padding:.6rem 1rem;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);cursor:pointer;}
+  .tab[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent);}
+  .panel{display:none;}
+  .panel.active{display:block;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.25rem 1.4rem;margin-bottom:1.25rem;}
+  label{display:block;font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:.3rem;}
+  .row{display:flex;gap:.75rem;flex-wrap:wrap;align-items:flex-end;}
+  .field{flex:1;min-width:160px;}
+  input[type=text]{width:100%;font-family:var(--font-mono);font-size:.95rem;padding:.55rem .65rem;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--ink);}
+  select{font-family:var(--font-mono);font-size:.95rem;padding:.55rem .5rem;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--ink);}
+  button.action{font-weight:600;font-size:.88rem;border:1px solid var(--accent);background:var(--accent);color:var(--bg);padding:.6rem 1.1rem;border-radius:8px;cursor:pointer;}
+  button.action.ghost{background:var(--surface);color:var(--ink);border-color:var(--border);}
+  .err{color:var(--bad);font-size:.85rem;margin-top:.6rem;}
+  table.result{width:100%;border-collapse:collapse;margin-top:1rem;font-family:var(--font-mono);font-size:.9rem;}
+  table.result td{padding:.4rem .3rem;border-bottom:1px solid var(--border);}
+  table.result td:first-child{color:var(--muted);width:44%;font-family:var(--font-body);font-weight:600;font-size:.82rem;}
+  .steps{margin-top:1.25rem;padding-top:1rem;border-top:1px dashed var(--border);}
+  .steps h3{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 .6rem;}
+  .step{font-family:var(--font-mono);font-size:.85rem;padding:.45rem .6rem;background:var(--bg);border-radius:6px;margin-bottom:.4rem;white-space:pre-wrap;word-break:break-word;}
+  .step b{color:var(--accent-2);}
+  footer{margin-top:2rem;font-size:.8rem;color:var(--muted);border-top:1px solid var(--border);padding-top:1rem;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">PSJM · Bab 10 · Modul 9 &amp; 10</p>
+  <h1>Kalkulator Subnetting &amp; Penyederhana IPv6</h1>
+  <p class="lede">Berbeda dari kalkulator subnetting pada umumnya, alat ini menampilkan setiap langkah perhitungan biner secara eksplisit — sesuai cara pengerjaan yang diajarkan pada Bab 10, bukan sekadar jawaban akhir.</p>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-panel="v4">Subnetting IPv4</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="v6">Penyederhana Notasi IPv6</button>
+  </div>
+
+  <div class="panel active" id="panel-v4">
+    <div class="card">
+      <div class="row">
+        <div class="field">
+          <label for="ipInput">Alamat IP</label>
+          <input type="text" id="ipInput" value="192.168.5.11" placeholder="192.168.5.11">
+        </div>
+        <div class="field">
+          <label for="maskInput">Subnet mask atau CIDR</label>
+          <input type="text" id="maskInput" value="255.255.255.0" placeholder="255.255.255.0 atau /24">
+        </div>
+        <div>
+          <button class="action" id="calcBtn">Hitung</button>
+        </div>
+      </div>
+      <div class="err" id="v4Err"></div>
+      <table class="result" id="v4Result" style="display:none"></table>
+      <div class="steps" id="v4Steps" style="display:none"></div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-v6">
+    <div class="card">
+      <div class="row">
+        <div class="field" style="flex:2;min-width:280px;">
+          <label for="v6Input">Alamat IPv6 (bentuk penuh atau ringkas)</label>
+          <input type="text" id="v6Input" value="2001:0db8:0000:0000:0000:ff00:0042:8329" placeholder="2001:0db8:0000:...">
+        </div>
+        <div>
+          <button class="action" id="v6SimplifyBtn">Sederhanakan</button>
+          <button class="action ghost" id="v6ExpandBtn">Perluas</button>
+        </div>
+      </div>
+      <div class="err" id="v6Err"></div>
+      <table class="result" id="v6Result" style="display:none"></table>
+      <div class="steps" id="v6Steps" style="display:none"></div>
+    </div>
+  </div>
+
+  <footer>
+    Semua perhitungan berjalan langsung di peramban Anda (JavaScript murni) — tidak ada data yang dikirim ke server mana pun. Cocok ditautkan sebagai sumber daya URL eksternal dari SPADA untuk Bab 10.
+  </footer>
+</div>
+
+<script>
+(function(){
+  // ---------- Tabs ----------
+  document.querySelectorAll('.tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected', t===tab?'true':'false'));
+      document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+      document.getElementById('panel-'+tab.dataset.panel).classList.add('active');
+    });
+  });
+
+  // ---------- IPv4 subnetting ----------
+  function toBin8(n){ return n.toString(2).padStart(8,'0'); }
+  function parseIp(str){
+    const parts = str.trim().split('.');
+    if(parts.length!==4) return null;
+    const nums = parts.map(p=>Number(p));
+    if(nums.some(n=>!Number.isInteger(n) || n<0 || n>255)) return null;
+    return nums;
+  }
+  function parseMask(str){
+    str = str.trim();
+    if(str.startsWith('/')){
+      const cidr = Number(str.slice(1));
+      if(!Number.isInteger(cidr) || cidr<0 || cidr>32) return null;
+      return {cidr, octets: cidrToMask(cidr)};
+    }
+    const octets = parseIp(str);
+    if(!octets) return null;
+    const cidr = maskToCidr(octets);
+    if(cidr===null) return null;
+    return {cidr, octets};
+  }
+  function cidrToMask(cidr){
+    const bits = '1'.repeat(cidr).padEnd(32,'0');
+    return [0,1,2,3].map(i=>parseInt(bits.slice(i*8,i*8+8),2));
+  }
+  function maskToCidr(octets){
+    const bits = octets.map(toBin8).join('');
+    if(!/^1*0*$/.test(bits)) return null;
+    return (bits.match(/1/g)||[]).length;
+  }
+  function ipToInt(octets){ return octets.reduce((a,b)=>a*256+b,0); }
+  function intToIp(n){ return [24,16,8,0].map(s=>(n>>>s)&255).join('.'); }
+
+  document.getElementById('calcBtn').addEventListener('click', ()=>{
+    const errEl = document.getElementById('v4Err');
+    const resultEl = document.getElementById('v4Result');
+    const stepsEl = document.getElementById('v4Steps');
+    errEl.textContent=''; resultEl.style.display='none'; stepsEl.style.display='none'; stepsEl.innerHTML='';
+
+    const ip = parseIp(document.getElementById('ipInput').value);
+    const mask = parseMask(document.getElementById('maskInput').value);
+    if(!ip){ errEl.textContent='Format alamat IP tidak valid. Contoh: 192.168.5.11'; return; }
+    if(!mask){ errEl.textContent='Format subnet mask/CIDR tidak valid. Contoh: 255.255.255.0 atau /24'; return; }
+
+    const ipInt = ipToInt(ip);
+    const maskInt = ipToInt(mask.octets);
+    const netInt = (ipInt & maskInt) >>> 0;
+    const wildcardOctets = mask.octets.map(o=>255-o);
+    const bcastInt = (netInt | ipToInt(wildcardOctets)) >>> 0;
+    const hostBits = 32-mask.cidr;
+    const totalHosts = Math.pow(2,hostBits);
+    const usable = hostBits<=1 ? 0 : totalHosts-2;
+    const firstHost = hostBits<=1 ? intToIp(netInt) : intToIp(netInt+1);
+    const lastHost = hostBits<=1 ? intToIp(bcastInt) : intToIp(bcastInt-1);
+
+    resultEl.style.display='';
+    resultEl.innerHTML = `
+      <tr><td>Alamat jaringan (network)</td><td>${intToIp(netInt)}</td></tr>
+      <tr><td>Alamat broadcast</td><td>${intToIp(bcastInt)}</td></tr>
+      <tr><td>Subnet mask</td><td>${mask.octets.join('.')} (/${mask.cidr})</td></tr>
+      <tr><td>Wildcard mask</td><td>${wildcardOctets.join('.')}</td></tr>
+      <tr><td>Rentang host yang dapat dipakai</td><td>${usable>0? firstHost+' – '+lastHost : '(tidak ada host yang dapat dipakai)'}</td></tr>
+      <tr><td>Jumlah host yang dapat dipakai</td><td>${usable.toLocaleString('id-ID')}</td></tr>
+    `;
+
+    stepsEl.style.display='';
+    stepsEl.innerHTML = `<h3>Langkah perhitungan</h3>
+      <div class="step"><b>1. Ubah IP ke biner &nbsp;</b>${ip.map(toBin8).join('.')}</div>
+      <div class="step"><b>2. Ubah mask ke biner &nbsp;</b>${mask.octets.map(toBin8).join('.')}</div>
+      <div class="step"><b>3. AND-kan IP dengan mask &rarr; network</b>\n${ip.map(toBin8).join('.')}\n${mask.octets.map(toBin8).join('.')} (AND)\n${'-'.repeat(35)}\n${mask.octets.map((m,i)=>toBin8(ip[i]&m)).join('.')} = ${intToIp(netInt)}</div>
+      <div class="step"><b>4. Wildcard = 255 − mask, OR-kan ke network &rarr; broadcast</b>\nWildcard: ${wildcardOctets.map(toBin8).join('.')}\nBroadcast: ${intToIp(bcastInt)}</div>
+      <div class="step"><b>5. Sisa bit host = 32 − ${mask.cidr} = ${hostBits} bit &rarr; 2^${hostBits} − 2 = ${usable.toLocaleString('id-ID')} host</b></div>`;
+  });
+
+  // ---------- IPv6 ----------
+  function expandV6(input){
+    let str = input.trim();
+    if(!str) return {error:'Alamat tidak boleh kosong.'};
+    if((str.match(/::/g)||[]).length>1) return {error:'Notasi "::" hanya boleh muncul satu kali dalam satu alamat.'};
+    let groups;
+    if(str.includes('::')){
+      const [left,right] = str.split('::');
+      const leftG = left ? left.split(':').filter(Boolean) : [];
+      const rightG = right ? right.split(':').filter(Boolean) : [];
+      const missing = 8 - leftG.length - rightG.length;
+      if(missing<0) return {error:'Jumlah grup melebihi 8 — periksa kembali alamat.'};
+      groups = [...leftG, ...Array(missing).fill('0'), ...rightG];
+    } else {
+      groups = str.split(':');
+    }
+    if(groups.length!==8) return {error:'Alamat IPv6 harus memiliki 8 grup (setelah "::" diperluas). Ditemukan '+groups.length+'.'};
+    for(const g of groups){ if(!/^[0-9a-fA-F]{1,4}$/.test(g)) return {error:'Grup "'+g+'" bukan bilangan heksadesimal 1–4 digit yang valid.'}; }
+    return {groups: groups.map(g=>g.toLowerCase().padStart(4,'0'))};
+  }
+  function compressV6(groupsFull){
+    const groups = groupsFull.map(g=>g.replace(/^0+(?=.)/,''));
+    // find longest run of "0"
+    let bestStart=-1,bestLen=0,curStart=-1,curLen=0;
+    for(let i=0;i<8;i++){
+      if(groups[i]==='0'){ if(curStart===-1)curStart=i; curLen++; if(curLen>bestLen){bestLen=curLen;bestStart=curStart;} }
+      else { curStart=-1; curLen=0; }
+    }
+    if(bestLen<2) return groups.join(':');
+    const before = groups.slice(0,bestStart).join(':');
+    const after = groups.slice(bestStart+bestLen).join(':');
+    return before+'::'+after;
+  }
+
+  document.getElementById('v6SimplifyBtn').addEventListener('click', ()=>{
+    const errEl=document.getElementById('v6Err'), resultEl=document.getElementById('v6Result'), stepsEl=document.getElementById('v6Steps');
+    errEl.textContent=''; resultEl.style.display='none'; stepsEl.style.display='none'; stepsEl.innerHTML='';
+    const r = expandV6(document.getElementById('v6Input').value);
+    if(r.error){ errEl.textContent=r.error; return; }
+    const full = r.groups.join(':');
+    const simplified = compressV6(r.groups);
+    resultEl.style.display='';
+    resultEl.innerHTML = `<tr><td>Bentuk penuh (8 grup, 4 digit)</td><td>${full}</td></tr>
+      <tr><td>Bentuk disederhanakan</td><td>${simplified}</td></tr>`;
+    stepsEl.style.display='';
+    stepsEl.innerHTML = `<h3>Langkah penyederhanaan</h3>
+      <div class="step"><b>1. Perluas ke 8 grup penuh &nbsp;</b>${full}</div>
+      <div class="step"><b>2. Buang angka nol di depan tiap grup &nbsp;</b>${r.groups.map(g=>g.replace(/^0+(?=.)/,'')).join(':')}</div>
+      <div class="step"><b>3. Ganti rangkaian grup "0" terpanjang (≥2 grup) dengan "::"</b>\n&rarr; ${simplified}</div>`;
+  });
+
+  document.getElementById('v6ExpandBtn').addEventListener('click', ()=>{
+    const errEl=document.getElementById('v6Err'), resultEl=document.getElementById('v6Result'), stepsEl=document.getElementById('v6Steps');
+    errEl.textContent=''; resultEl.style.display='none'; stepsEl.style.display='none'; stepsEl.innerHTML='';
+    const r = expandV6(document.getElementById('v6Input').value);
+    if(r.error){ errEl.textContent=r.error; return; }
+    const full = r.groups.join(':');
+    resultEl.style.display='';
+    resultEl.innerHTML = `<tr><td>Bentuk penuh (8 grup, 4 digit)</td><td>${full}</td></tr>`;
+    stepsEl.style.display='';
+    stepsEl.innerHTML = `<h3>Langkah perluasan</h3>
+      <div class="step"><b>1. Jika ada "::", isi dengan grup "0000" sebanyak yang hilang agar total 8 grup</b></div>
+      <div class="step"><b>2. Lengkapi tiap grup menjadi 4 digit heksadesimal dengan menambah nol di depan</b>\n&rarr; ${full}</div>`;
+  });
+})();
+</script>
+</body>
+</html>
