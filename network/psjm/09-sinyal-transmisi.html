@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bit, Byte, dan Tiga Bentuk Sinyal</title>
+<style>
+  :root{
+    --ink:#1b2430; --bg:#f5f3ee; --surface:#ffffff; --border:#d8d3c8;
+    --accent:#2f6f6b; --accent-2:#c96a2e; --muted:#6b6558;
+    --font-display:'IBM Plex Sans',system-ui,sans-serif; --font-body:'IBM Plex Sans',system-ui,sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){ --ink:#e7e5df; --bg:#12181d; --surface:#1a2229; --border:#2b343c; --accent:#5fd0c4; --accent-2:#f0a35c; --muted:#9aa0a6; }
+  }
+  :root[data-theme="dark"]{ --ink:#e7e5df; --bg:#12181d; --surface:#1a2229; --border:#2b343c; --accent:#5fd0c4; --accent-2:#f0a35c; --muted:#9aa0a6; }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);line-height:1.5;}
+  .wrap{max-width:840px;margin:0 auto;padding:2rem 1.25rem 4rem;}
+  .eyebrow{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:0 0 .4rem;}
+  h1{font-family:var(--font-display);font-weight:700;font-size:clamp(1.5rem,3.2vw,2.1rem);margin:0 0 .5rem;text-wrap:balance;}
+  .lede{color:var(--muted);max-width:64ch;margin:0 0 1.5rem;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;}
+  .row{display:flex;gap:.75rem;flex-wrap:wrap;align-items:flex-end;margin-bottom:1.25rem;}
+  .field{flex:1;min-width:160px;}
+  label{display:block;font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:.3rem;}
+  input[type=text]{width:100%;font-family:var(--font-mono);font-size:1rem;padding:.55rem .65rem;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--ink);}
+  .bitrow{font-family:var(--font-mono);font-size:1rem;letter-spacing:.25em;text-align:center;padding:.6rem;background:var(--bg);border-radius:8px;margin-bottom:1.25rem;}
+  .bitrow b{color:var(--accent-2);}
+  .tabs{display:flex;gap:.5rem;border-bottom:1px solid var(--border);margin-bottom:1rem;}
+  .tab{font-weight:600;font-size:.88rem;padding:.55rem .9rem;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);cursor:pointer;}
+  .tab[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent);}
+  canvas{width:100%;height:160px;display:block;border-radius:8px;background:var(--bg);}
+  .toolbar{display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap;margin-top:1.25rem;}
+  button.action{font-weight:600;font-size:.88rem;border:1px solid var(--border);background:var(--surface);color:var(--ink);padding:.6rem 1.1rem;border-radius:8px;cursor:pointer;}
+  button.action.primary{background:var(--accent);border-color:var(--accent);color:var(--bg);}
+  .explain{margin-top:1.25rem;font-size:.88rem;color:var(--muted);border-top:1px dashed var(--border);padding-top:1rem;}
+  footer{margin-top:2rem;font-size:.8rem;color:var(--muted);border-top:1px solid var(--border);padding-top:1rem;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">PSJM · Bab 1 · Modul 1</p>
+  <h1>Bit, Byte, dan Tiga Bentuk Sinyal</h1>
+  <p class="lede">Ketikkan satu karakter untuk melihat representasi bit-nya, lalu bandingkan bagaimana rangkaian bit yang sama dikirim sebagai sinyal listrik, cahaya, dan gelombang radio.</p>
+
+  <div class="card">
+    <div class="row">
+      <div class="field">
+        <label for="charInput">Satu karakter (ASCII)</label>
+        <input type="text" id="charInput" maxlength="1" value="A">
+      </div>
+      <div>
+        <button class="action primary" id="playBtn">Putar animasi</button>
+      </div>
+    </div>
+    <div class="bitrow" id="bitrow"></div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-mode="electric">Sinyal Listrik</button>
+      <button class="tab" role="tab" aria-selected="false" data-mode="light">Sinyal Cahaya</button>
+      <button class="tab" role="tab" aria-selected="false" data-mode="radio">Gelombang Radio</button>
+    </div>
+    <canvas id="waveCanvas" width="740" height="160"></canvas>
+    <p class="explain" id="explainText"></p>
+  </div>
+
+  <footer>PSJM Bab 1 — Communications in a Connected World. Byte yang sama (8 bit) dikirim melalui tiga media berbeda dengan cara merepresentasikan 0/1 yang berbeda pula: tegangan tinggi/rendah, cahaya menyala/mati, atau amplitudo gelombang radio.</footer>
+</div>
+
+<script>
+(function(){
+  const charInput = document.getElementById('charInput');
+  const bitrow = document.getElementById('bitrow');
+  const canvas = document.getElementById('waveCanvas');
+  const ctx = canvas.getContext('2d');
+  const explainText = document.getElementById('explainText');
+  let mode = 'electric';
+  let playhead = 0; // 0..1 across the bit sequence, -1 = not playing
+  let playing = false;
+  let rafId = null;
+
+  const EXPLAIN = {
+    electric: 'Bit 1 direpresentasikan sebagai tegangan listrik tinggi, bit 0 sebagai tegangan rendah — cara kerja sinyal pada kabel tembaga.',
+    light: 'Bit 1 direpresentasikan sebagai cahaya menyala, bit 0 sebagai cahaya mati — cara kerja sinyal pada fiber optik.',
+    radio: 'Bit 1 direpresentasikan sebagai gelombang beramplitudo besar, bit 0 sebagai amplitudo kecil — salah satu cara sederhana merepresentasikan data pada gelombang radio.',
+  };
+
+  function getBits(){
+    const ch = charInput.value || 'A';
+    const code = ch.charCodeAt(0) & 0xFF;
+    return code.toString(2).padStart(8,'0');
+  }
+
+  function render(){
+    const bits = getBits();
+    bitrow.innerHTML = bits.split('').map(b=>`<b>${b}</b>`).join(' ');
+    explainText.textContent = EXPLAIN[mode];
+    draw(bits);
+  }
+
+  function draw(bits){
+    const rect = canvas.getBoundingClientRect();
+    const w = rect.width || 740, h = rect.height || 160;
+    const dpr = window.devicePixelRatio||1;
+    canvas.width = w*dpr; canvas.height = h*dpr;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,w,h);
+
+    const n = bits.length;
+    const segW = w/n;
+    const midY = h/2;
+    const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+    const border = getComputedStyle(document.documentElement).getPropertyValue('--border').trim();
+    const accent2 = getComputedStyle(document.documentElement).getPropertyValue('--accent-2').trim();
+
+    ctx.strokeStyle = border; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, midY); ctx.lineTo(w, midY); ctx.stroke();
+
+    ctx.strokeStyle = accent; ctx.lineWidth = 2.5;
+
+    if(mode==='electric'){
+      ctx.beginPath();
+      for(let i=0;i<n;i++){
+        const bit = bits[i]==='1';
+        const y = bit ? midY-45 : midY+45;
+        const x0 = i*segW, x1 = (i+1)*segW;
+        if(i===0) ctx.moveTo(x0,y); else ctx.lineTo(x0,y);
+        ctx.lineTo(x1,y);
+      }
+      ctx.stroke();
+    } else if(mode==='light'){
+      for(let i=0;i<n;i++){
+        const bit = bits[i]==='1';
+        const x0 = i*segW+4, ww = segW-8;
+        ctx.fillStyle = bit ? accent2 : border;
+        ctx.fillRect(x0, midY-30, ww, 60);
+      }
+    } else if(mode==='radio'){
+      ctx.beginPath();
+      const cycles = 6;
+      for(let px=0; px<=w; px++){
+        const i = Math.min(n-1, Math.floor(px/segW));
+        const bit = bits[i]==='1';
+        const amp = bit ? 42 : 12;
+        const y = midY + amp*Math.sin((px/w)*Math.PI*2*cycles*n/8);
+        if(px===0) ctx.moveTo(px,y); else ctx.lineTo(px,y);
+      }
+      ctx.stroke();
+    }
+
+    // bit segment dividers + labels
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim();
+    ctx.font = '11px monospace';
+    ctx.textAlign = 'center';
+    for(let i=0;i<n;i++){
+      ctx.fillText(bits[i], i*segW+segW/2, h-6);
+    }
+
+    // playhead
+    if(playing){
+      const px = playhead*w;
+      ctx.strokeStyle = accent2; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(px,0); ctx.lineTo(px,h); ctx.stroke();
+    }
+  }
+
+  function animate(){
+    playhead += 0.006;
+    if(playhead>=1){ playhead=0; playing=false; render(); return; }
+    draw(getBits());
+    rafId = requestAnimationFrame(animate);
+  }
+
+  document.querySelectorAll('.tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected', t===tab?'true':'false'));
+      mode = tab.dataset.mode;
+      render();
+    });
+  });
+  charInput.addEventListener('input', render);
+  document.getElementById('playBtn').addEventListener('click', ()=>{
+    if(rafId) cancelAnimationFrame(rafId);
+    playhead = 0; playing = true;
+    animate();
+  });
+  window.addEventListener('resize', render);
+
+  render();
+})();
+</script>
+</body>
+</html>

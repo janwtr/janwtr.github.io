@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visualisasi Tumpang Tindih Kanal Wi-Fi</title>
+<style>
+  :root{
+    --ink:#1b2430; --bg:#f5f3ee; --surface:#ffffff; --border:#d8d3c8;
+    --accent:#2f6f6b; --accent-2:#c96a2e; --muted:#6b6558; --good:#2f7d4f; --bad:#b3423a;
+    --net-a:#3b6ea5; --net-b:#c96a2e;
+    --font-display:'IBM Plex Sans',system-ui,sans-serif; --font-body:'IBM Plex Sans',system-ui,sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){ --ink:#e7e5df; --bg:#12181d; --surface:#1a2229; --border:#2b343c; --accent:#5fd0c4; --accent-2:#f0a35c; --muted:#9aa0a6; --good:#5bc98a; --bad:#e2756c; --net-a:#5b9bd9; --net-b:#f0a35c; }
+  }
+  :root[data-theme="dark"]{ --ink:#e7e5df; --bg:#12181d; --surface:#1a2229; --border:#2b343c; --accent:#5fd0c4; --accent-2:#f0a35c; --muted:#9aa0a6; --good:#5bc98a; --bad:#e2756c; --net-a:#5b9bd9; --net-b:#f0a35c; }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);line-height:1.5;}
+  .wrap{max-width:860px;margin:0 auto;padding:2rem 1.25rem 4rem;}
+  .eyebrow{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:0 0 .4rem;}
+  h1{font-family:var(--font-display);font-weight:700;font-size:clamp(1.5rem,3.2vw,2.1rem);margin:0 0 .5rem;text-wrap:balance;}
+  .lede{color:var(--muted);max-width:66ch;margin:0 0 1.5rem;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;}
+  canvas{width:100%;height:220px;display:block;border-radius:8px;}
+  .sliders{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-top:1.25rem;}
+  @media(max-width:560px){.sliders{grid-template-columns:1fr;}}
+  .slider-group label{display:flex;justify-content:space-between;font-size:.85rem;font-weight:600;margin-bottom:.4rem;}
+  .slider-group.a label{color:var(--net-a);}
+  .slider-group.b label{color:var(--net-b);}
+  input[type=range]{width:100%;}
+  .presets{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem;}
+  button.preset{font-size:.8rem;font-weight:600;border:1px solid var(--border);background:var(--surface);color:var(--ink);padding:.4rem .75rem;border-radius:20px;cursor:pointer;}
+  .verdict{margin-top:1.25rem;padding:.85rem 1rem;border-radius:8px;font-size:.9rem;font-weight:600;text-align:center;}
+  .verdict.good{background:color-mix(in srgb, var(--good) 15%, var(--surface));color:var(--good);}
+  .verdict.bad{background:color-mix(in srgb, var(--bad) 15%, var(--surface));color:var(--bad);}
+  .note{margin-top:1.25rem;font-size:.85rem;color:var(--muted);border-top:1px dashed var(--border);padding-top:1rem;}
+  footer{margin-top:2rem;font-size:.8rem;color:var(--muted);border-top:1px solid var(--border);padding-top:1rem;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">PSJM · Bab 3 · Modul 3</p>
+  <h1>Visualisasi Tumpang Tindih Kanal Wi-Fi 2.4GHz</h1>
+  <p class="lede">Geser channel dua jaringan Wi-Fi tetangga untuk melihat kapan keduanya saling tumpang tindih (interferensi) dan mengapa channel 1, 6, 11 dianjurkan digunakan bersama.</p>
+
+  <div class="card">
+    <canvas id="chCanvas" width="800" height="220"></canvas>
+    <div class="sliders">
+      <div class="slider-group a">
+        <label for="chA">Jaringan A — Channel <span id="chAVal">1</span></label>
+        <input type="range" id="chA" min="1" max="11" step="1" value="1">
+      </div>
+      <div class="slider-group b">
+        <label for="chB">Jaringan B — Channel <span id="chBVal">6</span></label>
+        <input type="range" id="chB" min="1" max="11" step="1" value="6">
+      </div>
+    </div>
+    <div class="presets">
+      <button class="preset" data-a="1" data-b="6">Channel 1 &amp; 6 (dianjurkan)</button>
+      <button class="preset" data-a="1" data-b="11">Channel 1 &amp; 11 (dianjurkan)</button>
+      <button class="preset" data-a="6" data-b="7">Channel 6 &amp; 7 (bertumpang tindih)</button>
+      <button class="preset" data-a="3" data-b="4">Channel 3 &amp; 4 (bertumpang tindih parah)</button>
+    </div>
+    <div class="verdict" id="verdict"></div>
+  </div>
+
+  <p class="note">Di Indonesia (dan sebagian besar dunia), band 2.4GHz dibagi menjadi channel 1–13/14, masing-masing lebar ±22MHz namun berjarak hanya 5MHz antar channel — sehingga hanya channel 1, 6, dan 11 yang tidak saling tumpang tindih sama sekali.</p>
+
+  <footer>PSJM Bab 3 — Wireless and Mobile Networks. Cocok dipakai sebelum praktik memilih channel router Wi-Fi rumah pada Bab 3/4.</footer>
+</div>
+
+<script>
+(function(){
+  const canvas = document.getElementById('chCanvas');
+  const ctx = canvas.getContext('2d');
+  const chA = document.getElementById('chA'), chB = document.getElementById('chB');
+  const chAVal = document.getElementById('chAVal'), chBVal = document.getElementById('chBVal');
+  const verdict = document.getElementById('verdict');
+
+  const CH_WIDTH = 22; // MHz
+  function centerFreq(ch){ return 2412 + (ch-1)*5; }
+
+  function overlapPercent(a,b){
+    const diff = Math.abs(centerFreq(a)-centerFreq(b));
+    const overlap = Math.max(0, CH_WIDTH - diff);
+    return Math.round((overlap/CH_WIDTH)*100);
+  }
+
+  function draw(){
+    const a = Number(chA.value), b = Number(chB.value);
+    chAVal.textContent = a; chBVal.textContent = b;
+
+    const rect = canvas.getBoundingClientRect();
+    const w = rect.width||800, h = rect.height||220;
+    const dpr = window.devicePixelRatio||1;
+    canvas.width = w*dpr; canvas.height = h*dpr;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,w,h);
+
+    const freqMin = 2400, freqMax = 2485;
+    const baseY = h-30;
+    const scaleX = f => ((f-freqMin)/(freqMax-freqMin))*w;
+
+    // axis
+    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--border').trim();
+    ctx.beginPath(); ctx.moveTo(0,baseY); ctx.lineTo(w,baseY); ctx.stroke();
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim();
+    ctx.font = '10px monospace'; ctx.textAlign='center';
+    for(let c=1; c<=11; c+=1){
+      const x = scaleX(centerFreq(c));
+      ctx.fillText(String(c), x, h-10);
+    }
+
+    function hump(ch, color){
+      const cf = centerFreq(ch);
+      const x0 = scaleX(cf-CH_WIDTH/2), x1 = scaleX(cf+CH_WIDTH/2), xc = scaleX(cf);
+      ctx.beginPath();
+      ctx.moveTo(x0, baseY);
+      ctx.quadraticCurveTo(xc, baseY-140, x1, baseY);
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.globalAlpha = 0.55;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = color; ctx.lineWidth=2;
+      ctx.beginPath();
+      ctx.moveTo(x0, baseY);
+      ctx.quadraticCurveTo(xc, baseY-140, x1, baseY);
+      ctx.stroke();
+    }
+
+    const netA = getComputedStyle(document.documentElement).getPropertyValue('--net-a').trim();
+    const netB = getComputedStyle(document.documentElement).getPropertyValue('--net-b').trim();
+    hump(a, netA);
+    hump(b, netB);
+
+    const pct = overlapPercent(a,b);
+    verdict.textContent = pct===0
+      ? `Channel ${a} dan ${b}: TIDAK tumpang tindih (0%) — kombinasi aman, tidak saling mengganggu.`
+      : `Channel ${a} dan ${b}: tumpang tindih sekitar ${pct}% — berpotensi saling mengganggu (interferensi), terutama jika kedua jaringan aktif bersamaan di lokasi berdekatan.`;
+    verdict.className = 'verdict ' + (pct===0 ? 'good' : 'bad');
+  }
+
+  chA.addEventListener('input', draw);
+  chB.addEventListener('input', draw);
+  document.querySelectorAll('.preset').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ chA.value = btn.dataset.a; chB.value = btn.dataset.b; draw(); });
+  });
+  window.addEventListener('resize', draw);
+
+  draw();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visualisasi ARP &amp; NAT</title>
+<style>
+  :root{
+    --ink:#1b2430; --bg:#f5f3ee; --surface:#ffffff; --border:#d8d3c8;
+    --accent:#2f6f6b; --accent-2:#c96a2e; --muted:#6b6558;
+    --a:#3b6ea5; --b:#2f7d4f; --c:#7a5ba8; --router:#c96a2e;
+    --font-display:'IBM Plex Sans',system-ui,sans-serif; --font-body:'IBM Plex Sans',system-ui,sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){ --ink:#e7e5df; --bg:#12181d; --surface:#1a2229; --border:#2b343c; --accent:#5fd0c4; --accent-2:#f0a35c; --muted:#9aa0a6; }
+  }
+  :root[data-theme="dark"]{ --ink:#e7e5df; --bg:#12181d; --surface:#1a2229; --border:#2b343c; --accent:#5fd0c4; --accent-2:#f0a35c; --muted:#9aa0a6; }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);line-height:1.5;}
+  .wrap{max-width:900px;margin:0 auto;padding:2rem 1.25rem 4rem;}
+  .eyebrow{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:0 0 .4rem;}
+  h1{font-family:var(--font-display);font-weight:700;font-size:clamp(1.5rem,3.2vw,2.1rem);margin:0 0 .5rem;text-wrap:balance;}
+  .lede{color:var(--muted);max-width:66ch;margin:0 0 1.5rem;}
+  .tabs{display:flex;gap:.5rem;border-bottom:1px solid var(--border);margin-bottom:1.5rem;}
+  .tab{font-weight:600;font-size:.92rem;padding:.6rem 1rem;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);cursor:pointer;}
+  .tab[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent);}
+  .panel{display:none;}
+  .panel.active{display:block;}
+  .stage{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.75rem 1.25rem;position:relative;min-height:200px;}
+  .hosts{display:flex;justify-content:space-around;align-items:flex-start;gap:.5rem;flex-wrap:wrap;}
+  .host{width:120px;text-align:center;font-family:var(--font-mono);font-size:.8rem;border:2px solid var(--border);border-radius:10px;padding:.6rem .4rem;transition:border-color .3s, box-shadow .3s;}
+  .host .box{font-size:1.5rem;}
+  .host .name{font-weight:700;margin:.2rem 0;}
+  .host .addr{color:var(--muted);font-size:.72rem;}
+  .host.hl-src{border-color:var(--a);box-shadow:0 0 0 3px color-mix(in srgb, var(--a) 25%, transparent);}
+  .host.hl-dst{border-color:var(--b);box-shadow:0 0 0 3px color-mix(in srgb, var(--b) 25%, transparent);}
+  .host.hl-router{border-color:var(--router);box-shadow:0 0 0 3px color-mix(in srgb, var(--router) 25%, transparent);}
+  .bubble{margin-top:1rem;text-align:center;min-height:2.4em;}
+  .bubble span{display:inline-block;font-family:var(--font-mono);font-weight:700;font-size:.82rem;background:var(--accent-2);color:#1b2430;padding:.35rem .8rem;border-radius:20px;opacity:0;transform:translateY(6px);transition:opacity .35s, transform .35s;}
+  .bubble span.show{opacity:1;transform:translateY(0);}
+  .caption{text-align:center;margin-top:1.25rem;font-size:.95rem;min-height:2.6em;}
+  .caption b{color:var(--accent-2);}
+  .progress{display:flex;gap:.4rem;justify-content:center;margin-top:1rem;}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--border);}
+  .dot.active{background:var(--accent);}
+  .toolbar{display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap;margin-top:1.5rem;}
+  button.action{font-weight:600;font-size:.88rem;border:1px solid var(--border);background:var(--surface);color:var(--ink);padding:.6rem 1.1rem;border-radius:8px;cursor:pointer;}
+  button.action.primary{background:var(--accent);border-color:var(--accent);color:var(--bg);}
+  table.tbl{width:100%;border-collapse:collapse;margin-top:1.5rem;font-family:var(--font-mono);font-size:.82rem;}
+  table.tbl caption{text-align:left;font-family:var(--font-body);font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.5rem;}
+  table.tbl th,table.tbl td{border:1px solid var(--border);padding:.4rem .55rem;text-align:left;}
+  table.tbl th{background:var(--surface);}
+  footer{margin-top:2rem;font-size:.8rem;color:var(--muted);border-top:1px solid var(--border);padding-top:1rem;}
+  @media (prefers-reduced-motion:reduce){.bubble span{transition:none;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">PSJM · Bab 13 · Modul 12 &amp; 13</p>
+  <h1>Visualisasi ARP &amp; NAT</h1>
+  <p class="lede">Dua proses inti Bab 13: bagaimana ARP menjembatani alamat IP dan MAC address, serta bagaimana NAT menerjemahkan alamat privat menjadi alamat publik.</p>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-panel="arp">ARP: Request &amp; Reply</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="nat">NAT: Translasi Alamat</button>
+  </div>
+
+  <div class="panel active" id="panel-arp">
+    <div class="stage">
+      <div class="hosts" id="arpHosts"></div>
+      <div class="bubble" id="arpBubble"></div>
+    </div>
+    <p class="caption" id="arpCaption"></p>
+    <div class="progress" id="arpProgress"></div>
+    <div class="toolbar">
+      <button class="action" id="arpPrev">&larr; Sebelumnya</button>
+      <button class="action primary" id="arpNext">Selanjutnya &rarr;</button>
+      <button class="action" id="arpReset">Ulangi</button>
+    </div>
+    <table class="tbl" id="arpTable">
+      <caption>ARP cache milik Host A</caption>
+      <thead><tr><th>Alamat IP</th><th>Alamat MAC</th></tr></thead>
+      <tbody id="arpTableBody"></tbody>
+    </table>
+  </div>
+
+  <div class="panel" id="panel-nat">
+    <div class="stage">
+      <div class="hosts" id="natHosts"></div>
+      <div class="bubble" id="natBubble"></div>
+    </div>
+    <p class="caption" id="natCaption"></p>
+    <div class="progress" id="natProgress"></div>
+    <div class="toolbar">
+      <button class="action" id="natPrev">&larr; Sebelumnya</button>
+      <button class="action primary" id="natNext">Selanjutnya &rarr;</button>
+      <button class="action" id="natReset">Ulangi</button>
+    </div>
+    <table class="tbl" id="natTable">
+      <caption>Tabel translasi NAT pada router</caption>
+      <thead><tr><th>Alamat privat (LAN)</th><th>Alamat publik (Internet)</th></tr></thead>
+      <tbody id="natTableBody"></tbody>
+    </table>
+  </div>
+
+  <footer>PSJM Bab 13 — Gateway, ARP, dan Routing. ARP Request bersifat broadcast (dikirim ke seluruh host), sedangkan ARP Reply bersifat unicast (hanya dari pemilik alamat yang dituju).</footer>
+</div>
+
+<script>
+(function(){
+  // ---------- ARP ----------
+  const arpHostsData = [
+    {id:'A', name:'Host A', addr:'IP 192.168.1.10', emoji:'💻'},
+    {id:'B', name:'Host B', addr:'IP 192.168.1.20', emoji:'🖥️'},
+    {id:'C', name:'Host C', addr:'IP 192.168.1.30', emoji:'🖨️'},
+  ];
+  const arpSteps = [
+    {hl:{}, bubble:null, caption:'Host A hendak mengirim data ke 192.168.1.20, tetapi hanya mengetahui alamat IP tujuan — belum mengetahui MAC address-nya.', cache:[]},
+    {hl:{A:'src'}, bubble:'ARP Request: siapa pemilik 192.168.1.20?', caption:'<b>1. ARP Request</b> — Host A menyiarkan (broadcast) pertanyaan ke seluruh host di jaringan lokal.', cache:[]},
+    {hl:{A:'src',B:'dst',C:'dst'}, bubble:'Broadcast diterima oleh B dan C', caption:'Seluruh host dalam satu broadcast domain (B dan C) menerima pesan ini, tetapi hanya pemilik alamat yang dituju yang akan menjawab.', cache:[]},
+    {hl:{B:'dst'}, bubble:'ARP Reply: saya 192.168.1.20, MAC saya AA:BB:CC:11:22:33', caption:'<b>2. ARP Reply</b> — hanya Host B (pemilik alamat) yang menjawab, dikirim langsung (unicast) ke Host A.', cache:[]},
+    {hl:{A:'src'}, bubble:null, caption:'<b>3. Host A menyimpan pasangan IP–MAC</b> ke dalam ARP cache-nya, agar tidak perlu mengulang proses ini setiap kali hendak berkomunikasi dengan Host B.', cache:[{ip:'192.168.1.20', mac:'AA:BB:CC:11:22:33'}]},
+  ];
+  let arpIdx = 0;
+  const arpHostsEl = document.getElementById('arpHosts');
+  const arpBubbleEl = document.getElementById('arpBubble');
+  const arpCaptionEl = document.getElementById('arpCaption');
+  const arpProgressEl = document.getElementById('arpProgress');
+  const arpTableBody = document.getElementById('arpTableBody');
+
+  function renderArp(){
+    const s = arpSteps[arpIdx];
+    arpHostsEl.innerHTML = arpHostsData.map(h=>{
+      const hl = s.hl[h.id] ? ('hl-'+(s.hl[h.id]==='src'?'src':'dst')) : '';
+      return `<div class="host ${hl}"><div class="box">${h.emoji}</div><div class="name">${h.name}</div><div class="addr">${h.addr}</div></div>`;
+    }).join('');
+    arpBubbleEl.innerHTML = s.bubble ? `<span class="show">${s.bubble}</span>` : '<span></span>';
+    arpCaptionEl.innerHTML = s.caption;
+    arpProgressEl.innerHTML = arpSteps.map((_,i)=>`<span class="dot ${i===arpIdx?'active':''}"></span>`).join('');
+    arpTableBody.innerHTML = s.cache.length ? s.cache.map(r=>`<tr><td>${r.ip}</td><td>${r.mac}</td></tr>`).join('') : '<tr><td colspan="2" style="color:var(--muted)">(kosong)</td></tr>';
+  }
+  document.getElementById('arpNext').addEventListener('click', ()=>{ arpIdx=Math.min(arpIdx+1, arpSteps.length-1); renderArp(); });
+  document.getElementById('arpPrev').addEventListener('click', ()=>{ arpIdx=Math.max(arpIdx-1, 0); renderArp(); });
+  document.getElementById('arpReset').addEventListener('click', ()=>{ arpIdx=0; renderArp(); });
+
+  // ---------- NAT ----------
+  const natHostsData = [
+    {id:'H1', name:'Laptop', addr:'192.168.1.10', emoji:'💻'},
+    {id:'H2', name:'Ponsel', addr:'192.168.1.11', emoji:'📱'},
+    {id:'R', name:'Router (NAT)', addr:'Publik: 203.0.113.5', emoji:'🌐'},
+    {id:'S', name:'Server internet', addr:'93.184.216.34', emoji:'🖧'},
+  ];
+  const natSteps = [
+    {hl:{}, bubble:null, caption:'Dua perangkat pada jaringan rumah (Laptop &amp; Ponsel) memakai alamat IP privat, dan hendak mengakses server di internet.', table:[]},
+    {hl:{H1:'src'}, bubble:'Paket dari 192.168.1.10 → 93.184.216.34', caption:'Laptop mengirim paket dengan alamat sumber IP privat-nya sendiri, ditujukan ke server internet.', table:[]},
+    {hl:{R:'router'}, bubble:'NAT: 192.168.1.10 → 203.0.113.5', caption:'<b>Router menerjemahkan (translate)</b> alamat sumber privat menjadi alamat publik miliknya sendiri, sembari mencatat pemetaannya.', table:[{priv:'192.168.1.10', pub:'203.0.113.5 : 40001'}]},
+    {hl:{S:'dst'}, bubble:'Paket diterima server dengan sumber 203.0.113.5', caption:'Server internet hanya melihat satu alamat IP publik router — tidak mengetahui ada banyak perangkat di baliknya.', table:[{priv:'192.168.1.10', pub:'203.0.113.5 : 40001'}]},
+    {hl:{H2:'src'}, bubble:'Ponsel juga mengirim paket, dengan sumber 192.168.1.11', caption:'Ponsel melakukan hal yang sama secara bersamaan menggunakan alamat privat berbeda.', table:[{priv:'192.168.1.10', pub:'203.0.113.5 : 40001'}]},
+    {hl:{R:'router'}, bubble:'NAT: 192.168.1.11 → 203.0.113.5 (port berbeda)', caption:'Router menerjemahkan alamat Ponsel ke alamat publik yang <b>sama</b>, tetapi dengan nomor port yang berbeda — inilah cara banyak perangkat berbagi satu alamat IP publik.', table:[{priv:'192.168.1.10', pub:'203.0.113.5 : 40001'},{priv:'192.168.1.11', pub:'203.0.113.5 : 40002'}]},
+    {hl:{R:'router'}, bubble:'Balasan untuk port 40001 → diteruskan ke 192.168.1.10', caption:'Saat balasan tiba, router mencocokkannya dengan tabel translasi untuk mengetahui perangkat lokal mana yang harus menerimanya.', table:[{priv:'192.168.1.10', pub:'203.0.113.5 : 40001'},{priv:'192.168.1.11', pub:'203.0.113.5 : 40002'}]},
+  ];
+  let natIdx = 0;
+  const natHostsEl = document.getElementById('natHosts');
+  const natBubbleEl = document.getElementById('natBubble');
+  const natCaptionEl = document.getElementById('natCaption');
+  const natProgressEl = document.getElementById('natProgress');
+  const natTableBody = document.getElementById('natTableBody');
+
+  function renderNat(){
+    const s = natSteps[natIdx];
+    natHostsEl.innerHTML = natHostsData.map(h=>{
+      const role = s.hl[h.id];
+      const hl = role==='src'?'hl-src':role==='dst'?'hl-dst':role==='router'?'hl-router':'';
+      return `<div class="host ${hl}"><div class="box">${h.emoji}</div><div class="name">${h.name}</div><div class="addr">${h.addr}</div></div>`;
+    }).join('');
+    natBubbleEl.innerHTML = s.bubble ? `<span class="show">${s.bubble}</span>` : '<span></span>';
+    natCaptionEl.innerHTML = s.caption;
+    natProgressEl.innerHTML = natSteps.map((_,i)=>`<span class="dot ${i===natIdx?'active':''}"></span>`).join('');
+    natTableBody.innerHTML = s.table.length ? s.table.map(r=>`<tr><td>${r.priv}</td><td>${r.pub}</td></tr>`).join('') : '<tr><td colspan="2" style="color:var(--muted)">(kosong)</td></tr>';
+  }
+  document.getElementById('natNext').addEventListener('click', ()=>{ natIdx=Math.min(natIdx+1, natSteps.length-1); renderNat(); });
+  document.getElementById('natPrev').addEventListener('click', ()=>{ natIdx=Math.max(natIdx-1, 0); renderNat(); });
+  document.getElementById('natReset').addEventListener('click', ()=>{ natIdx=0; renderNat(); });
+
+  // ---------- Tabs ----------
+  document.querySelectorAll('.tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected', t===tab?'true':'false'));
+      document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+      document.getElementById('panel-'+tab.dataset.panel).classList.add('active');
+    });
+  });
+
+  renderArp();
+  renderNat();
+})();
+</script>
+</body>
+</html>
