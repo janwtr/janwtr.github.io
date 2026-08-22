@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spektrum Tanggung Jawab: On-Premises, IaaS, PaaS, SaaS</title>
+<style>
+  :root {
+    --navy: #1F3864; --lightblue: #DCE6F1; --yellow: #FFF2CC;
+    --grey: #595959; --green: #2E7D32; --red: #C62828;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+    background: #F7F9FC; color: #222; margin: 0; padding: 24px;
+  }
+  h1 { color: var(--navy); font-size: 1.5rem; text-align: center; margin-bottom: 4px; }
+  p.subtitle { text-align: center; color: var(--grey); margin-top: 0; margin-bottom: 20px; }
+  .instructions {
+    max-width: 900px; margin: 0 auto 22px; background: var(--yellow);
+    border: 1px solid #E8D28A; border-radius: 8px; padding: 12px 18px; font-size: 0.95rem;
+  }
+  .board {
+    max-width: 1000px; margin: 0 auto; display: grid;
+    grid-template-columns: repeat(4, 1fr); gap: 14px;
+  }
+  .col {
+    background: #fff; border-radius: 10px; border: 2px solid var(--lightblue);
+    padding: 10px; display: flex; flex-direction: column;
+  }
+  .col h3 {
+    text-align: center; color: var(--navy); font-size: 1rem; margin: 4px 0 10px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--lightblue);
+  }
+  .layer {
+    min-height: 40px; margin-bottom: 6px; border-radius: 6px;
+    border: 1.5px solid #C7D2E0; display: flex; align-items: center; justify-content: center;
+    font-size: 0.82rem; font-weight: 600; padding: 4px; text-align: center;
+    cursor: pointer; user-select: none; transition: background 0.15s, transform 0.1s;
+    background: #fff; color: var(--grey);
+  }
+  .layer:hover { transform: scale(1.03); }
+  .layer.user { background: var(--yellow); border-color: #E8D28A; color: #7A5C00; }
+  .layer.provider { background: var(--lightblue); border-color: var(--navy); color: var(--navy); }
+  .layer.wrong { outline: 3px solid var(--red); }
+  .legend {
+    max-width: 900px; margin: 16px auto 0; text-align: center; font-size: 0.88rem; color: var(--grey);
+  }
+  .legend span { display: inline-block; padding: 3px 10px; border-radius: 12px; margin: 0 6px; font-weight: 600; }
+  .legend .u { background: var(--yellow); color: #7A5C00; }
+  .legend .p { background: var(--lightblue); color: var(--navy); }
+  .controls { max-width: 900px; margin: 22px auto; text-align: center; }
+  button {
+    background: var(--navy); color: #fff; border: none; padding: 10px 22px;
+    border-radius: 24px; font-size: 0.95rem; cursor: pointer; margin: 0 6px;
+  }
+  button:hover { opacity: 0.9; }
+  button.secondary { background: #fff; color: var(--navy); border: 1.5px solid var(--navy); }
+  #result { max-width: 900px; margin: 16px auto; text-align: center; font-weight: 700; font-size: 1.05rem; min-height: 26px; }
+  #result.ok { color: var(--green); }
+  #result.bad { color: var(--red); }
+  @media (max-width: 720px) { .board { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+
+<h1>Spektrum Tanggung Jawab Pengelolaan Cloud</h1>
+<p class="subtitle">Bab 1 — Konsep Dasar Cloud Computing dan Model Layanan</p>
+
+<div class="instructions">
+  <strong>Cara main:</strong> Klik tiap kotak lapisan untuk menandainya sebagai <strong>dikelola Pengguna</strong> (kuning) atau <strong>dikelola Penyedia Layanan</strong> (biru). Setiap klik akan mengganti warna secara bergantian. Tandai keempat kolom (On-Premises, IaaS, PaaS, SaaS) sesuai pemahaman Anda, lalu tekan <strong>Periksa Jawaban</strong>.
+</div>
+
+<div class="board" id="board"></div>
+
+<div class="legend">
+  <span class="u">Kuning = dikelola Pengguna</span>
+  <span class="p">Biru = dikelola Penyedia Layanan</span>
+</div>
+
+<div class="controls">
+  <button id="checkBtn">Periksa Jawaban</button>
+  <button class="secondary" id="resetBtn">Ulangi</button>
+  <button class="secondary" id="revealBtn">Tampilkan Kunci</button>
+</div>
+<div id="result"></div>
+
+<script>
+const layers = ["Aplikasi","Data","Runtime","OS","Virtualisasi","Server","Storage","Jaringan"];
+// boundary = jumlah lapisan TERATAS yang dikelola pengguna
+const models = [
+  { key: "onprem", label: "On-Premises", boundary: 8 },
+  { key: "iaas",   label: "IaaS",         boundary: 4 },
+  { key: "paas",   label: "PaaS",         boundary: 2 },
+  { key: "saas",   label: "SaaS",         boundary: 0 },
+];
+
+const state = {}; // state[modelKey][layerIdx] = 'user' | 'provider' | null
+
+function buildBoard() {
+  const board = document.getElementById("board");
+  board.innerHTML = "";
+  models.forEach(m => {
+    state[m.key] = new Array(layers.length).fill(null);
+    const col = document.createElement("div");
+    col.className = "col";
+    col.innerHTML = `<h3>${m.label}</h3>`;
+    layers.forEach((layerName, idx) => {
+      const div = document.createElement("div");
+      div.className = "layer";
+      div.textContent = layerName;
+      div.dataset.model = m.key;
+      div.dataset.idx = idx;
+      div.addEventListener("click", () => toggleLayer(m.key, idx, div));
+      col.appendChild(div);
+    });
+    board.appendChild(col);
+  });
+}
+
+function toggleLayer(modelKey, idx, el) {
+  const cur = state[modelKey][idx];
+  let next;
+  if (cur === null) next = "user";
+  else if (cur === "user") next = "provider";
+  else next = null;
+  state[modelKey][idx] = next;
+  el.classList.remove("user", "provider", "wrong");
+  if (next) el.classList.add(next);
+  document.getElementById("result").textContent = "";
+  document.getElementById("result").className = "";
+}
+
+function checkAnswers() {
+  let total = 0, correct = 0, allFilled = true;
+  models.forEach(m => {
+    layers.forEach((_, idx) => {
+      const val = state[m.key][idx];
+      const shouldBeUser = idx < m.boundary; // top layers (small idx) = user side
+      const expected = shouldBeUser ? "user" : "provider";
+      const el = document.querySelector(`.layer[data-model="${m.key}"][data-idx="${idx}"]`);
+      total++;
+      if (val === null) { allFilled = false; el.classList.add("wrong"); }
+      else if (val === expected) { correct++; el.classList.remove("wrong"); }
+      else { el.classList.add("wrong"); }
+    });
+  });
+  const resultEl = document.getElementById("result");
+  if (!allFilled) {
+    resultEl.textContent = "Masih ada kotak yang belum ditandai — lengkapi dulu semua kotak.";
+    resultEl.className = "bad";
+    return;
+  }
+  const pct = Math.round((correct/total)*100);
+  if (correct === total) {
+    resultEl.textContent = `Sempurna! ${correct}/${total} benar (100%). Anda memahami spektrum tanggung jawab dengan tepat.`;
+    resultEl.className = "ok";
+  } else {
+    resultEl.textContent = `${correct}/${total} benar (${pct}%). Kotak bergaris merah masih keliru — coba tinjau ulang Bab 1.4 (Model Layanan) di Buku Ajar.`;
+    resultEl.className = "bad";
+  }
+}
+
+function resetBoard() {
+  buildBoard();
+  document.getElementById("result").textContent = "";
+  document.getElementById("result").className = "";
+}
+
+function revealAnswer() {
+  models.forEach(m => {
+    layers.forEach((_, idx) => {
+      const shouldBeUser = idx < m.boundary;
+      state[m.key][idx] = shouldBeUser ? "user" : "provider";
+      const el = document.querySelector(`.layer[data-model="${m.key}"][data-idx="${idx}"]`);
+      el.classList.remove("user", "provider", "wrong");
+      el.classList.add(state[m.key][idx]);
+    });
+  });
+  const resultEl = document.getElementById("result");
+  resultEl.textContent = "Ini kunci jawabannya — coba pahami polanya, lalu tekan Ulangi untuk mencoba sendiri.";
+  resultEl.className = "";
+}
+
+document.getElementById("checkBtn").addEventListener("click", checkAnswers);
+document.getElementById("resetBtn").addEventListener("click", resetBoard);
+document.getElementById("revealBtn").addEventListener("click", revealAnswer);
+
+buildBoard();
+</script>
+
+</body>
+</html>

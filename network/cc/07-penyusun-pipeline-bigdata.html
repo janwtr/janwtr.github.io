@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Penyusun Pipeline Big Data</title>
+<style>
+  :root { --navy:#1F3864; --lightblue:#DCE6F1; --yellow:#FFF2CC; --grey:#595959; --green:#2E7D32; --red:#C62828; }
+  * { box-sizing: border-box; }
+  body { font-family:'Segoe UI',Arial,Helvetica,sans-serif; background:#F7F9FC; color:#222; margin:0; padding:24px; }
+  h1 { color:var(--navy); font-size:1.5rem; text-align:center; margin-bottom:4px; }
+  p.subtitle { text-align:center; color:var(--grey); margin-top:0; margin-bottom:20px; }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  .instructions {
+    background: var(--yellow); border: 1px solid #E8D28A; border-radius: 8px;
+    padding: 12px 18px; font-size: 0.95rem; margin-bottom: 22px;
+  }
+  .tabs { display: flex; gap: 8px; margin-bottom: 18px; justify-content: center; }
+  .tab-btn {
+    background: #fff; border: 1.5px solid var(--lightblue); color: var(--navy);
+    padding: 8px 18px; border-radius: 20px; font-size: 0.88rem; cursor: pointer; font-weight: 600;
+  }
+  .tab-btn.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .scenario-desc {
+    background: #fff; border: 2px solid var(--lightblue); border-radius: 10px;
+    padding: 14px 18px; font-size: 0.93rem; margin-bottom: 18px;
+  }
+  .zone-title { color: var(--navy); font-size: 0.95rem; font-weight: 700; margin: 14px 0 8px; }
+  .pool, .sequence {
+    display: flex; flex-wrap: wrap; gap: 10px; min-height: 60px;
+    background: #fff; border: 2px dashed #C7D2E0; border-radius: 10px; padding: 12px;
+  }
+  .sequence { border-style: solid; border-color: var(--lightblue); }
+  .block {
+    background: var(--lightblue); color: var(--navy); border-radius: 8px; padding: 10px 16px;
+    font-size: 0.9rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;
+    transition: transform 0.1s;
+  }
+  .block:hover { transform: scale(1.04); }
+  .sequence .block { background: var(--navy); color: #fff; }
+  .sequence .block .num {
+    background: rgba(255,255,255,0.25); border-radius: 50%; width: 20px; height: 20px;
+    display: flex; align-items: center; justify-content: center; font-size: 0.75rem;
+  }
+  .arrow-sep { color: var(--grey); font-size: 1.1rem; align-self: center; }
+  .controls { text-align: center; margin-top: 20px; }
+  button.action {
+    background: var(--navy); color: #fff; border: none; padding: 10px 22px;
+    border-radius: 24px; font-size: 0.95rem; cursor: pointer; margin: 0 6px;
+  }
+  button.action:hover { opacity: 0.9; }
+  button.secondary { background: #fff; color: var(--navy); border: 1.5px solid var(--navy); }
+  #result { text-align: center; font-weight: 700; font-size: 1.02rem; min-height: 26px; margin-top: 14px; }
+  #result.ok { color: var(--green); }
+  #result.bad { color: var(--red); }
+</style>
+</head>
+<body>
+
+<h1>Penyusun Pipeline Big Data</h1>
+<p class="subtitle">Bab 13 — Layanan Big Data: Dataproc, Dataflow, dan BigQuery</p>
+
+<div class="wrap">
+  <div class="instructions">
+    <strong>Cara main:</strong> Pilih skenario, lalu klik blok layanan di area "Komponen Tersedia" sesuai urutan yang benar agar pindah ke area "Susunan Pipeline Anda". Klik blok di dalam susunan untuk mengembalikannya. Tekan <strong>Periksa Urutan</strong> saat selesai.
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+  <div class="scenario-desc" id="scenarioDesc"></div>
+
+  <div class="zone-title">Susunan Pipeline Anda</div>
+  <div class="sequence" id="sequenceZone"></div>
+
+  <div class="zone-title">Komponen Tersedia (klik untuk menambahkan)</div>
+  <div class="pool" id="poolZone"></div>
+
+  <div class="controls">
+    <button class="action" id="checkBtn">Periksa Urutan</button>
+    <button class="action secondary" id="resetBtn">Ulangi</button>
+    <button class="action secondary" id="revealBtn">Tampilkan Kunci</button>
+  </div>
+  <div id="result"></div>
+</div>
+
+<script>
+const scenarios = [
+  {
+    id: "streaming",
+    tabLabel: "Skenario A: Streaming Real-Time",
+    desc: "Sebuah aplikasi e-commerce ingin memantau transaksi pembelian secara real-time dan menampilkannya di dashboard yang selalu ter-update untuk tim operasional.",
+    correct: ["Pub/Sub", "Dataflow", "BigQuery", "Looker Studio"],
+    pool: ["Looker Studio", "Pub/Sub", "Dataproc", "Dataflow", "BigQuery", "Cloud Storage"]
+  },
+  {
+    id: "batch",
+    tabLabel: "Skenario B: Migrasi Batch Hadoop",
+    desc: "Perusahaan memigrasikan cluster Hadoop lokal ke cloud. Data mentah historis sudah diunggah sebagai file, lalu perlu diproses dengan job Spark/Hadoop yang sudah ada, disimpan untuk analisis SQL, dan ditampilkan sebagai laporan bulanan.",
+    correct: ["Cloud Storage", "Dataproc", "BigQuery", "Looker Studio"],
+    pool: ["BigQuery", "Cloud Storage", "Pub/Sub", "Looker Studio", "Dataproc", "Dataflow"]
+  }
+];
+
+let currentScenario = scenarios[0];
+let sequence = [];
+
+function buildTabs() {
+  const tabs = document.getElementById("tabs");
+  tabs.innerHTML = "";
+  scenarios.forEach(s => {
+    const btn = document.createElement("button");
+    btn.className = "tab-btn" + (s.id === currentScenario.id ? " active" : "");
+    btn.textContent = s.tabLabel;
+    btn.addEventListener("click", () => { currentScenario = s; resetBoard(); });
+    tabs.appendChild(btn);
+  });
+}
+
+function buildBoard() {
+  buildTabs();
+  document.getElementById("scenarioDesc").textContent = currentScenario.desc;
+  sequence = [];
+  renderZones();
+}
+
+function renderZones() {
+  const poolZone = document.getElementById("poolZone");
+  const seqZone = document.getElementById("sequenceZone");
+  poolZone.innerHTML = "";
+  seqZone.innerHTML = "";
+
+  currentScenario.pool.forEach(name => {
+    if (sequence.includes(name)) return;
+    const b = document.createElement("div");
+    b.className = "block";
+    b.textContent = name;
+    b.addEventListener("click", () => { sequence.push(name); renderZones(); clearResult(); });
+    poolZone.appendChild(b);
+  });
+
+  if (sequence.length === 0) {
+    seqZone.innerHTML = '<span style="color:#999;font-size:0.85rem;">Belum ada komponen dipilih.</span>';
+  } else {
+    sequence.forEach((name, i) => {
+      const b = document.createElement("div");
+      b.className = "block";
+      b.innerHTML = `<span class="num">${i+1}</span> ${name}`;
+      b.addEventListener("click", () => { sequence.splice(i, 1); renderZones(); clearResult(); });
+      seqZone.appendChild(b);
+      if (i < sequence.length - 1) {
+        const arrow = document.createElement("span");
+        arrow.className = "arrow-sep";
+        arrow.textContent = "→";
+        seqZone.appendChild(arrow);
+      }
+    });
+  }
+}
+
+function clearResult() {
+  document.getElementById("result").textContent = "";
+  document.getElementById("result").className = "";
+}
+
+function checkAnswer() {
+  const resultEl = document.getElementById("result");
+  const correct = currentScenario.correct;
+  if (sequence.length !== correct.length) {
+    resultEl.textContent = `Susunan Anda punya ${sequence.length} komponen, seharusnya ${correct.length}. Lengkapi dulu.`;
+    resultEl.className = "bad";
+    return;
+  }
+  const isCorrect = correct.every((name, i) => sequence[i] === name);
+  if (isCorrect) {
+    resultEl.textContent = "Benar! Urutan pipeline Anda sudah tepat.";
+    resultEl.className = "ok";
+  } else {
+    resultEl.textContent = "Belum tepat — urutan atau pilihan komponennya masih ada yang keliru. Coba tinjau ulang Bab 13.";
+    resultEl.className = "bad";
+  }
+}
+
+function resetBoard() {
+  sequence = [];
+  buildTabs();
+  document.getElementById("scenarioDesc").textContent = currentScenario.desc;
+  renderZones();
+  clearResult();
+}
+
+function revealAnswer() {
+  sequence = [...currentScenario.correct];
+  renderZones();
+  const resultEl = document.getElementById("result");
+  resultEl.textContent = "Ini kunci jawabannya — pahami alasannya, lalu tekan Ulangi untuk mencoba sendiri.";
+  resultEl.className = "";
+}
+
+document.getElementById("checkBtn").addEventListener("click", checkAnswer);
+document.getElementById("resetBtn").addEventListener("click", resetBoard);
+document.getElementById("revealBtn").addEventListener("click", revealAnswer);
+
+buildBoard();
+</script>
+
+</body>
+</html>

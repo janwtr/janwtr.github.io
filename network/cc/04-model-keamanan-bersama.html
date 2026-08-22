@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Model Tanggung Jawab Keamanan Bersama</title>
+<style>
+  :root { --navy:#1F3864; --lightblue:#DCE6F1; --yellow:#FFF2CC; --grey:#595959; --green:#2E7D32; --red:#C62828; }
+  * { box-sizing: border-box; }
+  body { font-family:'Segoe UI',Arial,Helvetica,sans-serif; background:#F7F9FC; color:#222; margin:0; padding:24px; }
+  h1 { color:var(--navy); font-size:1.5rem; text-align:center; margin-bottom:4px; }
+  p.subtitle { text-align:center; color:var(--grey); margin-top:0; margin-bottom:20px; }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  .instructions {
+    background: var(--yellow); border: 1px solid #E8D28A; border-radius: 8px;
+    padding: 12px 18px; font-size: 0.95rem; margin-bottom: 22px;
+  }
+  .item-list { display: flex; flex-direction: column; gap: 8px; }
+  .item {
+    background: #fff; border: 1.5px solid #C7D2E0; border-radius: 8px;
+    padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap;
+  }
+  .item .label { font-size: 0.95rem; flex: 1; min-width: 220px; }
+  .item .state-btn {
+    border: none; border-radius: 20px; padding: 8px 18px; font-size: 0.85rem;
+    font-weight: 700; cursor: pointer; min-width: 190px; text-align: center;
+    background: #EEE; color: var(--grey);
+  }
+  .item.wrong { outline: 2px solid var(--red); }
+  .state-btn.google { background: var(--lightblue); color: var(--navy); }
+  .state-btn.customer { background: var(--yellow); color: #7A5C00; }
+  .legend { max-width: 900px; margin: 16px auto 0; text-align: center; font-size: 0.88rem; color: var(--grey); }
+  .legend span { display: inline-block; padding: 3px 10px; border-radius: 12px; margin: 0 6px; font-weight: 600; }
+  .legend .g { background: var(--lightblue); color: var(--navy); }
+  .legend .c { background: var(--yellow); color: #7A5C00; }
+  .controls { max-width: 900px; margin: 22px auto; text-align: center; }
+  button.action {
+    background: var(--navy); color: #fff; border: none; padding: 10px 22px;
+    border-radius: 24px; font-size: 0.95rem; cursor: pointer; margin: 0 6px;
+  }
+  button.action:hover { opacity: 0.9; }
+  button.secondary { background: #fff; color: var(--navy); border: 1.5px solid var(--navy); }
+  #result { max-width: 900px; margin: 16px auto; text-align: center; font-weight: 700; font-size: 1.05rem; min-height: 26px; }
+  #result.ok { color: var(--green); }
+  #result.bad { color: var(--red); }
+</style>
+</head>
+<body>
+
+<h1>Model Tanggung Jawab Keamanan Bersama (Shared Responsibility Model)</h1>
+<p class="subtitle">Bab 6 — Keamanan dan Kepatuhan di Google Cloud</p>
+
+<div class="wrap">
+  <div class="instructions">
+    <strong>Cara main:</strong> Klik tombol di samping tiap item untuk menandainya sebagai tanggung jawab <strong>Google Cloud</strong> atau <strong>Pelanggan (Anda)</strong>. Klik berulang untuk berganti pilihan. Setelah semua item ditandai, tekan <strong>Periksa Jawaban</strong>.
+  </div>
+
+  <div class="item-list" id="itemList"></div>
+
+  <div class="legend">
+    <span class="g">Biru = Tanggung Jawab Google Cloud</span>
+    <span class="c">Kuning = Tanggung Jawab Pelanggan</span>
+  </div>
+
+  <div class="controls">
+    <button class="action" id="checkBtn">Periksa Jawaban</button>
+    <button class="action secondary" id="resetBtn">Ulangi</button>
+    <button class="action secondary" id="revealBtn">Tampilkan Kunci</button>
+  </div>
+  <div id="result"></div>
+</div>
+
+<script>
+const items = [
+  { text: "Keamanan fisik pusat data (kunci pintu, kamera, penjaga)", answer: "google" },
+  { text: "Perangkat keras server dan jaringan tulang punggung global", answer: "google" },
+  { text: "Lapisan virtualisasi (hypervisor) dan isolasi antar-pelanggan", answer: "google" },
+  { text: "Patch keamanan untuk infrastruktur dasar Google Cloud", answer: "google" },
+  { text: "Enkripsi data saat disimpan (default, otomatis oleh platform)", answer: "google" },
+  { text: "Ketersediaan (availability) infrastruktur global", answer: "google" },
+  { text: "Konfigurasi aturan firewall dan jaringan VPC milik Anda", answer: "customer" },
+  { text: "Pengelolaan identitas dan akses (IAM) — siapa boleh akses apa", answer: "customer" },
+  { text: "Klasifikasi dan tata kelola data yang Anda unggah", answer: "customer" },
+  { text: "Keamanan kode aplikasi yang Anda kembangkan dan deploy", answer: "customer" },
+  { text: "Patch sistem operasi pada VM Compute Engine milik Anda", answer: "customer" },
+  { text: "Pengelolaan kunci enkripsi kustom (Cloud KMS), bila digunakan", answer: "customer" },
+];
+
+const state = new Array(items.length).fill(null);
+
+function buildList() {
+  const wrap = document.getElementById("itemList");
+  wrap.innerHTML = "";
+  items.forEach((it, idx) => {
+    state[idx] = null;
+    const row = document.createElement("div");
+    row.className = "item";
+    row.dataset.idx = idx;
+    row.innerHTML = `
+      <div class="label">${it.text}</div>
+      <button class="state-btn" data-idx="${idx}">Belum ditandai</button>
+    `;
+    wrap.appendChild(row);
+  });
+  wrap.querySelectorAll(".state-btn").forEach(btn => {
+    btn.addEventListener("click", () => toggleItem(parseInt(btn.dataset.idx, 10)));
+  });
+}
+
+function toggleItem(idx) {
+  const cur = state[idx];
+  let next;
+  if (cur === null) next = "google";
+  else if (cur === "google") next = "customer";
+  else next = null;
+  state[idx] = next;
+  const btn = document.querySelector(`.state-btn[data-idx="${idx}"]`);
+  const row = document.querySelector(`.item[data-idx="${idx}"]`);
+  btn.classList.remove("google", "customer");
+  row.classList.remove("wrong");
+  if (next === "google") { btn.classList.add("google"); btn.textContent = "Google Cloud"; }
+  else if (next === "customer") { btn.classList.add("customer"); btn.textContent = "Pelanggan"; }
+  else { btn.textContent = "Belum ditandai"; }
+  document.getElementById("result").textContent = "";
+  document.getElementById("result").className = "";
+}
+
+function checkAnswers() {
+  let correct = 0, allFilled = true;
+  items.forEach((it, idx) => {
+    const row = document.querySelector(`.item[data-idx="${idx}"]`);
+    row.classList.remove("wrong");
+    if (state[idx] === null) { allFilled = false; row.classList.add("wrong"); }
+    else if (state[idx] === it.answer) { correct++; }
+    else { row.classList.add("wrong"); }
+  });
+  const resultEl = document.getElementById("result");
+  if (!allFilled) {
+    resultEl.textContent = "Masih ada item yang belum ditandai — lengkapi dulu semuanya.";
+    resultEl.className = "bad";
+    return;
+  }
+  const total = items.length;
+  const pct = Math.round((correct/total)*100);
+  if (correct === total) {
+    resultEl.textContent = `Sempurna! ${correct}/${total} benar (100%). Anda memahami pembagian tanggung jawab keamanan dengan tepat.`;
+    resultEl.className = "ok";
+  } else {
+    resultEl.textContent = `${correct}/${total} benar (${pct}%). Item bergaris merah masih keliru — tinjau ulang Bab 6.1 (Model Tanggung Jawab Bersama) di Buku Ajar.`;
+    resultEl.className = "bad";
+  }
+}
+
+function resetBoard() {
+  buildList();
+  document.getElementById("result").textContent = "";
+  document.getElementById("result").className = "";
+}
+
+function revealAnswer() {
+  items.forEach((it, idx) => {
+    state[idx] = it.answer;
+    const btn = document.querySelector(`.state-btn[data-idx="${idx}"]`);
+    const row = document.querySelector(`.item[data-idx="${idx}"]`);
+    row.classList.remove("wrong");
+    btn.classList.remove("google", "customer");
+    btn.classList.add(it.answer);
+    btn.textContent = it.answer === "google" ? "Google Cloud" : "Pelanggan";
+  });
+  const resultEl = document.getElementById("result");
+  resultEl.textContent = "Ini kunci jawabannya — pahami polanya, lalu tekan Ulangi untuk mencoba sendiri.";
+  resultEl.className = "";
+}
+
+document.getElementById("checkBtn").addEventListener("click", checkAnswers);
+document.getElementById("resetBtn").addEventListener("click", resetBoard);
+document.getElementById("revealBtn").addEventListener("click", revealAnswer);
+
+buildList();
+</script>
+
+</body>
+</html>

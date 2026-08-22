@@ -1,1 +1,136 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Media Interaktif Cloud Computing</title>
+<style>
+  :root { --navy:#1F3864; --lightblue:#DCE6F1; --yellow:#FFF2CC; --grey:#595959; --green:#2E7D32; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Arial, Helvetica, sans-serif; background: #F7F9FC; color: #222;
+    margin: 0; padding: 32px 20px 60px;
+  }
+  header { max-width: 980px; margin: 0 auto 28px; text-align: center; }
+  h1 { color: var(--navy); font-size: 1.7rem; margin-bottom: 6px; }
+  header p { color: var(--grey); font-size: 0.98rem; margin: 4px 0; }
+  .badge {
+    display: inline-block; background: var(--lightblue); color: var(--navy);
+    font-size: 0.78rem; font-weight: 700; padding: 4px 14px; border-radius: 14px; margin-top: 10px;
+  }
+  .grid {
+    max-width: 980px; margin: 0 auto; display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px;
+  }
+  a.card {
+    display: block; background: #fff; border: 2px solid var(--lightblue); border-radius: 12px;
+    padding: 20px; text-decoration: none; color: inherit; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  }
+  a.card:hover {
+    transform: translateY(-3px); box-shadow: 0 6px 16px rgba(31,56,100,0.15); border-color: var(--navy);
+  }
+  .card .num {
+    display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px;
+    border-radius: 50%; background: var(--navy); color: #fff; font-size: 0.85rem; font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .card .icon { font-size: 1.6rem; float: right; margin-top: -4px; }
+  .card h2 { font-size: 1.05rem; color: var(--navy); margin: 4px 0 6px; }
+  .card .chapter {
+    display: inline-block; font-size: 0.72rem; font-weight: 700; color: #7A5C00;
+    background: var(--yellow); padding: 2px 10px; border-radius: 10px; margin-bottom: 8px;
+  }
+  .card p { font-size: 0.88rem; line-height: 1.5; color: #444; margin: 0; }
+  footer {
+    max-width: 980px; margin: 40px auto 0; text-align: center; font-size: 0.82rem; color: var(--grey);
+  }
+</style>
+</head>
+<body>
 
+<header>
+  <h1>Media Pembelajaran Interaktif — Cloud Computing</h1>
+  <p>Kumpulan 8 alat bantu belajar interaktif untuk mendukung materi SPADA Matakuliah Cloud Computing.</p>
+  <p>Klik salah satu kartu di bawah untuk membuka alatnya di tab baru.</p>
+  <span class="badge">Google Cloud Computing Foundations Certificate v1.3.4</span>
+</header>
+
+<div class="grid" id="grid"></div>
+
+<footer>
+  Disusun sebagai materi pengayaan mandiri Matakuliah Cloud Computing — tidak memerlukan plugin Moodle apa pun.
+</footer>
+
+<script>
+const tools = [
+  {
+    file: "01-iaas-paas-saas-dragdrop.html",
+    icon: "🧱", chapter: "Bab 1",
+    title: "Spektrum Tanggung Jawab Cloud",
+    desc: "Tandai lapisan sistem mana yang dikelola pengguna dan mana yang dikelola penyedia, di empat model: On-Premises, IaaS, PaaS, SaaS."
+  },
+  {
+    file: "02-spektrum-compute-slider.html",
+    icon: "🖥️", chapter: "Bab 3",
+    title: "Spektrum Opsi Komputasi",
+    desc: "Geser slider dari kendali penuh ke abstraksi penuh untuk menjelajahi Compute Engine, App Engine, GKE, Cloud Run, dan Cloud Run Functions."
+  },
+  {
+    file: "03-pemilihan-storage-bercabang.html",
+    icon: "🗄️", chapter: "Bab 5",
+    title: "Pemilih Layanan Storage",
+    desc: "Jawab beberapa pertanyaan bercabang untuk menemukan layanan penyimpanan Google Cloud yang paling sesuai kebutuhan Anda."
+  },
+  {
+    file: "04-model-keamanan-bersama.html",
+    icon: "🔐", chapter: "Bab 6",
+    title: "Model Tanggung Jawab Keamanan Bersama",
+    desc: "Kelompokkan 12 aspek keamanan ke dalam tanggung jawab Google Cloud atau tanggung jawab pelanggan."
+  },
+  {
+    file: "05-simulator-vpc-firewall.html",
+    icon: "🌐", chapter: "Bab 9",
+    title: "Simulator VPC & Firewall",
+    desc: "Nyalakan/matikan aturan firewall pada topologi VPC dua-subnet, lalu uji berbagai skenario lalu lintas jaringan."
+  },
+  {
+    file: "06-matching-observability.html",
+    icon: "📈", chapter: "Bab 10",
+    title: "Cocokkan Komponen Observability",
+    desc: "Pasangkan Cloud Monitoring, Logging, Trace, Profiler, dan Error Reporting dengan skenario penggunaannya."
+  },
+  {
+    file: "07-penyusun-pipeline-bigdata.html",
+    icon: "🧩", chapter: "Bab 13",
+    title: "Penyusun Pipeline Big Data",
+    desc: "Susun urutan komponen Pub/Sub, Dataflow, Dataproc, BigQuery, dan Looker Studio yang tepat untuk dua skenario berbeda."
+  },
+  {
+    file: "08-sorter-ai-ml-flow.html",
+    icon: "🤖", chapter: "Bab 14",
+    title: "Peta Opsi AI/ML & Alur Data ke Model",
+    desc: "Kelompokkan pendekatan AI/ML berdasarkan tingkat keahlian yang dibutuhkan, lalu jalankan animasi alur data menjadi prediksi."
+  },
+];
+
+const grid = document.getElementById("grid");
+tools.forEach((t, i) => {
+  const a = document.createElement("a");
+  a.className = "card";
+  a.href = t.file;
+  a.target = "_blank";
+  a.rel = "noopener";
+  a.innerHTML = `
+    <span class="icon">${t.icon}</span>
+    <div class="num">${i + 1}</div>
+    <div class="chapter">${t.chapter}</div>
+    <h2>${t.title}</h2>
+    <p>${t.desc}</p>
+  `;
+  grid.appendChild(a);
+});
+</script>
+
+</body>
+</html>

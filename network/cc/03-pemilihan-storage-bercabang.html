@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pemilih Layanan Storage Google Cloud</title>
+<style>
+  :root { --navy:#1F3864; --lightblue:#DCE6F1; --yellow:#FFF2CC; --grey:#595959; --green:#2E7D32; }
+  * { box-sizing: border-box; }
+  body { font-family:'Segoe UI',Arial,Helvetica,sans-serif; background:#F7F9FC; color:#222; margin:0; padding:24px; }
+  h1 { color:var(--navy); font-size:1.5rem; text-align:center; margin-bottom:4px; }
+  p.subtitle { text-align:center; color:var(--grey); margin-top:0; margin-bottom:20px; }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  .instructions {
+    background: var(--yellow); border: 1px solid #E8D28A; border-radius: 8px;
+    padding: 12px 18px; font-size: 0.95rem; margin-bottom: 22px;
+  }
+  .breadcrumb {
+    font-size: 0.82rem; color: var(--grey); margin-bottom: 14px; min-height: 20px;
+  }
+  .breadcrumb span { color: var(--navy); font-weight: 600; }
+  .panel {
+    background: #fff; border: 2px solid var(--lightblue); border-radius: 12px;
+    padding: 28px; box-shadow: 0 3px 10px rgba(0,0,0,0.06); min-height: 220px;
+  }
+  .question { font-size: 1.15rem; font-weight: 700; color: var(--navy); margin-bottom: 20px; text-align: center; }
+  .choices { display: flex; flex-direction: column; gap: 10px; }
+  .choice-btn {
+    background: var(--lightblue); color: var(--navy); border: 2px solid transparent;
+    border-radius: 8px; padding: 14px 18px; font-size: 0.98rem; text-align: left;
+    cursor: pointer; transition: background 0.15s, border-color 0.15s;
+  }
+  .choice-btn:hover { background: #C7D9F0; border-color: var(--navy); }
+  .result-box { text-align: center; }
+  .result-box .icon { font-size: 3rem; margin-bottom: 8px; }
+  .result-box h2 { color: var(--navy); margin: 4px 0 4px; }
+  .result-box .tag {
+    display: inline-block; background: var(--yellow); color: #7A5C00;
+    font-size: 0.8rem; font-weight: 700; padding: 3px 12px; border-radius: 12px; margin-bottom: 14px;
+  }
+  .result-box p { text-align: left; font-size: 0.96rem; line-height: 1.6; color: #333; }
+  .result-box .usecase {
+    background: var(--lightblue); border-radius: 8px; padding: 10px 14px; margin-top: 10px;
+    font-size: 0.9rem; text-align: left;
+  }
+  .usecase strong { color: var(--navy); }
+  .controls { text-align: center; margin-top: 20px; }
+  button.restart {
+    background: var(--navy); color: #fff; border: none; padding: 10px 26px;
+    border-radius: 24px; font-size: 0.95rem; cursor: pointer;
+  }
+  button.restart:hover { opacity: 0.9; }
+  .back-link {
+    display: block; text-align: center; font-size: 0.85rem; color: var(--grey);
+    margin-top: 14px; cursor: pointer; text-decoration: underline;
+  }
+</style>
+</head>
+<body>
+
+<h1>Pemilih Layanan Storage Google Cloud</h1>
+<p class="subtitle">Bab 5 — Ragam Layanan Penyimpanan Data</p>
+
+<div class="wrap">
+  <div class="instructions">
+    <strong>Cara main:</strong> Jawab beberapa pertanyaan tentang kebutuhan data Anda, dan alat ini akan merekomendasikan layanan storage Google Cloud yang paling sesuai — lengkap dengan alasannya.
+  </div>
+
+  <div class="breadcrumb" id="breadcrumb"></div>
+
+  <div class="panel" id="panel"></div>
+
+  <div class="controls">
+    <button class="restart" id="restartBtn">Mulai Ulang dari Awal</button>
+  </div>
+</div>
+
+<script>
+const tree = {
+  start: {
+    question: "Jenis data seperti apa yang ingin Anda simpan?",
+    choices: [
+      { label: "Objek/berkas mentah — gambar, video, backup, arsip", next: "cloud_storage" },
+      { label: "Data terstruktur — tabel dengan baris & kolom", next: "structured" },
+      { label: "Perlu diakses seperti sistem berkas biasa (mount, POSIX)", next: "filestore" },
+    ]
+  },
+  structured: {
+    question: "Data akan dipakai untuk apa?",
+    choices: [
+      { label: "Analitik atas dataset besar (OLAP) — laporan, agregasi, BI", next: "bigquery" },
+      { label: "Transaksi operasional sehari-hari (OLTP)", next: "oltp" },
+    ]
+  },
+  oltp: {
+    question: "Apakah aplikasi perlu skala global dengan konsistensi kuat lintas banyak region sekaligus?",
+    choices: [
+      { label: "Ya — skala global, konsistensi transaksional ketat", next: "spanner" },
+      { label: "Tidak — cukup satu region/instans utama", next: "schema" },
+    ]
+  },
+  schema: {
+    question: "Apakah data punya skema relasional yang kaku dan butuh SQL penuh?",
+    choices: [
+      { label: "Ya — relasional, butuh SQL, mirip MySQL/PostgreSQL", next: "cloud_sql" },
+      { label: "Tidak — skema fleksibel (NoSQL)", next: "nosql" },
+    ]
+  },
+  nosql: {
+    question: "Seperti apa pola bebannya?",
+    choices: [
+      { label: "Throughput sangat tinggi, time-series/IoT/analitik skala besar", next: "bigtable" },
+      { label: "Dokumen fleksibel untuk aplikasi mobile/web dengan sinkronisasi real-time", next: "firestore" },
+    ]
+  },
+  cloud_storage: {
+    icon: "🪣", name: "Cloud Storage", tag: "Object Storage",
+    desc: "Layanan penyimpanan objek yang sangat tahan lama dan terjangkau untuk berkas dalam bentuk aslinya — tanpa perlu mengelola server atau sistem berkas.",
+    usecase: "Backup & arsip, hosting konten statis situs web, penyimpanan gambar/video, data lake mentah sebelum diproses."
+  },
+  filestore: {
+    icon: "🗂️", name: "Filestore", tag: "Managed File Storage (NFS)",
+    desc: "Menyediakan sistem berkas terkelola yang dapat di-mount seperti network file system (NFS) biasa oleh Compute Engine atau GKE.",
+    usecase: "Aplikasi lama (legacy) yang butuh akses berkas gaya POSIX, render farm, direktori home bersama."
+  },
+  bigquery: {
+    icon: "📊", name: "BigQuery", tag: "Serverless Data Warehouse",
+    desc: "Data warehouse analitik serverless yang mampu menjalankan kueri SQL atas petabita data dalam hitungan detik, tanpa mengelola infrastruktur apa pun.",
+    usecase: "Dashboard bisnis, analisis tren penjualan, laporan lintas-tahun, machine learning langsung di atas data (BigQuery ML)."
+  },
+  spanner: {
+    icon: "🌐", name: "Cloud Spanner", tag: "Globally Distributed SQL",
+    desc: "Database relasional terdistribusi global dengan konsistensi kuat (strong consistency) dan skalabilitas horizontal — menggabungkan kelebihan SQL tradisional dan NoSQL.",
+    usecase: "Sistem keuangan/perbankan global, e-commerce skala dunia, inventori multi-region yang harus selalu akurat."
+  },
+  cloud_sql: {
+    icon: "🛢️", name: "Cloud SQL", tag: "Managed Relational Database",
+    desc: "Database relasional terkelola penuh (MySQL, PostgreSQL, atau SQL Server) — Google menangani patching, backup, dan replikasi.",
+    usecase: "Aplikasi web/CMS umum, sistem ERP kecil-menengah, migrasi database on-premises yang sudah relasional."
+  },
+  bigtable: {
+    icon: "⚙️", name: "Cloud Bigtable", tag: "Wide-Column NoSQL",
+    desc: "Database NoSQL wide-column berkinerja sangat tinggi, dirancang untuk beban kerja dengan throughput dan volume data masif.",
+    usecase: "Data time-series dari sensor IoT, data telemetri, personalisasi iklan skala besar, analitik keuangan real-time."
+  },
+  firestore: {
+    icon: "🔥", name: "Firestore", tag: "Document NoSQL",
+    desc: "Database dokumen NoSQL yang fleksibel dengan sinkronisasi real-time — populer untuk backend aplikasi mobile dan web modern.",
+    usecase: "Aplikasi mobile/web dengan data real-time (chat, kolaborasi), profil pengguna, katalog produk yang berubah dinamis."
+  }
+};
+
+let path = ["start"];
+
+function render() {
+  const key = path[path.length - 1];
+  const node = tree[key];
+  const panel = document.getElementById("panel");
+  const breadcrumb = document.getElementById("breadcrumb");
+
+  if (node.question) {
+    breadcrumb.innerHTML = path.length > 1
+      ? `Langkah ${path.length} dari alur pertanyaan`
+      : "Mulai dari sini";
+    panel.innerHTML = `
+      <div class="question">${node.question}</div>
+      <div class="choices">
+        ${node.choices.map((c, i) => `<button class="choice-btn" data-next="${c.next}">${c.label}</button>`).join("")}
+      </div>
+      ${path.length > 1 ? '<span class="back-link" id="backLink">← Kembali ke pertanyaan sebelumnya</span>' : ''}
+    `;
+    panel.querySelectorAll(".choice-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        path.push(btn.dataset.next);
+        render();
+      });
+    });
+    const back = document.getElementById("backLink");
+    if (back) back.addEventListener("click", () => { path.pop(); render(); });
+  } else {
+    breadcrumb.innerHTML = `Rekomendasi ditemukan setelah <span>${path.length - 1}</span> pertanyaan`;
+    panel.innerHTML = `
+      <div class="result-box">
+        <div class="icon">${node.icon}</div>
+        <h2>${node.name}</h2>
+        <div class="tag">${node.tag}</div>
+        <p>${node.desc}</p>
+        <div class="usecase"><strong>Contoh penggunaan:</strong> ${node.usecase}</div>
+      </div>
+      <span class="back-link" id="backLink">← Kembali dan coba jawaban lain</span>
+    `;
+    document.getElementById("backLink").addEventListener("click", () => { path.pop(); render(); });
+  }
+}
+
+document.getElementById("restartBtn").addEventListener("click", () => {
+  path = ["start"];
+  render();
+});
+
+render();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cocokkan Komponen Observability Google Cloud</title>
+<style>
+  :root { --navy:#1F3864; --lightblue:#DCE6F1; --yellow:#FFF2CC; --grey:#595959; --green:#2E7D32; --red:#C62828; }
+  * { box-sizing: border-box; }
+  body { font-family:'Segoe UI',Arial,Helvetica,sans-serif; background:#F7F9FC; color:#222; margin:0; padding:24px; }
+  h1 { color:var(--navy); font-size:1.5rem; text-align:center; margin-bottom:4px; }
+  p.subtitle { text-align:center; color:var(--grey); margin-top:0; margin-bottom:20px; }
+  .wrap { max-width: 940px; margin: 0 auto; }
+  .instructions {
+    background: var(--yellow); border: 1px solid #E8D28A; border-radius: 8px;
+    padding: 12px 18px; font-size: 0.95rem; margin-bottom: 22px;
+  }
+  .columns { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .col h3 { color: var(--navy); text-align: center; font-size: 1rem; margin-bottom: 10px; }
+  .card {
+    background: #fff; border: 2px solid #C7D2E0; border-radius: 8px; padding: 12px 14px;
+    margin-bottom: 8px; cursor: pointer; font-size: 0.9rem; transition: border-color 0.15s, background 0.15s;
+    position: relative;
+  }
+  .card:hover { border-color: var(--navy); }
+  .card.selected { border-color: var(--navy); background: var(--lightblue); }
+  .card.matched { opacity: 0.55; cursor: default; }
+  .card .badge {
+    position: absolute; top: -8px; right: -8px; width: 22px; height: 22px; border-radius: 50%;
+    color: #fff; font-size: 0.72rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+  .card.wrong { border-color: var(--red); }
+  .controls { max-width: 940px; margin: 22px auto; text-align: center; }
+  button.action {
+    background: var(--navy); color: #fff; border: none; padding: 10px 22px;
+    border-radius: 24px; font-size: 0.95rem; cursor: pointer; margin: 0 6px;
+  }
+  button.action:hover { opacity: 0.9; }
+  button.secondary { background: #fff; color: var(--navy); border: 1.5px solid var(--navy); }
+  #result { max-width: 940px; margin: 16px auto; text-align: center; font-weight: 700; font-size: 1.05rem; min-height: 26px; }
+  #result.ok { color: var(--green); }
+  #result.bad { color: var(--red); }
+  #status { text-align: center; font-size: 0.85rem; color: var(--grey); margin-top: 4px; min-height: 18px; }
+</style>
+</head>
+<body>
+
+<h1>Cocokkan Komponen Observability Google Cloud</h1>
+<p class="subtitle">Bab 10 — Monitoring, Logging, dan Observability</p>
+
+<div class="wrap">
+  <div class="instructions">
+    <strong>Cara main:</strong> Klik satu komponen di kolom kiri, lalu klik skenario yang paling cocok di kolom kanan untuk memasangkannya. Nomor warna akan muncul saat pasangan terbentuk. Setelah semua berpasangan, tekan <strong>Periksa Jawaban</strong>.
+  </div>
+
+  <div class="columns">
+    <div class="col">
+      <h3>Komponen</h3>
+      <div id="leftCol"></div>
+    </div>
+    <div class="col">
+      <h3>Skenario Penggunaan</h3>
+      <div id="rightCol"></div>
+    </div>
+  </div>
+
+  <div id="status">Belum ada pasangan dibuat.</div>
+
+  <div class="controls">
+    <button class="action" id="checkBtn">Periksa Jawaban</button>
+    <button class="action secondary" id="resetBtn">Ulangi</button>
+    <button class="action secondary" id="revealBtn">Tampilkan Kunci</button>
+  </div>
+  <div id="result"></div>
+</div>
+
+<script>
+const components = [
+  { id: "monitoring", label: "Cloud Monitoring", desc: "Metrik, dashboard, dan alerting kondisi sistem" },
+  { id: "logging",    label: "Cloud Logging",    desc: "Pengumpulan dan pencarian log terpusat" },
+  { id: "trace",      label: "Cloud Trace",      desc: "Pelacakan latensi request terdistribusi" },
+  { id: "profiler",   label: "Cloud Profiler",   desc: "Analisis penggunaan CPU/memori kode" },
+  { id: "error",      label: "Error Reporting",  desc: "Agregasi dan pengelompokan error aplikasi" },
+];
+
+const scenarios = [
+  { id: "monitoring", label: "Tim ingin dashboard yang menampilkan CPU dan latensi seluruh VM, lalu diberi tahu otomatis saat CPU di atas 90%." },
+  { id: "trace",      label: "Sebuah request lambat melewati 5 microservice — tim ingin tahu di layanan mana waktu paling banyak terbuang." },
+  { id: "error",      label: "Aplikasi produksi mulai melempar exception baru — tim ingin exception serupa dikelompokkan otomatis, bukan satu per satu." },
+  { id: "logging",    label: "Tim keamanan perlu mencari semua log akses gagal dari alamat IP tertentu di 50 layanan sekaligus." },
+  { id: "profiler",   label: "Aplikasi menghabiskan memori berlebih — developer ingin tahu baris kode mana penyebabnya tanpa menghentikan produksi." },
+];
+
+// Shuffle scenario display order (fixed shuffle for consistency across loads within a session run)
+const shuffled = [scenarios[2], scenarios[4], scenarios[0], scenarios[3], scenarios[1]];
+
+const colors = ["#1F3864", "#2E7D32", "#B8860B", "#8E44AD", "#C0392B"];
+
+let selectedLeft = null;
+let matches = {}; // leftId -> rightIdx
+let matchColor = {}; // leftId -> color
+
+function buildBoard() {
+  matches = {};
+  matchColor = {};
+  selectedLeft = null;
+  const leftCol = document.getElementById("leftCol");
+  const rightCol = document.getElementById("rightCol");
+  leftCol.innerHTML = "";
+  rightCol.innerHTML = "";
+
+  components.forEach(c => {
+    const div = document.createElement("div");
+    div.className = "card";
+    div.dataset.id = c.id;
+    div.innerHTML = `<strong>${c.label}</strong><br><span style="color:#666;font-size:0.82rem;">${c.desc}</span>`;
+    div.addEventListener("click", () => selectLeft(c.id, div));
+    leftCol.appendChild(div);
+  });
+
+  shuffled.forEach((s, idx) => {
+    const div = document.createElement("div");
+    div.className = "card";
+    div.dataset.idx = idx;
+    div.dataset.answer = s.id;
+    div.textContent = s.label;
+    div.addEventListener("click", () => selectRight(idx, div));
+    rightCol.appendChild(div);
+  });
+
+  updateStatus();
+}
+
+function selectLeft(id, el) {
+  if (el.classList.contains("matched")) return;
+  document.querySelectorAll("#leftCol .card").forEach(c => c.classList.remove("selected"));
+  selectedLeft = id;
+  el.classList.add("selected");
+}
+
+function selectRight(idx, el) {
+  if (el.classList.contains("matched")) return;
+  if (!selectedLeft) { updateStatus("Pilih komponen di kolom kiri dulu."); return; }
+  // remove any previous match for this left id
+  Object.keys(matches).forEach(lid => {
+    if (matches[lid] === idx) { delete matches[lid]; delete matchColor[lid]; }
+  });
+  delete matches[selectedLeft];
+  matches[selectedLeft] = idx;
+  const color = colors[Object.keys(matches).length % colors.length];
+  matchColor[selectedLeft] = color;
+  renderMatches();
+  selectedLeft = null;
+  document.querySelectorAll("#leftCol .card").forEach(c => c.classList.remove("selected"));
+  updateStatus();
+}
+
+function renderMatches() {
+  document.querySelectorAll("#leftCol .card, #rightCol .card").forEach(c => {
+    c.classList.remove("matched", "wrong");
+    const badge = c.querySelector(".badge");
+    if (badge) badge.remove();
+  });
+  Object.entries(matches).forEach(([lid, ridx], n) => {
+    const leftEl = document.querySelector(`#leftCol .card[data-id="${lid}"]`);
+    const rightEl = document.querySelector(`#rightCol .card[data-idx="${ridx}"]`);
+    const color = matchColor[lid];
+    [leftEl, rightEl].forEach(el => {
+      el.classList.add("matched");
+      const badge = document.createElement("div");
+      badge.className = "badge";
+      badge.style.background = color;
+      badge.textContent = n + 1;
+      el.appendChild(badge);
+    });
+  });
+}
+
+function updateStatus(msg) {
+  const n = Object.keys(matches).length;
+  document.getElementById("status").textContent = msg || `${n} dari ${components.length} pasangan terbentuk.`;
+}
+
+function checkAnswers() {
+  const total = components.length;
+  const n = Object.keys(matches).length;
+  if (n < total) {
+    document.getElementById("result").textContent = "Masih ada komponen yang belum dipasangkan.";
+    document.getElementById("result").className = "bad";
+    return;
+  }
+  let correct = 0;
+  Object.entries(matches).forEach(([lid, ridx]) => {
+    const rightEl = document.querySelector(`#rightCol .card[data-idx="${ridx}"]`);
+    const leftEl = document.querySelector(`#leftCol .card[data-id="${lid}"]`);
+    if (rightEl.dataset.answer === lid) {
+      correct++;
+    } else {
+      rightEl.classList.add("wrong");
+      leftEl.classList.add("wrong");
+    }
+  });
+  const pct = Math.round((correct/total)*100);
+  const resultEl = document.getElementById("result");
+  if (correct === total) {
+    resultEl.textContent = `Sempurna! ${correct}/${total} pasangan benar (100%).`;
+    resultEl.className = "ok";
+  } else {
+    resultEl.textContent = `${correct}/${total} pasangan benar (${pct}%). Kartu bergaris merah masih keliru — tinjau ulang Bab 10 di Buku Ajar.`;
+    resultEl.className = "bad";
+  }
+}
+
+function revealAnswer() {
+  matches = {};
+  matchColor = {};
+  components.forEach((c, n) => {
+    const ridx = shuffled.findIndex(s => s.id === c.id);
+    matches[c.id] = ridx;
+    matchColor[c.id] = colors[n % colors.length];
+  });
+  renderMatches();
+  updateStatus("Ini kunci jawabannya — pahami polanya, lalu tekan Ulangi untuk mencoba sendiri.");
+}
+
+document.getElementById("checkBtn").addEventListener("click", checkAnswers);
+document.getElementById("resetBtn").addEventListener("click", buildBoard);
+document.getElementById("revealBtn").addEventListener("click", revealAnswer);
+
+buildBoard();
+</script>
+
+</body>
+</html>

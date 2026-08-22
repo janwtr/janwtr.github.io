@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulator VPC, Subnet, dan Aturan Firewall</title>
+<style>
+  :root { --navy:#1F3864; --lightblue:#DCE6F1; --yellow:#FFF2CC; --grey:#595959; --green:#2E7D32; --red:#C62828; }
+  * { box-sizing: border-box; }
+  body { font-family:'Segoe UI',Arial,Helvetica,sans-serif; background:#F7F9FC; color:#222; margin:0; padding:24px; }
+  h1 { color:var(--navy); font-size:1.5rem; text-align:center; margin-bottom:4px; }
+  p.subtitle { text-align:center; color:var(--grey); margin-top:0; margin-bottom:20px; }
+  .wrap { max-width: 960px; margin: 0 auto; }
+  .instructions {
+    background: var(--yellow); border: 1px solid #E8D28A; border-radius: 8px;
+    padding: 12px 18px; font-size: 0.95rem; margin-bottom: 22px;
+  }
+  .topology {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 22px;
+  }
+  .subnet {
+    background: #fff; border: 2px solid var(--lightblue); border-radius: 10px; padding: 14px;
+  }
+  .subnet h3 { color: var(--navy); margin: 0 0 4px; font-size: 1rem; }
+  .subnet .cidr { font-size: 0.78rem; color: var(--grey); margin-bottom: 10px; }
+  .vm {
+    display: flex; align-items: center; gap: 8px; background: #F7F9FC; border: 1px solid #C7D2E0;
+    border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; font-size: 0.88rem;
+  }
+  .vm .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--navy); flex-shrink:0; }
+  .vm .tag {
+    background: var(--lightblue); color: var(--navy); font-size: 0.72rem; font-weight: 700;
+    padding: 2px 8px; border-radius: 10px; margin-left: auto;
+  }
+  .internet {
+    text-align: center; background: #fff; border: 2px dashed var(--grey); border-radius: 10px;
+    padding: 10px; margin-bottom: 22px; font-size: 0.92rem; color: var(--grey);
+  }
+  .rules {
+    background: #fff; border: 2px solid var(--lightblue); border-radius: 10px; padding: 16px; margin-bottom: 22px;
+  }
+  .rules h3 { color: var(--navy); margin: 0 0 10px; font-size: 1.05rem; }
+  .rule-row {
+    display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid #EEF2F8;
+    font-size: 0.9rem;
+  }
+  .rule-row:last-child { border-bottom: none; }
+  .rule-row input { width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; }
+  .rule-row .rname { font-weight: 700; color: var(--navy); min-width: 190px; }
+  .rule-row .rdesc { color: #444; flex: 1; }
+  .tests {
+    background: #fff; border: 2px solid var(--lightblue); border-radius: 10px; padding: 16px;
+  }
+  .tests h3 { color: var(--navy); margin: 0 0 10px; font-size: 1.05rem; }
+  .test-row {
+    display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #EEF2F8;
+    flex-wrap: wrap;
+  }
+  .test-row:last-child { border-bottom: none; }
+  .test-desc { flex: 1; font-size: 0.9rem; min-width: 260px; }
+  button.test-btn {
+    background: var(--navy); color: #fff; border: none; padding: 8px 18px;
+    border-radius: 20px; font-size: 0.85rem; cursor: pointer;
+  }
+  button.test-btn:hover { opacity: 0.9; }
+  .verdict {
+    font-size: 0.85rem; font-weight: 700; padding: 4px 12px; border-radius: 12px; min-width: 220px;
+  }
+  .verdict.allow { background: #E4F3E6; color: var(--green); }
+  .verdict.deny { background: #FBE5E5; color: var(--red); }
+  .verdict.empty { background: transparent; color: var(--grey); font-weight: 400; }
+</style>
+</head>
+<body>
+
+<h1>Simulator VPC, Subnet, dan Aturan Firewall</h1>
+<p class="subtitle">Bab 9 — Virtual Private Cloud (VPC) dan Keamanan Jaringan</p>
+
+<div class="wrap">
+  <div class="instructions">
+    <strong>Cara main:</strong> Topologi VPC dengan 2 subnet dan beberapa VM sudah disiapkan di bawah. Nyalakan/matikan aturan firewall menggunakan kotak centang, lalu tekan tombol <strong>Uji</strong> pada tiap skenario lalu lintas untuk melihat apakah koneksinya diizinkan atau ditolak — beserta alasannya.
+  </div>
+
+  <div class="internet">🌐 Internet (di luar VPC)</div>
+
+  <div class="topology">
+    <div class="subnet">
+      <h3>subnet-web (us-central1)</h3>
+      <div class="cidr">CIDR: 10.0.1.0/24</div>
+      <div class="vm"><span class="dot"></span> vm-web-1 <span class="tag">tag: web</span></div>
+      <div class="vm"><span class="dot"></span> vm-web-2 <span class="tag">tag: web</span></div>
+    </div>
+    <div class="subnet">
+      <h3>subnet-db (us-central1)</h3>
+      <div class="cidr">CIDR: 10.0.2.0/24</div>
+      <div class="vm"><span class="dot"></span> vm-db-1 <span class="tag">tag: db</span></div>
+    </div>
+  </div>
+
+  <div class="rules">
+    <h3>Aturan Firewall (Ingress)</h3>
+    <div class="rule-row">
+      <input type="checkbox" id="r1" checked>
+      <span class="rname">allow-http-web</span>
+      <span class="rdesc">Izinkan TCP:80,443 dari 0.0.0.0/0 menuju VM bertag <code>web</code></span>
+    </div>
+    <div class="rule-row">
+      <input type="checkbox" id="r2" checked>
+      <span class="rname">allow-internal-web-to-db</span>
+      <span class="rdesc">Izinkan TCP:3306 dari subnet-web (10.0.1.0/24) menuju VM bertag <code>db</code></span>
+    </div>
+    <div class="rule-row">
+      <input type="checkbox" id="r3">
+      <span class="rname">allow-ssh-admin</span>
+      <span class="rdesc">Izinkan TCP:22 dari 0.0.0.0/0 menuju semua VM (tidak direkomendasikan untuk produksi)</span>
+    </div>
+    <div class="rule-row">
+      <input type="checkbox" id="r4" checked disabled>
+      <span class="rname">deny-all-default</span>
+      <span class="rdesc">Aturan implisit VPC: tolak semua ingress yang tidak cocok aturan allow manapun (selalu aktif)</span>
+    </div>
+  </div>
+
+  <div class="tests">
+    <h3>Skenario Uji Lalu Lintas</h3>
+
+    <div class="test-row" data-test="t1">
+      <div class="test-desc"><strong>1.</strong> Pengguna internet mengakses <em>vm-web-1</em> lewat HTTP (port 80)</div>
+      <button class="test-btn" data-test="t1">Uji</button>
+      <span class="verdict empty" id="v-t1">Belum diuji</span>
+    </div>
+
+    <div class="test-row" data-test="t2">
+      <div class="test-desc"><strong>2.</strong> <em>vm-web-1</em> (subnet-web) menghubungi <em>vm-db-1</em> lewat MySQL (port 3306)</div>
+      <button class="test-btn" data-test="t2">Uji</button>
+      <span class="verdict empty" id="v-t2">Belum diuji</span>
+    </div>
+
+    <div class="test-row" data-test="t3">
+      <div class="test-desc"><strong>3.</strong> Pengguna internet mencoba akses langsung ke <em>vm-db-1</em> lewat MySQL (port 3306)</div>
+      <button class="test-btn" data-test="t3">Uji</button>
+      <span class="verdict empty" id="v-t3">Belum diuji</span>
+    </div>
+
+    <div class="test-row" data-test="t4">
+      <div class="test-desc"><strong>4.</strong> Administrator dari internet mencoba SSH (port 22) ke <em>vm-web-2</em></div>
+      <button class="test-btn" data-test="t4">Uji</button>
+      <span class="verdict empty" id="v-t4">Belum diuji</span>
+    </div>
+  </div>
+</div>
+
+<script>
+function evalTest(id) {
+  const r1 = document.getElementById("r1").checked; // allow-http-web
+  const r2 = document.getElementById("r2").checked; // allow-internal-web-to-db
+  const r3 = document.getElementById("r3").checked; // allow-ssh-admin
+
+  let allow = false, reason = "";
+
+  if (id === "t1") {
+    if (r1) { allow = true; reason = "Diizinkan oleh aturan allow-http-web (internet → tag web, port 80)."; }
+    else { allow = false; reason = "Ditolak: tidak ada aturan allow yang cocok, deny-all-default berlaku."; }
+  }
+  if (id === "t2") {
+    if (r2) { allow = true; reason = "Diizinkan oleh aturan allow-internal-web-to-db (subnet-web → tag db, port 3306)."; }
+    else { allow = false; reason = "Ditolak: aturan allow-internal-web-to-db nonaktif, deny-all-default berlaku."; }
+  }
+  if (id === "t3") {
+    allow = false; reason = "Ditolak: tidak ada aturan yang mengizinkan 0.0.0.0/0 langsung ke tag db pada port 3306 — inilah tujuan desain tingkat subnet.";
+  }
+  if (id === "t4") {
+    if (r3) { allow = true; reason = "Diizinkan oleh aturan allow-ssh-admin — namun perhatikan, mengizinkan SSH dari 0.0.0.0/0 adalah praktik yang berisiko di produksi."; }
+    else { allow = false; reason = "Ditolak: aturan allow-ssh-admin nonaktif, deny-all-default berlaku (ini konfigurasi yang lebih aman)."; }
+  }
+
+  const el = document.getElementById("v-" + id);
+  el.textContent = (allow ? "✅ DIIZINKAN — " : "⛔ DITOLAK — ") + reason;
+  el.className = "verdict " + (allow ? "allow" : "deny");
+}
+
+document.querySelectorAll(".test-btn").forEach(btn => {
+  btn.addEventListener("click", () => evalTest(btn.dataset.test));
+});
+
+// Re-run any already-tested scenario when rules change, so results stay accurate
+["r1","r2","r3"].forEach(id => {
+  document.getElementById(id).addEventListener("change", () => {
+    ["t1","t2","t3","t4"].forEach(t => {
+      const el = document.getElementById("v-" + t);
+      if (!el.classList.contains("empty")) evalTest(t);
+    });
+  });
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spektrum Opsi Komputasi Google Cloud</title>
+<style>
+  :root { --navy:#1F3864; --lightblue:#DCE6F1; --yellow:#FFF2CC; --grey:#595959; --green:#2E7D32; }
+  * { box-sizing: border-box; }
+  body { font-family:'Segoe UI',Arial,Helvetica,sans-serif; background:#F7F9FC; color:#222; margin:0; padding:24px; }
+  h1 { color:var(--navy); font-size:1.5rem; text-align:center; margin-bottom:4px; }
+  p.subtitle { text-align:center; color:var(--grey); margin-top:0; margin-bottom:22px; }
+  .wrap { max-width: 820px; margin: 0 auto; }
+  .instructions {
+    background: var(--yellow); border: 1px solid #E8D28A; border-radius: 8px;
+    padding: 12px 18px; font-size: 0.95rem; margin-bottom: 26px;
+  }
+  .slider-track { position: relative; margin: 40px 10px 60px; }
+  input[type=range] {
+    width: 100%; -webkit-appearance: none; height: 8px; border-radius: 4px;
+    background: linear-gradient(to right, var(--navy), var(--lightblue));
+    outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 26px; height: 26px; border-radius: 50%;
+    background: #fff; border: 4px solid var(--navy); cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 26px; height: 26px; border-radius: 50%; background: #fff;
+    border: 4px solid var(--navy); cursor: pointer;
+  }
+  .ticks { display:flex; justify-content: space-between; margin-top: 10px; font-size: 0.72rem; color: var(--grey); }
+  .ticks span { width: 60px; text-align: center; }
+  .endpoints { display:flex; justify-content: space-between; margin-top: -4px; font-size: 0.78rem; font-weight: 700; color: var(--navy); }
+  .card {
+    background: #fff; border: 2px solid var(--lightblue); border-radius: 12px;
+    padding: 24px; text-align: center; min-height: 260px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.06); transition: all 0.2s;
+  }
+  .card .icon { font-size: 2.6rem; margin-bottom: 6px; }
+  .card h2 { color: var(--navy); margin: 4px 0 2px; font-size: 1.3rem; }
+  .card .tag {
+    display: inline-block; background: var(--lightblue); color: var(--navy);
+    font-size: 0.78rem; font-weight: 700; padding: 3px 12px; border-radius: 12px; margin-bottom: 14px;
+  }
+  .card p { font-size: 0.95rem; line-height: 1.55; color: #333; text-align: left; margin: 8px 0; }
+  .card .managed {
+    display: flex; gap: 12px; margin-top: 16px; font-size: 0.85rem;
+  }
+  .managed .box { flex: 1; border-radius: 8px; padding: 10px; text-align: left; }
+  .managed .user { background: var(--yellow); }
+  .managed .provider { background: var(--lightblue); }
+  .managed .box strong { display: block; margin-bottom: 4px; color: var(--navy); }
+  .progress-dots { display:flex; justify-content: center; gap: 10px; margin-top: 20px; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; background: #C7D2E0; transition: background 0.2s; }
+  .dot.active { background: var(--navy); }
+</style>
+</head>
+<body>
+
+<h1>Spektrum Opsi Komputasi Google Cloud</h1>
+<p class="subtitle">Bab 3 — Ragam Opsi Compute dan Praktik Compute Engine</p>
+
+<div class="wrap">
+  <div class="instructions">
+    <strong>Cara main:</strong> Geser slider untuk menjelajahi kelima opsi komputasi Google Cloud, dari yang paling banyak menuntut pengelolaan pengguna (kiri) hingga yang paling terabstraksi (kanan). Perhatikan bagaimana pembagian tanggung jawab berubah di tiap titik.
+  </div>
+
+  <div class="slider-track">
+    <div class="endpoints">
+      <span>◀ Kendali Penuh</span>
+      <span>Abstraksi Penuh ▶</span>
+    </div>
+    <input type="range" id="slider" min="0" max="4" step="1" value="0">
+    <div class="ticks">
+      <span>Compute Engine</span>
+      <span>App Engine</span>
+      <span>GKE</span>
+      <span>Cloud Run</span>
+      <span>Cloud Run Functions</span>
+    </div>
+  </div>
+
+  <div class="card" id="card"></div>
+
+  <div class="progress-dots" id="dots"></div>
+</div>
+
+<script>
+const options = [
+  {
+    icon: "🖥️", name: "Compute Engine", tag: "IaaS — Infrastructure as a Service",
+    desc: "Menjalankan mesin virtual (VM) sesuai konfigurasi Anda: vCPU, memori, sistem operasi, disk. Anda punya kendali penuh atas lingkungan eksekusi.",
+    user: "Sistem operasi, runtime, aplikasi, patching, penskalaan manual/autoscaling",
+    provider: "Perangkat keras fisik, virtualisasi, jaringan pusat data"
+  },
+  {
+    icon: "📦", name: "App Engine", tag: "PaaS — Platform as a Service",
+    desc: "Anda unggah kode aplikasi; platform otomatis menangani infrastruktur, penyediaan, dan penskalaan. Dua varian: standard dan flexible.",
+    user: "Kode aplikasi, konfigurasi runtime dasar",
+    provider: "Sistem operasi, patching, load balancing, penyediaan server"
+  },
+  {
+    icon: "☸️", name: "Google Kubernetes Engine (GKE)", tag: "Container Orchestration",
+    desc: "Platform terkelola untuk menjalankan aplikasi yang dikemas dalam container, diorkestrasikan otomatis oleh Kubernetes lintas cluster mesin.",
+    user: "Definisi container & manifest Kubernetes, kebijakan deployment",
+    provider: "Control plane Kubernetes, node infrastructure (terkelola)"
+  },
+  {
+    icon: "🐳", name: "Cloud Run", tag: "Serverless Container",
+    desc: "Menjalankan container secara serverless dan sepenuhnya terkelola — cukup serahkan container image, penskalaan otomatis hingga nol saat tidak ada trafik.",
+    user: "Container image aplikasi",
+    provider: "Seluruh infrastruktur eksekusi, penskalaan, load balancing"
+  },
+  {
+    icon: "⚡", name: "Cloud Run Functions", tag: "Serverless penuh (FaaS)",
+    desc: "Menjalankan satu fungsi kode tunggal sebagai respons terhadap peristiwa (event-driven) — tanpa server yang perlu dikelola sama sekali.",
+    user: "Kode fungsi saja",
+    provider: "Segalanya: server, runtime, penskalaan, event trigger"
+  }
+];
+
+const slider = document.getElementById("slider");
+const card = document.getElementById("card");
+const dotsWrap = document.getElementById("dots");
+
+options.forEach((_, i) => {
+  const d = document.createElement("div");
+  d.className = "dot" + (i === 0 ? " active" : "");
+  dotsWrap.appendChild(d);
+});
+
+function render(idx) {
+  const o = options[idx];
+  card.innerHTML = `
+    <div class="icon">${o.icon}</div>
+    <h2>${o.name}</h2>
+    <div class="tag">${o.tag}</div>
+    <p>${o.desc}</p>
+    <div class="managed">
+      <div class="box user"><strong>Dikelola Anda</strong>${o.user}</div>
+      <div class="box provider"><strong>Dikelola Google Cloud</strong>${o.provider}</div>
+    </div>
+  `;
+  document.querySelectorAll(".dot").forEach((d, i) => d.classList.toggle("active", i === idx));
+}
+
+slider.addEventListener("input", () => render(parseInt(slider.value, 10)));
+render(0);
+</script>
+
+</body>
+</html>

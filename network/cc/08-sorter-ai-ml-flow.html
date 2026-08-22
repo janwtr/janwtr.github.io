@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Peta Opsi AI/ML dan Alur Data ke Model</title>
+<style>
+  :root { --navy:#1F3864; --lightblue:#DCE6F1; --yellow:#FFF2CC; --grey:#595959; --green:#2E7D32; --red:#C62828; }
+  * { box-sizing: border-box; }
+  body { font-family:'Segoe UI',Arial,Helvetica,sans-serif; background:#F7F9FC; color:#222; margin:0; padding:24px; }
+  h1 { color:var(--navy); font-size:1.5rem; text-align:center; margin-bottom:4px; }
+  h2.section { color: var(--navy); font-size: 1.1rem; text-align: center; margin: 34px 0 6px; }
+  p.subtitle { text-align:center; color:var(--grey); margin-top:0; margin-bottom:20px; }
+  .wrap { max-width: 940px; margin: 0 auto; }
+  .instructions {
+    background: var(--yellow); border: 1px solid #E8D28A; border-radius: 8px;
+    padding: 12px 18px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .buckets { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 18px; }
+  .bucket {
+    background: #fff; border: 2px solid var(--lightblue); border-radius: 10px; padding: 14px; min-height: 200px;
+  }
+  .bucket h3 { color: var(--navy); font-size: 0.95rem; text-align: center; margin: 0 0 10px; }
+  .pool-strip {
+    display: flex; flex-wrap: wrap; gap: 8px; background: #fff; border: 2px dashed #C7D2E0;
+    border-radius: 10px; padding: 12px; margin-top: 14px; min-height: 50px;
+  }
+  .concept {
+    background: var(--lightblue); color: var(--navy); border-radius: 8px; padding: 8px 14px;
+    font-size: 0.85rem; font-weight: 600; cursor: pointer;
+  }
+  .concept:hover { transform: scale(1.03); }
+  .bucket .concept.wrong { outline: 2px solid var(--red); }
+  .controls { text-align: center; margin-top: 18px; }
+  button.action {
+    background: var(--navy); color: #fff; border: none; padding: 10px 22px;
+    border-radius: 24px; font-size: 0.95rem; cursor: pointer; margin: 0 6px;
+  }
+  button.action:hover { opacity: 0.9; }
+  button.secondary { background: #fff; color: var(--navy); border: 1.5px solid var(--navy); }
+  #result { text-align: center; font-weight: 700; font-size: 1.02rem; min-height: 26px; margin-top: 14px; }
+  #result.ok { color: var(--green); }
+  #result.bad { color: var(--red); }
+
+  .flow { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 16px; flex-wrap: wrap; }
+  .stage {
+    background: #fff; border: 2px solid #C7D2E0; border-radius: 10px; padding: 14px 16px;
+    font-size: 0.85rem; text-align: center; width: 150px; transition: all 0.3s;
+  }
+  .stage .icon { font-size: 1.6rem; margin-bottom: 4px; }
+  .stage.active { border-color: var(--navy); background: var(--lightblue); transform: scale(1.06); }
+  .stage.done { border-color: var(--green); background: #E4F3E6; }
+  .flow-arrow { color: var(--grey); font-size: 1.3rem; }
+  .flow-desc { text-align: center; min-height: 24px; font-size: 0.9rem; color: var(--navy); font-weight: 600; margin-top: 12px; }
+</style>
+</head>
+<body>
+
+<h1>Peta Opsi AI/ML dan Alur Data ke Model</h1>
+<p class="subtitle">Bab 14 — Kecerdasan Buatan dan Machine Learning di Google Cloud</p>
+
+<div class="wrap">
+  <h2 class="section">Bagian 1: Kelompokkan Opsi Membangun Model AI/ML</h2>
+  <div class="instructions">
+    <strong>Cara main:</strong> Klik tiap kartu konsep di bagian bawah untuk memindahkannya ke keranjang yang sesuai — "Butuh Keahlian ML Mendalam" atau "Ramah untuk Non-Spesialis". Klik kartu di dalam keranjang untuk mengembalikannya. Tekan Periksa saat semua sudah dikelompokkan.
+  </div>
+
+  <div class="buckets">
+    <div class="bucket" id="bucketDeep" data-bucket="deep">
+      <h3>🧠 Butuh Keahlian ML Mendalam & Data Besar</h3>
+      <div class="bucket-items" id="itemsDeep"></div>
+    </div>
+    <div class="bucket" id="bucketEasy" data-bucket="easy">
+      <h3>🧩 Ramah untuk Non-Spesialis</h3>
+      <div class="bucket-items" id="itemsEasy"></div>
+    </div>
+  </div>
+
+  <div class="pool-strip" id="poolStrip"></div>
+
+  <div class="controls">
+    <button class="action" id="checkBtn">Periksa Pengelompokan</button>
+    <button class="action secondary" id="resetBtn">Ulangi</button>
+    <button class="action secondary" id="revealBtn">Tampilkan Kunci</button>
+  </div>
+  <div id="result"></div>
+
+  <h2 class="section">Bagian 2: Alur Data Menjadi Prediksi</h2>
+  <div class="instructions">
+    Tekan <strong>Jalankan Animasi</strong> untuk melihat tahapan bagaimana data mentah menjadi layanan prediksi yang bisa dipanggil aplikasi.
+  </div>
+
+  <div class="flow" id="flowRow"></div>
+  <div class="flow-desc" id="flowDesc"></div>
+  <div class="controls">
+    <button class="action" id="playBtn">Jalankan Animasi</button>
+  </div>
+</div>
+
+<script>
+// ---------- Bagian 1: Sorter ----------
+const concepts = [
+  { id: "custom", label: "Membangun model kustom dari nol (TensorFlow/PyTorch)", bucket: "deep" },
+  { id: "vertex-training", label: "Vertex AI Custom Training dengan kode pelatihan sendiri", bucket: "deep" },
+  { id: "transfer", label: "Transfer learning — melatih ulang sebagian model pra-latih", bucket: "deep" },
+  { id: "hyperparam", label: "Tuning hyperparameter manual untuk performa optimal", bucket: "deep" },
+  { id: "pretrained-api", label: "Memanggil Pre-trained API (Vision AI, Natural Language AI)", bucket: "easy" },
+  { id: "automl", label: "Vertex AI AutoML — unggah data, model dilatih otomatis", bucket: "easy" },
+  { id: "bqml", label: "BigQuery ML — buat model langsung lewat query SQL", bucket: "easy" },
+  { id: "genai-studio", label: "Vertex AI Studio — mencoba prompt model generatif tanpa kode", bucket: "easy" },
+];
+
+let placement = {}; // id -> 'deep' | 'easy' | null
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(((i * 9301 + 49297) % 233280) / 233280 * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+const poolOrder = shuffle(concepts.map(c => c.id));
+
+function buildSorter() {
+  placement = {};
+  concepts.forEach(c => placement[c.id] = null);
+  renderSorter();
+}
+
+function renderSorter() {
+  const pool = document.getElementById("poolStrip");
+  const deep = document.getElementById("itemsDeep");
+  const easy = document.getElementById("itemsEasy");
+  pool.innerHTML = ""; deep.innerHTML = ""; easy.innerHTML = "";
+
+  poolOrder.forEach(id => {
+    if (placement[id]) return;
+    const c = concepts.find(x => x.id === id);
+    const div = document.createElement("div");
+    div.className = "concept";
+    div.textContent = c.label;
+    div.addEventListener("click", () => { placement[id] = "deep"; renderSorter(); clearResult(); });
+    pool.appendChild(div);
+  });
+
+  concepts.forEach(c => {
+    if (placement[c.id] !== "deep" && placement[c.id] !== "easy") return;
+    const target = placement[c.id] === "deep" ? deep : easy;
+    const div = document.createElement("div");
+    div.className = "concept";
+    div.textContent = c.label;
+    div.dataset.id = c.id;
+    div.addEventListener("click", () => { placement[c.id] = null; renderSorter(); clearResult(); });
+    target.appendChild(div);
+  });
+}
+
+function clearResult() {
+  document.getElementById("result").textContent = "";
+  document.getElementById("result").className = "";
+}
+
+function checkSorter() {
+  const resultEl = document.getElementById("result");
+  const unplaced = concepts.filter(c => !placement[c.id]);
+  if (unplaced.length > 0) {
+    resultEl.textContent = `Masih ada ${unplaced.length} kartu di area tengah — kelompokkan dulu semuanya.`;
+    resultEl.className = "bad";
+    return;
+  }
+  let correct = 0;
+  concepts.forEach(c => {
+    const el = document.querySelector(`.concept[data-id="${c.id}"]`);
+    if (placement[c.id] === c.bucket) { correct++; el.classList.remove("wrong"); }
+    else { el.classList.add("wrong"); }
+  });
+  const total = concepts.length;
+  const pct = Math.round((correct/total)*100);
+  if (correct === total) {
+    resultEl.textContent = `Sempurna! ${correct}/${total} benar (100%).`;
+    resultEl.className = "ok";
+  } else {
+    resultEl.textContent = `${correct}/${total} benar (${pct}%). Kartu bergaris merah masih keliru — tinjau ulang Bab 14.`;
+    resultEl.className = "bad";
+  }
+}
+
+function revealSorter() {
+  concepts.forEach(c => placement[c.id] = c.bucket);
+  renderSorter();
+  document.getElementById("result").textContent = "Ini kunci jawabannya — tekan Ulangi untuk mencoba sendiri.";
+  document.getElementById("result").className = "";
+}
+
+document.getElementById("checkBtn").addEventListener("click", checkSorter);
+document.getElementById("resetBtn").addEventListener("click", buildSorter);
+document.getElementById("revealBtn").addEventListener("click", revealSorter);
+buildSorter();
+
+// ---------- Bagian 2: Flow animation ----------
+const stages = [
+  { icon: "🗂️", label: "Kumpulkan & Siapkan Data", desc: "Data mentah dibersihkan, dilabeli, dan disimpan (Cloud Storage/BigQuery)." },
+  { icon: "🏋️", label: "Latih Model", desc: "Model dilatih memakai AutoML, custom training, atau fine-tuning atas model pra-latih." },
+  { icon: "🚀", label: "Deploy ke Endpoint", desc: "Model dipublikasikan sebagai endpoint Vertex AI yang siap menerima permintaan." },
+  { icon: "🔌", label: "Aplikasi Memanggil API", desc: "Aplikasi mengirim data baru ke endpoint dan menerima hasil prediksi secara real-time." },
+];
+
+function buildFlow() {
+  const row = document.getElementById("flowRow");
+  row.innerHTML = "";
+  stages.forEach((s, i) => {
+    const div = document.createElement("div");
+    div.className = "stage";
+    div.id = "stage-" + i;
+    div.innerHTML = `<div class="icon">${s.icon}</div>${s.label}`;
+    row.appendChild(div);
+    if (i < stages.length - 1) {
+      const arrow = document.createElement("span");
+      arrow.className = "flow-arrow";
+      arrow.textContent = "→";
+      row.appendChild(arrow);
+    }
+  });
+}
+
+let playing = false;
+function playAnimation() {
+  if (playing) return;
+  playing = true;
+  stages.forEach((_, i) => document.getElementById("stage-" + i).classList.remove("active", "done"));
+  document.getElementById("flowDesc").textContent = "";
+  let step = 0;
+  function next() {
+    if (step > 0) document.getElementById("stage-" + (step - 1)).classList.replace("active", "done");
+    if (step >= stages.length) { playing = false; document.getElementById("flowDesc").textContent = "Selesai — data telah menjadi layanan prediksi yang siap dipakai."; return; }
+    const el = document.getElementById("stage-" + step);
+    el.classList.add("active");
+    document.getElementById("flowDesc").textContent = stages[step].desc;
+    step++;
+    setTimeout(next, 1400);
+  }
+  next();
+}
+
+document.getElementById("playBtn").addEventListener("click", playAnimation);
+buildFlow();
+</script>
+
+</body>
+</html>
