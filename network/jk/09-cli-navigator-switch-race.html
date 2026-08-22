@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Navigator Mode CLI Cisco &amp; Simulasi MAC Address Switch</title>
+<style>
+:root{
+  --bg:#0f1420;
+  --panel:#161d2e;
+  --panel2:#1d2740;
+  --border:#2b3654;
+  --text:#e7ecf7;
+  --text-dim:#94a3c4;
+  --accent:#4fd1c5;
+  --accent2:#7c9eff;
+  --warn:#f5a623;
+  --danger:#ff6b6b;
+  --success:#4ade80;
+  --flood:#f5a623;
+  --forward:#4ade80;
+  --mono: "Cascadia Code","Fira Code",Consolas,"Courier New",monospace;
+  --sans: "Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--sans);
+  min-height:100vh;
+}
+header.app-header{
+  padding:18px 24px 10px;
+  border-bottom:1px solid var(--border);
+  background:linear-gradient(180deg,#141b2c,#0f1420);
+}
+header.app-header h1{
+  margin:0 0 4px;
+  font-size:1.4rem;
+  letter-spacing:.2px;
+}
+header.app-header p{
+  margin:0;
+  color:var(--text-dim);
+  font-size:.85rem;
+}
+.tabs{
+  display:flex;
+  gap:8px;
+  padding:12px 24px 0;
+  border-bottom:1px solid var(--border);
+  background:#0f1420;
+  flex-wrap:wrap;
+}
+.tab-btn{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-bottom:none;
+  color:var(--text-dim);
+  padding:10px 18px;
+  border-radius:10px 10px 0 0;
+  cursor:pointer;
+  font-size:.9rem;
+  font-weight:600;
+  transition:all .15s ease;
+}
+.tab-btn:hover{color:var(--text);}
+.tab-btn.active{
+  color:var(--accent);
+  background:var(--panel2);
+  border-color:var(--accent);
+  box-shadow:0 -2px 0 var(--accent) inset;
+}
+main{
+  padding:20px 24px 40px;
+  max-width:1200px;
+  margin:0 auto;
+}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+.intro{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:14px 18px;
+  margin-bottom:18px;
+  font-size:.92rem;
+  line-height:1.55;
+  color:var(--text-dim);
+}
+.intro strong{color:var(--text);}
+h2.section-title{
+  font-size:1.05rem;
+  margin:0 0 10px;
+  color:var(--accent2);
+}
+.grid{
+  display:grid;
+  grid-template-columns:1.5fr 1fr;
+  gap:18px;
+}
+@media (max-width:900px){
+  .grid{grid-template-columns:1fr;}
+}
+.card{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:16px;
+}
+svg{width:100%;height:auto;display:block;}
+.node-label{fill:var(--text);font-family:var(--sans);font-weight:600;font-size:13px;}
+.node-prompt{fill:var(--text-dim);font-family:var(--mono);font-size:11px;}
+.edge-label{fill:var(--text-dim);font-family:var(--mono);font-size:10.5px;cursor:pointer;}
+.edge-label:hover{fill:var(--accent);}
+.edge-path{stroke:var(--border);stroke-width:1.6;fill:none;cursor:pointer;}
+.edge-path:hover{stroke:var(--accent2);stroke-width:2.4;}
+.edge-path.dashed{stroke-dasharray:4 4;}
+.node-circle{
+  stroke:var(--border);
+  stroke-width:2;
+  fill:var(--panel2);
+  transition:all .2s ease;
+}
+.node-circle.current{
+  stroke:var(--accent);
+  stroke-width:3;
+  fill:#12332f;
+  filter:drop-shadow(0 0 6px rgba(79,209,197,.6));
+}
+.terminal{
+  background:#05070c;
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:12px 14px;
+  font-family:var(--mono);
+  font-size:.85rem;
+  color:#c8ffcb;
+  min-height:120px;
+  max-height:220px;
+  overflow-y:auto;
+}
+.terminal .prompt-line{color:#79f2c0;}
+.terminal .hist-line{color:#8fb0e6;opacity:.85;}
+.terminal .cur-prompt{
+  font-size:1.05rem;
+  color:var(--accent);
+  font-weight:700;
+  margin-bottom:6px;
+  padding-bottom:6px;
+  border-bottom:1px dashed var(--border);
+}
+.cmd-list{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  margin-top:10px;
+}
+.cmd-btn{
+  text-align:left;
+  background:var(--panel2);
+  border:1px solid var(--border);
+  color:var(--text);
+  padding:8px 12px;
+  border-radius:8px;
+  font-family:var(--mono);
+  font-size:.82rem;
+  cursor:pointer;
+  transition:all .12s ease;
+}
+.cmd-btn:hover{
+  border-color:var(--accent);
+  background:#1a2a3c;
+  transform:translateX(2px);
+}
+.cmd-btn .arrow-to{color:var(--text-dim);float:right;font-family:var(--sans);font-size:.72rem;}
+.btn{
+  background:var(--accent2);
+  color:#0b1120;
+  border:none;
+  padding:8px 14px;
+  border-radius:8px;
+  font-weight:600;
+  cursor:pointer;
+  font-size:.85rem;
+}
+.btn.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--border);}
+.btn:hover{filter:brightness(1.1);}
+.challenge-box{
+  margin-top:14px;
+  padding:12px;
+  border:1px dashed var(--warn);
+  border-radius:10px;
+  background:rgba(245,166,35,.06);
+}
+.challenge-box.success{
+  border-color:var(--success);
+  background:rgba(74,222,128,.08);
+}
+.pill{
+  display:inline-block;
+  padding:2px 9px;
+  border-radius:999px;
+  font-size:.72rem;
+  font-weight:700;
+  background:var(--panel2);
+  border:1px solid var(--border);
+  margin-left:6px;
+}
+/* Tab 2 */
+.mac-table{
+  width:100%;
+  border-collapse:collapse;
+  font-family:var(--mono);
+  font-size:.82rem;
+}
+.mac-table th,.mac-table td{
+  padding:7px 9px;
+  border-bottom:1px solid var(--border);
+  text-align:left;
+}
+.mac-table th{color:var(--text-dim);font-family:var(--sans);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;}
+.mac-table tr.new-row{animation:flashrow 1.4s ease;}
+@keyframes flashrow{
+  0%{background:rgba(79,209,197,.35);}
+  100%{background:transparent;}
+}
+.legend{
+  display:flex;
+  gap:16px;
+  flex-wrap:wrap;
+  font-size:.78rem;
+  color:var(--text-dim);
+  margin-top:10px;
+}
+.legend span{display:inline-flex;align-items:center;gap:6px;}
+.swatch{width:14px;height:14px;border-radius:4px;display:inline-block;}
+.swatch.flood{background:var(--flood);}
+.swatch.forward{background:var(--forward);}
+.event-log{
+  background:#05070c;
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:10px 12px;
+  font-family:var(--mono);
+  font-size:.78rem;
+  max-height:180px;
+  overflow-y:auto;
+  color:var(--text-dim);
+}
+.event-log .flood-tag{color:var(--flood);font-weight:700;}
+.event-log .forward-tag{color:var(--forward);font-weight:700;}
+.event-log .learn-tag{color:var(--accent2);font-weight:700;}
+.scenario-controls{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:14px;
+}
+.status-line{
+  font-size:.85rem;
+  color:var(--text-dim);
+  margin-bottom:10px;
+  min-height:20px;
+}
+.frame-dot{filter:drop-shadow(0 0 4px currentColor);}
+footer.credit{
+  text-align:center;
+  color:var(--text-dim);
+  font-size:.72rem;
+  padding:20px;
+}
+</style>
+</head>
+<body>
+<header class="app-header">
+  <h1>Navigator Mode CLI Cisco &amp; Simulasi Pembelajaran MAC Address oleh Switch</h1>
+  <p>Alat bantu praktikum Jaringan Komputer &mdash; latihan interaktif untuk memahami mode CLI IOS dan cara kerja switch Layer 2.</p>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-tab="tab1" id="btn-tab1">1. Navigator Mode CLI</button>
+  <button class="tab-btn" data-tab="tab2" id="btn-tab2">2. Simulasi MAC Address Table &amp; Forwarding</button>
+</nav>
+
+<main>
+  <!-- ===================== TAB 1 ===================== -->
+  <section id="tab1" class="tab-panel active">
+    <div class="intro">
+      Setiap perintah pada Cisco IOS hanya berlaku pada <strong>mode</strong> tertentu, sehingga penting memahami bagaimana kita berpindah antar mode. Klik salah satu tombol perintah di bawah untuk "menjalankan" perintah tersebut dan lihat bagaimana indikator mode aktif serta prompt terminal berubah. Diagram ini menampilkan enam mode utama beserta perintah yang menghubungkannya.
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2 class="section-title">Diagram Mode CLI</h2>
+        <svg id="diagram" viewBox="0 0 900 520" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+
+      <div>
+        <div class="card">
+          <h2 class="section-title">Terminal Simulasi</h2>
+          <div class="terminal" id="terminal">
+            <div class="cur-prompt" id="curPrompt">Switch&gt;</div>
+            <div id="histLog"></div>
+          </div>
+          <div class="cmd-list" id="cmdList"></div>
+        </div>
+
+        <div class="card" style="margin-top:14px;">
+          <h2 class="section-title">Mode Tantangan <span class="pill" id="challengeStatusPill">nonaktif</span></h2>
+          <p style="font-size:.83rem;color:var(--text-dim);margin:0 0 10px;">
+            Sistem akan memberi target mode. Klik perintah yang menurutmu benar secara berurutan untuk mencapainya. Jika salah jalur, kamu tidak dianggap "gagal" &mdash; kamu hanya akan melihat ke mode mana perintah itu sebenarnya membawamu, lalu bisa lanjut mencari jalan yang benar.
+          </p>
+          <div id="challengeArea">
+            <button class="btn" id="startChallengeBtn">Mulai Tantangan</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== TAB 2 ===================== -->
+  <section id="tab2" class="tab-panel">
+    <div class="intro">
+      Switch Layer 2 mempelajari alamat MAC dari frame yang masuk lalu menyimpannya pada <strong>tabel MAC (CAM table)</strong>. Selama alamat MAC tujuan belum diketahui, switch akan <strong style="color:var(--flood)">flood</strong> (mengirim frame ke semua port kecuali port asal) &mdash; ini kurang efisien dan membuat host lain ikut melihat frame tersebut. Setelah MAC tujuan dipelajari, switch cukup <strong style="color:var(--forward)">forward</strong> (meneruskan) frame hanya ke satu port yang benar.
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <h2 class="section-title">Skenario Terpandu</h2>
+      <div class="status-line" id="scenarioStatus">Langkah 0 dari 3: Tabel MAC masih kosong. Klik "Langkah Berikutnya" untuk mulai.</div>
+      <div class="scenario-controls">
+        <button class="btn" id="nextStepBtn">Langkah Berikutnya &rarr;</button>
+        <button class="btn secondary" id="resetScenarioBtn">Reset Skenario</button>
+      </div>
+      <div class="legend">
+        <span><span class="swatch flood"></span> Flood (tujuan belum dikenal &mdash; dikirim ke semua port kecuali port asal)</span>
+        <span><span class="swatch forward"></span> Forward (tujuan sudah dikenal &mdash; dikirim ke satu port saja)</span>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2 class="section-title">Topologi Switch</h2>
+        <svg id="switchDiagram" viewBox="0 0 900 500" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div class="scenario-controls" style="margin-top:10px;">
+          <button class="btn secondary manual-send" data-src="A" data-dst="C">Kirim: PC-A &rarr; PC-C</button>
+          <button class="btn secondary manual-send" data-src="C" data-dst="A">Kirim: PC-C &rarr; PC-A</button>
+          <button class="btn secondary manual-send" data-src="B" data-dst="D">Kirim: PC-B &rarr; PC-D</button>
+          <button class="btn secondary manual-send" data-src="D" data-dst="B">Kirim: PC-D &rarr; PC-B</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h2 class="section-title">Tabel MAC Address Switch</h2>
+          <table class="mac-table">
+            <thead><tr><th>Port</th><th>MAC Address</th><th>Aging (detik)</th></tr></thead>
+            <tbody id="macTableBody">
+              <tr><td colspan="3" style="color:var(--text-dim);">(kosong)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card" style="margin-top:14px;">
+          <h2 class="section-title">Log Kejadian</h2>
+          <div class="event-log" id="eventLog"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="credit">Alat bantu Praktikum Jaringan Komputer &mdash; dibuat untuk latihan mandiri.</footer>
+
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   TAB SWITCHING
+   ============================================================ */
+document.getElementById('btn-tab1').addEventListener('click', function(){ showTab('tab1'); });
+document.getElementById('btn-tab2').addEventListener('click', function(){ showTab('tab2'); });
+function showTab(id){
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+  document.getElementById('btn-'+id).classList.add('active');
+}
+
+/* ============================================================
+   TAB 1: CLI MODE NAVIGATOR
+   ============================================================ */
+var nodes = {
+  user:   {label:"User EXEC",             prompt:"Switch&gt;",              x:110, y:270},
+  priv:   {label:"Privileged EXEC",       prompt:"Switch#",                x:400, y:270},
+  global: {label:"Global Configuration",  prompt:"Switch(config)#",        x:680, y:270},
+  iface:  {label:"Interface Configuration", prompt:"Switch(config-if)#",   x:830, y:80},
+  line:   {label:"Line Configuration",    prompt:"Switch(config-line)#",   x:830, y:270},
+  vlan:   {label:"VLAN Configuration",    prompt:"Switch(config-vlan)#",   x:830, y:460}
+};
+
+var edges = [
+  {id:"e1", from:"user",   to:"priv",   cmd:"enable",                label:"enable",              dashed:false},
+  {id:"e2", from:"priv",   to:"user",   cmd:"disable",                label:"disable / exit",      dashed:false},
+  {id:"e3", from:"priv",   to:"global", cmd:"configure terminal",     label:"configure terminal",  dashed:false},
+  {id:"e4", from:"global", to:"priv",   cmd:"exit",                   label:"exit",                dashed:false},
+  {id:"e5", from:"global", to:"iface",  cmd:"interface fa0/1",        label:"interface fa0/1",     dashed:false},
+  {id:"e6", from:"iface",  to:"global", cmd:"exit",                   label:"exit",                dashed:false},
+  {id:"e7", from:"iface",  to:"priv",   cmd:"end",                    label:"end (Ctrl+Z)",        dashed:true},
+  {id:"e8", from:"global", to:"line",   cmd:"line console 0",         label:"line console 0",      dashed:false},
+  {id:"e9", from:"line",   to:"global", cmd:"exit",                   label:"exit",                dashed:false},
+  {id:"e10",from:"line",   to:"priv",   cmd:"end",                    label:"end (Ctrl+Z)",        dashed:true},
+  {id:"e11",from:"global", to:"vlan",   cmd:"vlan 10",                label:"vlan 10",             dashed:false},
+  {id:"e12",from:"vlan",   to:"global", cmd:"exit",                   label:"exit",                dashed:false},
+  {id:"e13",from:"vlan",   to:"priv",   cmd:"end",                    label:"end (Ctrl+Z)",        dashed:true}
+];
+
+var currentMode = "user";
+var history = [];
+var challengeActive = false;
+var challengeTarget = null;
+var challengeSteps = 0;
+
+var svg = document.getElementById('diagram');
+var NS = "http://www.w3.org/2000/svg";
+
+function el(tag, attrs){
+  var e = document.createElementNS(NS, tag);
+  for (var k in attrs){ e.setAttribute(k, attrs[k]); }
+  return e;
+}
+
+function midpoint(a,b){ return {x:(a.x+b.x)/2, y:(a.y+b.y)/2}; }
+
+function buildDiagram(){
+  svg.innerHTML = "";
+  var arrowMarker = el('marker', {id:'arrowhead', markerWidth:'8', markerHeight:'8', refX:'6', refY:'3', orient:'auto'});
+  var arrowPath = el('path', {d:'M0,0 L6,3 L0,6 Z', fill:'#7c9eff'});
+  arrowMarker.appendChild(arrowPath);
+  var defs = el('defs', {});
+  defs.appendChild(arrowMarker);
+  svg.appendChild(defs);
+
+  // draw edges (as slightly curved paths so multiple edges between same pair don't overlap)
+  var pairCounts = {};
+  edges.forEach(function(edge){
+    var a = nodes[edge.from], b = nodes[edge.to];
+    var key = [edge.from, edge.to].sort().join('-');
+    pairCounts[key] = (pairCounts[key]||0) + 1;
+    var offset = (edge.from < edge.to ? 1 : -1) * 14 * pairCounts[key];
+    var mx = (a.x+b.x)/2, my = (a.y+b.y)/2;
+    var dx = b.x-a.x, dy = b.y-a.y;
+    var len = Math.sqrt(dx*dx+dy*dy) || 1;
+    var nx = -dy/len, ny = dx/len;
+    var cx = mx + nx*offset, cy = my + ny*offset;
+    var path = el('path', {
+      d: 'M '+a.x+' '+a.y+' Q '+cx+' '+cy+' '+b.x+' '+b.y,
+      class: 'edge-path' + (edge.dashed ? ' dashed' : ''),
+      'marker-end':'url(#arrowhead)',
+      'data-edge': edge.id
+    });
+    path.addEventListener('click', function(){ runCommand(edge); });
+    svg.appendChild(path);
+
+    var lbl = el('text', {
+      x: cx, y: cy - 4, class:'edge-label', 'text-anchor':'middle', 'data-edge': edge.id
+    });
+    lbl.textContent = edge.label;
+    lbl.addEventListener('click', function(){ runCommand(edge); });
+    svg.appendChild(lbl);
+  });
+
+  // draw nodes
+  Object.keys(nodes).forEach(function(key){
+    var n = nodes[key];
+    var g = el('g', {'data-node': key});
+    var circle = el('circle', {cx:n.x, cy:n.y, r:46, class:'node-circle', id:'circ-'+key});
+    g.appendChild(circle);
+    var lbl = el('text', {x:n.x, y:n.y-4, class:'node-label', 'text-anchor':'middle'});
+    lbl.textContent = n.label;
+    g.appendChild(lbl);
+    var pr = el('text', {x:n.x, y:n.y+14, class:'node-prompt', 'text-anchor':'middle'});
+    pr.textContent = n.prompt.replace('&gt;','>');
+    g.appendChild(pr);
+    svg.appendChild(g);
+  });
+}
+
+function renderCommandList(){
+  var list = document.getElementById('cmdList');
+  list.innerHTML = "";
+  var available = edges.filter(function(e){ return e.from === currentMode; });
+  available.forEach(function(edge){
+    var btn = document.createElement('button');
+    btn.className = 'cmd-btn';
+    btn.innerHTML = edge.cmd + '<span class="arrow-to">&rarr; ' + nodes[edge.to].label + '</span>';
+    btn.addEventListener('click', function(){ runCommand(edge); });
+    list.appendChild(btn);
+  });
+}
+
+function updateNodeHighlight(){
+  Object.keys(nodes).forEach(function(key){
+    document.getElementById('circ-'+key).classList.toggle('current', key === currentMode);
+  });
+}
+
+function updatePromptPanel(){
+  document.getElementById('curPrompt').innerHTML = nodes[currentMode].prompt;
+}
+
+function appendHistory(text, meta){
+  var line = document.createElement('div');
+  line.className = 'hist-line';
+  line.textContent = text;
+  var log = document.getElementById('histLog');
+  log.appendChild(line);
+  document.getElementById('terminal').scrollTop = document.getElementById('terminal').scrollHeight;
+}
+
+function runCommand(edge){
+  var fromLabel = nodes[currentMode].label;
+  currentMode = edge.to;
+  history.push(edge.cmd);
+  appendHistory(nodes[edge.from].prompt.replace('&gt;','>') + ' ' + edge.cmd + '   [' + fromLabel + ' -> ' + nodes[edge.to].label + ']');
+  updateNodeHighlight();
+  updatePromptPanel();
+  renderCommandList();
+
+  if (challengeActive){
+    challengeSteps++;
+    checkChallenge();
+  }
+}
+
+function checkChallenge(){
+  var area = document.getElementById('challengeArea');
+  if (currentMode === challengeTarget){
+    challengeActive = false;
+    document.getElementById('challengeStatusPill').textContent = 'berhasil';
+    area.innerHTML = '<div class="challenge-box success">' +
+      '<strong>Berhasil!</strong> Kamu mencapai <em>' + nodes[challengeTarget].label + '</em> dalam ' + challengeSteps + ' langkah.' +
+      '</div><button class="btn" id="startChallengeBtn2">Coba Tantangan Lain</button>';
+    document.getElementById('startChallengeBtn2').addEventListener('click', startChallenge);
+  } else {
+    document.getElementById('challengeStatusPill').textContent = 'berjalan (' + challengeSteps + ' langkah)';
+    area.innerHTML = '<div class="challenge-box">' +
+      'Target: <strong>' + nodes[challengeTarget].label + '</strong> (' + nodes[challengeTarget].prompt.replace('&gt;','>') + ')<br>' +
+      'Posisi sekarang: <strong>' + nodes[currentMode].label + '</strong>. Perintah terakhir membawamu ke sini &mdash; lanjutkan mencari jalur menuju target di daftar perintah di atas.' +
+      '</div>';
+  }
+}
+
+function startChallenge(){
+  var keys = Object.keys(nodes).filter(function(k){ return k !== currentMode; });
+  challengeTarget = keys[Math.floor(Math.random()*keys.length)];
+  challengeActive = true;
+  challengeSteps = 0;
+  document.getElementById('challengeStatusPill').textContent = 'berjalan (0 langkah)';
+  var area = document.getElementById('challengeArea');
+  area.innerHTML = '<div class="challenge-box">' +
+    'Target: <strong>' + nodes[challengeTarget].label + '</strong> (' + nodes[challengeTarget].prompt.replace('&gt;','>') + ')<br>' +
+    'Klik perintah-perintah di daftar "Terminal Simulasi" untuk mencapainya.' +
+    '</div>';
+}
+
+document.getElementById('startChallengeBtn').addEventListener('click', startChallenge);
+
+buildDiagram();
+renderCommandList();
+updateNodeHighlight();
+updatePromptPanel();
+
+/* ============================================================
+   TAB 2: MAC ADDRESS LEARNING & FORWARDING SIMULATION
+   ============================================================ */
+var ports = {
+  A: {port:"Fa0/1", mac:"AAAA.AAAA.AAAA", name:"PC-A", x:120, y:120, portX:330, portY:150},
+  B: {port:"Fa0/2", mac:"BBBB.BBBB.BBBB", name:"PC-B", x:120, y:400, portX:330, portY:350},
+  C: {port:"Fa0/3", mac:"CCCC.CCCC.CCCC", name:"PC-C", x:780, y:120, portX:570, portY:150},
+  D: {port:"Fa0/4", mac:"DDDD.DDDD.DDDD", name:"PC-D", x:780, y:400, portX:570, portY:350}
+};
+var switchBox = {x:350, y:200, w:200, h:100};
+
+var macTable = {}; // port -> {mac, age}
+var eventLogEl = document.getElementById('eventLog');
+var macTableBody = document.getElementById('macTableBody');
+var scenarioStatus = document.getElementById('scenarioStatus');
+var scenarioStep = 0;
+var animBusy = false;
+
+var svg2 = document.getElementById('switchDiagram');
+
+function buildSwitchDiagram(){
+  svg2.innerHTML = "";
+  // connection lines
+  Object.keys(ports).forEach(function(k){
+    var p = ports[k];
+    var line = el('line', {x1:p.x, y1:p.y, x2:p.portX, y2:p.portY, stroke:'#2b3654', 'stroke-width':2});
+    svg2.appendChild(line);
+  });
+
+  // switch box
+  var rect = el('rect', {x:switchBox.x, y:switchBox.y, width:switchBox.w, height:switchBox.h, rx:10, fill:'#1d2740', stroke:'#4fd1c5', 'stroke-width':2});
+  svg2.appendChild(rect);
+  var swLabel = el('text', {x:switchBox.x+switchBox.w/2, y:switchBox.y+switchBox.h/2+5, 'text-anchor':'middle', class:'node-label'});
+  swLabel.textContent = "Switch L2";
+  svg2.appendChild(swLabel);
+
+  // port dots + labels
+  Object.keys(ports).forEach(function(k){
+    var p = ports[k];
+    var dot = el('circle', {cx:p.portX, cy:p.portY, r:6, fill:'#7c9eff', id:'port-'+k});
+    svg2.appendChild(dot);
+    var plabel = el('text', {x:p.portX, y: p.portY < 250 ? p.portY-14 : p.portY+22, 'text-anchor':'middle', class:'node-prompt'});
+    plabel.textContent = p.port;
+    svg2.appendChild(plabel);
+
+    // PC box
+    var pcRect = el('rect', {x:p.x-45, y:p.y-30, width:90, height:60, rx:8, fill:'#161d2e', stroke:'#2b3654', 'stroke-width':2});
+    svg2.appendChild(pcRect);
+    var pcLabel = el('text', {x:p.x, y:p.y-6, 'text-anchor':'middle', class:'node-label'});
+    pcLabel.textContent = p.name;
+    svg2.appendChild(pcLabel);
+    var pcMac = el('text', {x:p.x, y:p.y+14, 'text-anchor':'middle', class:'node-prompt', style:'font-size:9.5px;'});
+    pcMac.textContent = p.mac;
+    svg2.appendChild(pcMac);
+  });
+}
+buildSwitchDiagram();
+
+function logEvent(html){
+  var div = document.createElement('div');
+  div.innerHTML = html;
+  eventLogEl.appendChild(div);
+  eventLogEl.scrollTop = eventLogEl.scrollHeight;
+}
+
+function renderMacTable(highlightPort){
+  var portKeys = Object.keys(macTable);
+  if (portKeys.length === 0){
+    macTableBody.innerHTML = '<tr><td colspan="3" style="color:var(--text-dim);">(kosong)</td></tr>';
+    return;
+  }
+  macTableBody.innerHTML = "";
+  portKeys.forEach(function(port){
+    var entry = macTable[port];
+    var tr = document.createElement('tr');
+    if (port === highlightPort) tr.className = 'new-row';
+    tr.innerHTML = '<td>'+port+'</td><td>'+entry.mac+'</td><td>'+entry.age+'</td>';
+    macTableBody.appendChild(tr);
+  });
+}
+
+function learnMac(pcKey){
+  var p = ports[pcKey];
+  var isNew = !macTable[p.port];
+  macTable[p.port] = {mac:p.mac, age:0};
+  renderMacTable(p.port);
+  logEvent('<span class="learn-tag">[BELAJAR]</span> Switch mencatat: MAC ' + p.mac + ' (' + p.name + ') berada di port ' + p.port + (isNew ? ' <em>(entri baru)</em>' : ' <em>(refresh)</em>'));
+}
+
+function findPortForMac(mac){
+  for (var port in macTable){
+    if (macTable[port].mac === mac) return port;
+  }
+  return null;
+}
+
+function findPcKeyByPort(port){
+  for (var k in ports){ if (ports[k].port === port) return k; }
+  return null;
+}
+
+/* Animate a small circle traveling from (x1,y1) to (x2,y2) */
+function animateDot(x1,y1,x2,y2,color,duration,onDone){
+  var dot = el('circle', {r:7, fill:color, class:'frame-dot'});
+  svg2.appendChild(dot);
+  var start = null;
+  function frame(ts){
+    if (!start) start = ts;
+    var t = Math.min(1, (ts-start)/duration);
+    var cx = x1 + (x2-x1)*t;
+    var cy = y1 + (y2-y1)*t;
+    dot.setAttribute('cx', cx);
+    dot.setAttribute('cy', cy);
+    if (t < 1){
+      requestAnimationFrame(frame);
+    } else {
+      svg2.removeChild(dot);
+      if (onDone) onDone();
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+function sendFrame(srcKey, dstKey, cb){
+  if (animBusy) { if(cb) cb(); return; }
+  animBusy = true;
+  var src = ports[srcKey], dst = ports[dstKey];
+  logEvent('<strong>' + src.name + ' &rarr; ' + dst.name + '</strong>: mengirim frame ke MAC ' + dst.mac);
+
+  // phase 1: PC -> switch port (incoming)
+  animateDot(src.x, src.y, src.portX, src.portY, '#7c9eff', 700, function(){
+    learnMac(srcKey);
+
+    var knownPort = findPortForMac(dst.mac);
+    var otherKeys = Object.keys(ports).filter(function(k){ return k !== srcKey; });
+
+    if (!knownPort){
+      // FLOOD to all ports except source
+      logEvent('<span class="flood-tag">[FLOOD]</span> MAC tujuan ' + dst.mac + ' belum dikenal &rarr; frame dikirim ke SEMUA port kecuali port asal (' + src.port + ').');
+      var remaining = otherKeys.length;
+      otherKeys.forEach(function(k){
+        var target = ports[k];
+        var portDot = document.getElementById('port-'+k);
+        portDot.setAttribute('fill', '#f5a623');
+        animateDot(src.portX, src.portY, target.portX, target.portY, '#f5a623', 800, function(){});
+        animateDot(target.portX, target.portY, target.x, target.y, '#f5a623', 500, function(){
+          portDot.setAttribute('fill', '#7c9eff');
+          remaining--;
+          if (remaining === 0){
+            animBusy = false;
+            if (cb) cb();
+          }
+        });
+      });
+    } else {
+      // FORWARD only to known port
+      logEvent('<span class="forward-tag">[FORWARD]</span> MAC tujuan ' + dst.mac + ' sudah dikenal di port ' + knownPort + ' &rarr; frame diteruskan HANYA ke port tersebut.');
+      var portDot2 = document.getElementById('port-'+dstKey);
+      portDot2.setAttribute('fill', '#4ade80');
+      animateDot(src.portX, src.portY, dst.portX, dst.portY, '#4ade80', 800, function(){
+        animateDot(dst.portX, dst.portY, dst.x, dst.y, '#4ade80', 500, function(){
+          portDot2.setAttribute('fill', '#7c9eff');
+          animBusy = false;
+          if (cb) cb();
+        });
+      });
+    }
+  });
+}
+
+/* Guided scenario */
+var scenarioSteps = [
+  {desc:"Langkah 1 dari 3: PC-A mengirim frame ke PC-C. Tabel MAC masih kosong, jadi setelah belajar MAC-A, switch akan FLOOD karena MAC-C belum dikenal.", action:function(done){ sendFrame('A','C',done); }},
+  {desc:"Langkah 2 dari 3: PC-C membalas ke PC-A. Switch mempelajari MAC-C, dan karena MAC-A sudah dikenal (di Fa0/1), frame ini langsung di-FORWARD hanya ke satu port.", action:function(done){ sendFrame('C','A',done); }},
+  {desc:"Langkah 3 dari 3: PC-A mengirim lagi ke PC-C. Sekarang kedua MAC sudah dikenal, sehingga switch FORWARD (bukan flood) &mdash; bandingkan dengan langkah 1.", action:function(done){ sendFrame('A','C',done); }}
+];
+
+document.getElementById('nextStepBtn').addEventListener('click', function(){
+  if (animBusy) return;
+  if (scenarioStep >= scenarioSteps.length){
+    scenarioStatus.textContent = 'Skenario selesai. Gunakan tombol "Kirim" di bawah topologi untuk bereksperimen bebas, atau klik Reset untuk mengulang.';
+    return;
+  }
+  var step = scenarioSteps[scenarioStep];
+  scenarioStatus.textContent = step.desc;
+  step.action(function(){
+    scenarioStep++;
+    if (scenarioStep >= scenarioSteps.length){
+      scenarioStatus.textContent = 'Skenario selesai! Perhatikan perbedaan Langkah 1 (flood, karena MAC tujuan belum dikenal) dengan Langkah 3 (forward langsung, karena tabel MAC sudah lengkap).';
+    }
+  });
+});
+
+document.getElementById('resetScenarioBtn').addEventListener('click', function(){
+  macTable = {};
+  scenarioStep = 0;
+  animBusy = false;
+  renderMacTable();
+  eventLogEl.innerHTML = "";
+  scenarioStatus.textContent = 'Langkah 0 dari 3: Tabel MAC masih kosong. Klik "Langkah Berikutnya" untuk mulai.';
+  logEvent('<em>Tabel MAC direset.</em>');
+});
+
+document.querySelectorAll('.manual-send').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    if (animBusy) return;
+    var src = btn.getAttribute('data-src');
+    var dst = btn.getAttribute('data-dst');
+    sendFrame(src, dst, function(){});
+  });
+});
+
+})();
+</script>
+</body>
+</html>

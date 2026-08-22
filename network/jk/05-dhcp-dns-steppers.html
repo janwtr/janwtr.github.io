@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Animasi Proses DHCP (DORA) dan Resolusi DNS</title>
+<style>
+  :root{
+    --bg:#0f1220;
+    --panel:#171b2e;
+    --panel-2:#1e2338;
+    --border:#2c3355;
+    --text:#e8eaf6;
+    --text-dim:#9aa1c4;
+    --accent:#5b8cff;
+    --accent-2:#22d3ee;
+    --client:#22c55e;
+    --server:#f59e0b;
+    --root:#a855f7;
+    --tld:#ec4899;
+    --auth:#06b6d4;
+    --broadcast:#f97316;
+    --unicast:#22d3ee;
+    --iterative:#f472b6;
+    --recursive:#60a5fa;
+    --success:#4ade80;
+    --danger:#f87171;
+    --radius:14px;
+    --shadow: 0 8px 30px rgba(0,0,0,0.35);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);}
+  body{min-height:100vh;padding:20px;}
+  .wrap{max-width:1180px;margin:0 auto;}
+  h1{font-size:1.5rem;margin:0 0 6px 0;font-weight:700;letter-spacing:-0.01em;}
+  .subtitle{color:var(--text-dim);margin:0 0 18px 0;font-size:0.92rem;}
+
+  .tabs{display:flex;gap:8px;margin-bottom:16px;border-bottom:1px solid var(--border);}
+  .tab-btn{
+    background:transparent;border:none;color:var(--text-dim);
+    padding:10px 18px;font-size:0.95rem;font-weight:600;cursor:pointer;
+    border-bottom:3px solid transparent;transition:color .15s ease, border-color .15s ease;
+  }
+  .tab-btn:hover{color:var(--text);}
+  .tab-btn.active{color:var(--accent-2);border-bottom-color:var(--accent-2);}
+
+  .panel{
+    background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+    padding:18px 20px;box-shadow:var(--shadow);
+  }
+  .tab-content{display:none;}
+  .tab-content.active{display:block;}
+
+  .intro{
+    background:var(--panel-2);border:1px solid var(--border);border-left:4px solid var(--accent);
+    border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:0.92rem;line-height:1.55;color:var(--text);
+  }
+  .intro p{margin:4px 0;}
+
+  .controls{
+    display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px;
+  }
+  button.ctrl{
+    background:var(--panel-2);color:var(--text);border:1px solid var(--border);
+    padding:9px 16px;border-radius:8px;font-size:0.88rem;font-weight:600;cursor:pointer;
+    transition:background .15s ease, transform .05s ease, border-color .15s;
+  }
+  button.ctrl:hover:not(:disabled){background:#252b46;border-color:var(--accent);}
+  button.ctrl:active:not(:disabled){transform:scale(0.97);}
+  button.ctrl:disabled{opacity:0.4;cursor:not-allowed;}
+  button.ctrl.primary{background:var(--accent);border-color:var(--accent);color:white;}
+  button.ctrl.primary:hover:not(:disabled){background:#4a78e6;}
+  button.ctrl.playing{background:var(--success);border-color:var(--success);color:#08290f;}
+
+  .step-indicator{
+    display:flex;gap:6px;margin-left:auto;align-items:center;
+  }
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--border);transition:background .2s, transform .2s;}
+  .dot.active{background:var(--accent-2);transform:scale(1.3);}
+  .dot.done{background:var(--accent);}
+
+  .toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;font-size:0.9rem;}
+  .switch{
+    position:relative;width:44px;height:24px;background:var(--panel-2);border:1px solid var(--border);
+    border-radius:14px;cursor:pointer;transition:background .2s;flex-shrink:0;
+  }
+  .switch.on{background:var(--accent);}
+  .switch .knob{
+    position:absolute;top:2px;left:2px;width:18px;height:18px;background:white;border-radius:50%;
+    transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,0.4);
+  }
+  .switch.on .knob{transform:translateX(20px);}
+
+  .stage{
+    background:#0b0e1a;border:1px solid var(--border);border-radius:12px;
+    padding:8px;margin-bottom:14px;overflow-x:auto;
+  }
+  svg{display:block;width:100%;height:auto;min-width:640px;}
+
+  .node-box{fill:var(--panel-2);stroke:var(--border);stroke-width:1.5;}
+  .node-label{fill:var(--text);font-size:13px;font-weight:700;font-family:inherit;}
+  .node-sub{fill:var(--text-dim);font-size:10.5px;font-family:inherit;}
+
+  .step-title{font-size:1.05rem;font-weight:700;margin:0 0 4px 0;color:var(--accent-2);}
+  .step-desc{font-size:0.9rem;color:var(--text);line-height:1.5;margin:0 0 14px 0;}
+
+  .info-grid{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:6px;
+  }
+  .info-card{
+    background:var(--panel-2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;
+    transition:opacity .3s, transform .3s;
+  }
+  .info-card.pending{opacity:0.35;}
+  .info-card .k{font-size:0.72rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:3px;}
+  .info-card .v{font-size:0.95rem;font-weight:700;color:var(--text);font-family:"SF Mono",Consolas,monospace;}
+  .info-card.filled .v{color:var(--success);}
+
+  .badge{
+    display:inline-block;padding:2px 10px;border-radius:20px;font-size:0.72rem;font-weight:700;
+    text-transform:uppercase;letter-spacing:0.03em;margin-right:6px;
+  }
+  .badge.broadcast{background:rgba(249,115,22,0.18);color:var(--broadcast);border:1px solid var(--broadcast);}
+  .badge.unicast{background:rgba(34,211,238,0.18);color:var(--unicast);border:1px solid var(--unicast);}
+  .badge.iterative{background:rgba(244,114,182,0.18);color:var(--iterative);border:1px solid var(--iterative);}
+  .badge.recursive{background:rgba(96,165,250,0.18);color:var(--recursive);border:1px solid var(--recursive);}
+  .badge.cache{background:rgba(74,222,128,0.18);color:var(--success);border:1px solid var(--success);}
+
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;font-size:0.82rem;color:var(--text-dim);}
+  .legend-item{display:flex;align-items:center;gap:6px;}
+  .legend-swatch{width:22px;height:4px;border-radius:2px;}
+
+  .note-box{
+    background:rgba(249,115,22,0.08);border:1px solid var(--broadcast);border-radius:10px;
+    padding:10px 14px;margin-top:12px;font-size:0.87rem;color:#fdba74;display:none;
+  }
+  .note-box.show{display:block;}
+
+  .packet-label{fill:var(--text);font-size:11px;font-weight:700;font-family:inherit;}
+
+  footer{margin-top:18px;text-align:center;color:var(--text-dim);font-size:0.78rem;}
+
+  @media (max-width:640px){
+    h1{font-size:1.2rem;}
+    .panel{padding:14px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Animasi Proses DHCP (DORA) dan Resolusi DNS</h1>
+  <p class="subtitle">Materi interaktif Jaringan Komputer &mdash; jalankan langkah demi langkah untuk memahami alur komunikasi jaringan.</p>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="dhcp">DHCP DORA</button>
+    <button class="tab-btn" data-tab="dns">Resolusi DNS</button>
+  </div>
+
+  <!-- ===================== TAB 1: DHCP ===================== -->
+  <div class="tab-content active" id="tab-dhcp">
+    <div class="panel">
+      <div class="intro">
+        <p><strong>DHCP (Dynamic Host Configuration Protocol)</strong> memungkinkan client mendapatkan konfigurasi IP secara otomatis dari server melalui 4 tahap yang disingkat <strong>DORA</strong>: Discover, Offer, Request, Acknowledge.</p>
+        <p>Perhatikan bahwa langkah 1 (Discover) dan langkah 3 (Request) sama-sama dikirim sebagai <strong>broadcast</strong> &mdash; ini sering disalahpahami sebagai unicast, padahal Request perlu broadcast agar server DHCP lain yang tidak terpilih juga tahu dan bisa menarik kembali tawarannya.</p>
+      </div>
+
+      <div class="controls">
+        <button class="ctrl" id="dhcp-prev">&larr; Sebelumnya</button>
+        <button class="ctrl primary" id="dhcp-next">Langkah Berikutnya &rarr;</button>
+        <button class="ctrl" id="dhcp-play">&#9654; Putar Otomatis</button>
+        <button class="ctrl" id="dhcp-reset">&#8635; Ulangi</button>
+        <div class="step-indicator" id="dhcp-dots"></div>
+      </div>
+
+      <div class="stage">
+        <svg id="dhcp-svg" viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg">
+          <!-- lane line -->
+          <line x1="150" y1="150" x2="750" y2="150" stroke="#2c3355" stroke-width="2" stroke-dasharray="4 4"/>
+
+          <!-- Client node -->
+          <g id="dhcp-client">
+            <rect class="node-box" x="70" y="110" width="160" height="80" rx="12" stroke="#22c55e"/>
+            <text class="node-label" x="150" y="140" text-anchor="middle">&#128421; Client</text>
+            <text class="node-sub" id="dhcp-client-ip" x="150" y="158" text-anchor="middle">IP: 0.0.0.0</text>
+            <text class="node-sub" x="150" y="173" text-anchor="middle">(belum terkonfigurasi)</text>
+          </g>
+
+          <!-- Server node -->
+          <g id="dhcp-server">
+            <rect class="node-box" x="670" y="110" width="160" height="80" rx="12" stroke="#f59e0b"/>
+            <text class="node-label" x="750" y="140" text-anchor="middle">&#128421;&#65039; DHCP Server</text>
+            <text class="node-sub" x="750" y="158" text-anchor="middle">192.168.1.1</text>
+            <text class="node-sub" id="dhcp-server-status" x="750" y="173" text-anchor="middle">siap</text>
+          </g>
+
+          <!-- broadcast burst rings (for discover/request) -->
+          <g id="dhcp-broadcast-rings" opacity="0"></g>
+
+          <!-- packet -->
+          <g id="dhcp-packet" opacity="0">
+            <rect x="-55" y="-16" width="110" height="32" rx="8" fill="#f97316" stroke="#fff" stroke-width="1"/>
+            <text id="dhcp-packet-text" class="packet-label" x="0" y="5" text-anchor="middle" fill="#101010">DISCOVER</text>
+          </g>
+
+          <!-- direction arrow -->
+          <text id="dhcp-arrow" x="450" y="130" text-anchor="middle" font-size="20" fill="#9aa1c4" opacity="0"></text>
+        </svg>
+      </div>
+
+      <div class="badge-row" style="margin-bottom:8px;">
+        <span class="badge broadcast" id="dhcp-mode-badge">BROADCAST</span>
+        <span id="dhcp-msg-type" style="font-weight:700;color:#e8eaf6;">DHCPDISCOVER</span>
+      </div>
+
+      <h3 class="step-title" id="dhcp-step-title">Langkah 1 dari 4: DHCPDISCOVER</h3>
+      <p class="step-desc" id="dhcp-step-desc">Client belum memiliki alamat IP (0.0.0.0), sehingga ia mengirim paket DHCPDISCOVER sebagai <strong>broadcast</strong> ke alamat tujuan FF:FF:FF:FF:FF:FF agar semua server DHCP di jaringan lokal menerimanya.</p>
+
+      <div class="note-box" id="dhcp-note">
+        &#9888;&#65039; <strong>Miskonsepsi umum:</strong> Banyak yang mengira DHCPREQUEST dikirim langsung (unicast) ke server yang dipilih. Padahal ini tetap <strong>broadcast</strong>, supaya DHCP server lain yang ikut menawarkan IP tahu bahwa tawaran mereka tidak dipilih dan bisa membebaskan kembali alamat tersebut.
+      </div>
+
+      <div class="info-grid" id="dhcp-info">
+        <div class="info-card pending" data-field="offered-ip">
+          <div class="k">IP yang Ditawarkan</div><div class="v">&mdash;</div>
+        </div>
+        <div class="info-card pending" data-field="subnet">
+          <div class="k">Subnet Mask</div><div class="v">&mdash;</div>
+        </div>
+        <div class="info-card pending" data-field="lease">
+          <div class="k">Lease Time</div><div class="v">&mdash;</div>
+        </div>
+        <div class="info-card pending" data-field="gateway">
+          <div class="k">Default Gateway</div><div class="v">&mdash;</div>
+        </div>
+        <div class="info-card pending" data-field="dns">
+          <div class="k">DNS Server</div><div class="v">&mdash;</div>
+        </div>
+        <div class="info-card pending" data-field="status">
+          <div class="k">Status Client</div><div class="v">&mdash;</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== TAB 2: DNS ===================== -->
+  <div class="tab-content" id="tab-dns">
+    <div class="panel">
+      <div class="intro">
+        <p><strong>Resolusi DNS</strong> menerjemahkan nama domain (mis. www.example.com) menjadi alamat IP. Client mengirim satu query <strong>rekursif</strong> ke resolver (biasanya milik ISP), lalu resolver melakukan serangkaian query <strong>iteratif</strong> ke server Root, TLD, dan Authoritative.</p>
+        <p>Bedanya: query <strong>rekursif</strong> (client&rarr;resolver) meminta jawaban akhir langsung, sedangkan query <strong>iteratif</strong> (resolver&rarr;root/tld/auth) hanya meminta "rujukan" (referral) ke server berikutnya &mdash; ini poin ujian yang sering keliru.</p>
+      </div>
+
+      <div class="toggle-row">
+        <div class="switch" id="dns-cache-toggle"><div class="knob"></div></div>
+        <span>Simulasikan cache <strong>HIT</strong> (resolver sudah menyimpan jawaban)</span>
+      </div>
+
+      <div class="controls">
+        <button class="ctrl" id="dns-prev">&larr; Sebelumnya</button>
+        <button class="ctrl primary" id="dns-next">Langkah Berikutnya &rarr;</button>
+        <button class="ctrl" id="dns-play">&#9654; Putar Otomatis</button>
+        <button class="ctrl" id="dns-reset">&#8635; Ulangi</button>
+        <div class="step-indicator" id="dns-dots"></div>
+      </div>
+
+      <div class="stage">
+        <svg id="dns-svg" viewBox="0 0 900 340" xmlns="http://www.w3.org/2000/svg">
+          <line x1="120" y1="90" x2="820" y2="90" stroke="#2c3355" stroke-width="2" stroke-dasharray="4 4"/>
+
+          <!-- Client -->
+          <g>
+            <rect class="node-box" x="40" y="50" width="140" height="80" rx="12" stroke="#22c55e"/>
+            <text class="node-label" x="110" y="82" text-anchor="middle">&#128421; Client</text>
+            <text class="node-sub" x="110" y="99" text-anchor="middle">ingin buka</text>
+            <text class="node-sub" x="110" y="113" text-anchor="middle">www.example.com</text>
+          </g>
+
+          <!-- Resolver -->
+          <g>
+            <rect class="node-box" x="230" y="50" width="150" height="80" rx="12" stroke="#60a5fa"/>
+            <text class="node-label" x="305" y="78" text-anchor="middle">&#127760; Resolver</text>
+            <text class="node-sub" x="305" y="95" text-anchor="middle">(DNS ISP)</text>
+            <text class="node-sub" id="dns-resolver-cache" x="305" y="110" text-anchor="middle">cache: kosong</text>
+          </g>
+
+          <!-- Root -->
+          <g>
+            <rect class="node-box" x="440" y="200" width="130" height="70" rx="12" stroke="#a855f7"/>
+            <text class="node-label" x="505" y="230" text-anchor="middle">&#127760; Root</text>
+            <text class="node-sub" x="505" y="246" text-anchor="middle">"." server</text>
+          </g>
+
+          <!-- TLD -->
+          <g>
+            <rect class="node-box" x="600" y="200" width="130" height="70" rx="12" stroke="#ec4899"/>
+            <text class="node-label" x="665" y="230" text-anchor="middle">&#127760; TLD</text>
+            <text class="node-sub" x="665" y="246" text-anchor="middle">.com server</text>
+          </g>
+
+          <!-- Authoritative -->
+          <g>
+            <rect class="node-box" x="760" y="50" width="130" height="80" rx="12" stroke="#06b6d4"/>
+            <text class="node-label" x="825" y="80" text-anchor="middle">&#127760; Authoritative</text>
+            <text class="node-sub" x="825" y="97" text-anchor="middle">ns.example.com</text>
+            <text class="node-sub" x="825" y="112" text-anchor="middle">zone: example.com</text>
+          </g>
+
+          <!-- connecting faint lines to lower servers -->
+          <line x1="305" y1="130" x2="505" y2="200" stroke="#2c3355" stroke-width="1.5" stroke-dasharray="3 3"/>
+          <line x1="505" y1="200" x2="665" y2="200" stroke="#2c3355" stroke-width="1.5" stroke-dasharray="3 3"/>
+          <line x1="665" y1="200" x2="825" y2="130" stroke="#2c3355" stroke-width="1.5" stroke-dasharray="3 3"/>
+
+          <!-- packet -->
+          <g id="dns-packet" opacity="0">
+            <rect x="-70" y="-15" width="140" height="30" rx="8" fill="#60a5fa" stroke="#fff" stroke-width="1"/>
+            <text id="dns-packet-text" class="packet-label" x="0" y="5" text-anchor="middle" fill="#101010">Query</text>
+          </g>
+        </svg>
+      </div>
+
+      <div class="badge-row" style="margin-bottom:8px;">
+        <span class="badge recursive" id="dns-mode-badge">REKURSIF</span>
+        <span id="dns-msg-type" style="font-weight:700;color:#e8eaf6;">Client &rarr; Resolver</span>
+      </div>
+
+      <h3 class="step-title" id="dns-step-title">Langkah 1: Query Rekursif dari Client</h3>
+      <p class="step-desc" id="dns-step-desc">Client mengirim satu query rekursif ke resolver: "carikan saya alamat IP untuk www.example.com, dan berikan jawaban akhirnya."</p>
+
+      <div class="legend">
+        <div class="legend-item"><span class="legend-swatch" style="background:var(--recursive);"></span> Query Rekursif (client&rarr;resolver, minta jawaban final)</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:var(--iterative);"></span> Query Iteratif (resolver&rarr;root/tld/auth, minta referral)</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:var(--success);"></span> Cache HIT (jawaban langsung dari cache resolver)</div>
+      </div>
+
+      <div class="info-grid" style="margin-top:14px;">
+        <div class="info-card pending" data-field="dns-domain"><div class="k">Domain</div><div class="v">www.example.com</div></div>
+        <div class="info-card pending" data-field="dns-referral"><div class="k">Referral Terakhir</div><div class="v">&mdash;</div></div>
+        <div class="info-card pending" data-field="dns-answer"><div class="k">Jawaban (A Record)</div><div class="v">&mdash;</div></div>
+        <div class="info-card pending" data-field="dns-cache"><div class="k">Status Cache Resolver</div><div class="v">Kosong</div></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>Materi Jaringan Komputer &middot; Animasi berbasis SVG dan CSS, tanpa pustaka eksternal.</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  function $(sel, root){ return (root||document).querySelector(sel); }
+  function $all(sel, root){ return Array.prototype.slice.call((root||document).querySelectorAll(sel)); }
+
+  // ---------- Tab switching ----------
+  var tabBtns = $all('.tab-btn');
+  var tabContents = { dhcp: $('#tab-dhcp'), dns: $('#tab-dns') };
+  tabBtns.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      tabBtns.forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      Object.keys(tabContents).forEach(function(k){ tabContents[k].classList.remove('active'); });
+      tabContents[btn.getAttribute('data-tab')].classList.add('active');
+    });
+  });
+
+  // ============================================================
+  // TAB 1: DHCP DORA
+  // ============================================================
+  var dhcpSteps = [
+    {
+      title: "Langkah 1 dari 4: DHCPDISCOVER",
+      desc: "Client belum memiliki alamat IP (0.0.0.0), sehingga ia mengirim paket DHCPDISCOVER sebagai <strong>broadcast</strong> ke alamat tujuan FF:FF:FF:FF:FF:FF agar semua server DHCP di jaringan lokal menerimanya.",
+      mode: "broadcast",
+      msg: "DHCPDISCOVER",
+      dir: "right",
+      note: false,
+      fields: {}
+    },
+    {
+      title: "Langkah 2 dari 4: DHCPOFFER",
+      desc: "Server DHCP menjawab dengan DHCPOFFER, berisi tawaran alamat IP beserta parameter konfigurasi (subnet mask, lease time, gateway, DNS). Balasan ini bisa unicast maupun broadcast tergantung kemampuan client.",
+      mode: "unicast",
+      msg: "DHCPOFFER",
+      dir: "left",
+      note: false,
+      fields: { "offered-ip":"192.168.1.50", "subnet":"255.255.255.0", "lease":"24 jam", "gateway":"192.168.1.1", "dns":"8.8.8.8" }
+    },
+    {
+      title: "Langkah 3 dari 4: DHCPREQUEST",
+      desc: "Client menerima tawaran, lalu mengirim DHCPREQUEST untuk secara resmi meminta IP tersebut. Paket ini <strong>tetap dikirim sebagai broadcast</strong>, bukan unicast, agar server DHCP lain yang ikut menawarkan tahu bahwa tawaran mereka tidak dipilih.",
+      mode: "broadcast",
+      msg: "DHCPREQUEST",
+      dir: "right",
+      note: true,
+      fields: { "offered-ip":"192.168.1.50", "subnet":"255.255.255.0", "lease":"24 jam", "gateway":"192.168.1.1", "dns":"8.8.8.8" }
+    },
+    {
+      title: "Langkah 4 dari 4: DHCPACK",
+      desc: "Server mengirim DHCPACK sebagai konfirmasi akhir. Client kini mengaktifkan konfigurasi IP tersebut dan siap digunakan di jaringan.",
+      mode: "unicast",
+      msg: "DHCPACK",
+      dir: "left",
+      note: false,
+      fields: { "offered-ip":"192.168.1.50", "subnet":"255.255.255.0", "lease":"24 jam", "gateway":"192.168.1.1", "dns":"8.8.8.8", "status":"Terkonfigurasi" }
+    }
+  ];
+
+  var dhcpIdx = 0;
+  var dhcpTimer = null;
+  var dhcpAnimToken = 0;
+
+  var dEls = {
+    prev: $('#dhcp-prev'), next: $('#dhcp-next'), play: $('#dhcp-play'), reset: $('#dhcp-reset'),
+    dots: $('#dhcp-dots'), title: $('#dhcp-step-title'), desc: $('#dhcp-step-desc'),
+    note: $('#dhcp-note'), modeBadge: $('#dhcp-mode-badge'), msgType: $('#dhcp-msg-type'),
+    packet: $('#dhcp-packet'), packetText: $('#dhcp-packet-text'), arrow: $('#dhcp-arrow'),
+    clientIp: $('#dhcp-client-ip'), serverStatus: $('#dhcp-server-status'),
+    rings: $('#dhcp-broadcast-rings')
+  };
+
+  function buildDots(container, count){
+    container.innerHTML = "";
+    for(var i=0;i<count;i++){
+      var d = document.createElement('div');
+      d.className = 'dot';
+      container.appendChild(d);
+    }
+  }
+  buildDots(dEls.dots, dhcpSteps.length);
+
+  function updateDots(container, idx){
+    $all('.dot', container).forEach(function(d, i){
+      d.classList.toggle('active', i === idx);
+      d.classList.toggle('done', i < idx);
+    });
+  }
+
+  function setPacketPosition(packetEl, x, y){
+    packetEl.setAttribute('transform', 'translate(' + x + ',' + y + ')');
+  }
+
+  function animatePacket(packetEl, fromX, toX, y, duration, onDone){
+    var token = ++dhcpAnimToken;
+    var start = null;
+    packetEl.setAttribute('opacity', '1');
+    function frame(ts){
+      if (token !== dhcpAnimToken) return;
+      if (!start) start = ts;
+      var t = Math.min(1, (ts - start) / duration);
+      var ease = t < 0.5 ? 2*t*t : -1 + (4 - 2*t)*t; // easeInOutQuad
+      var x = fromX + (toX - fromX) * ease;
+      setPacketPosition(packetEl, x, y);
+      if (t < 1) {
+        requestAnimationFrame(frame);
+      } else {
+        if (onDone) onDone();
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function pulseBroadcastRings(){
+    var rings = dEls.rings;
+    rings.innerHTML = "";
+    rings.setAttribute('opacity', '1');
+    for (var i=0;i<3;i++){
+      var c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      c.setAttribute('cx', '450');
+      c.setAttribute('cy', '150');
+      c.setAttribute('r', '10');
+      c.setAttribute('fill', 'none');
+      c.setAttribute('stroke', '#f97316');
+      c.setAttribute('stroke-width', '2');
+      c.setAttribute('opacity', '0.8');
+      rings.appendChild(c);
+      (function(circle, delay){
+        setTimeout(function(){
+          circle.animate([
+            { r: 10, opacity: 0.8 },
+            { r: 260, opacity: 0 }
+          ], { duration: 900, easing: 'ease-out' });
+        }, delay);
+      })(c, i*220);
+    }
+    setTimeout(function(){ rings.setAttribute('opacity','0'); }, 1300);
+  }
+
+  function renderDhcpStep(idx, animate){
+    var step = dhcpSteps[idx];
+    dEls.title.innerHTML = step.title;
+    dEls.desc.innerHTML = step.desc;
+    dEls.msgType.textContent = step.msg;
+    dEls.modeBadge.textContent = step.mode === 'broadcast' ? 'BROADCAST' : 'UNICAST';
+    dEls.modeBadge.className = 'badge ' + step.mode;
+    dEls.note.classList.toggle('show', step.note);
+    dEls.packetText.textContent = step.msg;
+
+    updateDots(dEls.dots, idx);
+
+    dEls.prev.disabled = (idx === 0);
+    dEls.next.disabled = (idx === dhcpSteps.length - 1);
+
+    // update info cards
+    $all('#dhcp-info .info-card').forEach(function(card){
+      var field = card.getAttribute('data-field');
+      var val = step.fields[field];
+      var vEl = $('.v', card);
+      if (val) {
+        vEl.textContent = val;
+        card.classList.add('filled');
+        card.classList.remove('pending');
+      } else {
+        vEl.textContent = '—';
+        card.classList.remove('filled');
+        card.classList.add('pending');
+      }
+    });
+
+    // client IP label
+    dEls.clientIp.textContent = (idx >= 3) ? "IP: 192.168.1.50" : "IP: 0.0.0.0";
+
+    // server status
+    dEls.serverStatus.textContent = idx === 0 ? "menerima broadcast" :
+      idx === 1 ? "menawarkan IP" :
+      idx === 2 ? "menerima request" : "konfirmasi terkirim";
+
+    var fromX = step.dir === 'right' ? -300 : 300;
+    var toX = 0;
+    var packetY = 150 - 150; // group root at 0,0 offset via transform below
+
+    if (animate) {
+      dEls.packet.setAttribute('opacity','0');
+      setPacketPosition(dEls.packet, 450 + fromX, 150);
+      if (step.mode === 'broadcast') {
+        setTimeout(pulseBroadcastRings, 80);
+      }
+      animatePacket(dEls.packet, 450 + fromX, 450 + toX, 150, 750, function(){
+        // hold then fade
+        setTimeout(function(){
+          dEls.packet.style.transition = 'opacity .3s';
+          dEls.packet.setAttribute('opacity','0');
+        }, 350);
+      });
+    } else {
+      dEls.packet.style.transition = '';
+      dEls.packet.setAttribute('opacity','0');
+      setPacketPosition(dEls.packet, 450, 150);
+    }
+  }
+
+  function dhcpGoTo(idx, animate){
+    dhcpIdx = Math.max(0, Math.min(dhcpSteps.length - 1, idx));
+    renderDhcpStep(dhcpIdx, animate !== false);
+  }
+
+  dEls.next.addEventListener('click', function(){ dhcpGoTo(dhcpIdx + 1); });
+  dEls.prev.addEventListener('click', function(){ dhcpGoTo(dhcpIdx - 1); });
+  dEls.reset.addEventListener('click', function(){ stopDhcpPlay(); dhcpGoTo(0); });
+
+  function stopDhcpPlay(){
+    if (dhcpTimer) { clearInterval(dhcpTimer); dhcpTimer = null; }
+    dEls.play.classList.remove('playing');
+    dEls.play.innerHTML = '&#9654; Putar Otomatis';
+  }
+
+  dEls.play.addEventListener('click', function(){
+    if (dhcpTimer) {
+      stopDhcpPlay();
+      return;
+    }
+    if (dhcpIdx >= dhcpSteps.length - 1) { dhcpGoTo(0); }
+    dEls.play.classList.add('playing');
+    dEls.play.innerHTML = '&#10074;&#10074; Jeda';
+    dhcpTimer = setInterval(function(){
+      if (dhcpIdx >= dhcpSteps.length - 1) {
+        stopDhcpPlay();
+        return;
+      }
+      dhcpGoTo(dhcpIdx + 1);
+    }, 1800);
+  });
+
+  renderDhcpStep(0, false);
+
+  // ============================================================
+  // TAB 2: DNS Resolution
+  // ============================================================
+  // Node approx centers in svg coords
+  var DNS_POS = {
+    client: {x:110, y:90},
+    resolver: {x:305, y:90},
+    root: {x:505, y:235},
+    tld: {x:665, y:235},
+    auth: {x:825, y:90}
+  };
+
+  var dnsStepsMiss = [
+    {
+      title: "Langkah 1: Query Rekursif dari Client",
+      desc: "Client mengirim satu query <strong>rekursif</strong> ke resolver: \"carikan alamat IP untuk www.example.com, dan berikan jawaban akhirnya.\" Resolver mengecek cache-nya dan ternyata kosong.",
+      mode: "recursive", from:"client", to:"resolver", msg:"Query: www.example.com?",
+      cacheStatus: "Kosong", referral:null, answer:null
+    },
+    {
+      title: "Langkah 2: Query Iteratif ke Root Server",
+      desc: "Karena tidak ada di cache, resolver melakukan query <strong>iteratif</strong> ke Root server. Root tidak tahu jawabannya, tapi memberi <strong>referral</strong>: \"tanyakan ke server TLD .com\".",
+      mode: "iterative", from:"resolver", to:"root", msg:"Siapa NS untuk .com?",
+      cacheStatus: "Kosong", referral:"Root → rujuk ke .com", answer:null
+    },
+    {
+      title: "Langkah 3: Query Iteratif ke TLD Server",
+      desc: "Resolver melanjutkan dengan query iteratif ke server TLD .com. TLD juga tidak menyimpan jawaban akhir, tapi memberi referral ke Authoritative Name Server milik example.com.",
+      mode: "iterative", from:"resolver", to:"tld", msg:"Siapa NS untuk example.com?",
+      cacheStatus: "Kosong", referral:"TLD → rujuk ke ns.example.com", answer:null
+    },
+    {
+      title: "Langkah 4: Query Iteratif ke Authoritative Server",
+      desc: "Resolver mengirim query iteratif ke Authoritative Name Server (ns.example.com), yang memang menyimpan data zona example.com. Server ini menjawab dengan A record (alamat IP) yang sesungguhnya.",
+      mode: "iterative", from:"resolver", to:"auth", msg:"IP dari www.example.com?",
+      cacheStatus: "Kosong", referral:"Authoritative → punya jawaban!", answer:"93.184.216.34"
+    },
+    {
+      title: "Langkah 5: Resolver Menyimpan Cache dan Membalas Client",
+      desc: "Resolver menyimpan hasil (93.184.216.34) ke dalam cache-nya untuk mempercepat query berikutnya, lalu mengirimkan jawaban akhir kembali ke client melalui jalur query rekursif tadi.",
+      mode: "recursive", from:"resolver", to:"client", msg:"Jawaban: 93.184.216.34",
+      cacheStatus: "Tersimpan (TTL aktif)", referral:"Authoritative → punya jawaban!", answer:"93.184.216.34"
+    }
+  ];
+
+  var dnsStepsHit = [
+    {
+      title: "Langkah 1: Query Rekursif dari Client",
+      desc: "Client mengirim query rekursif ke resolver untuk www.example.com.",
+      mode: "recursive", from:"client", to:"resolver", msg:"Query: www.example.com?",
+      cacheStatus: "Ada di cache!", referral:null, answer:null
+    },
+    {
+      title: "Langkah 2: Cache HIT — Tidak Perlu Query Iteratif",
+      desc: "Resolver mengecek cache dan <strong>menemukan jawaban yang masih berlaku (TTL belum habis)</strong>. Tidak perlu lagi menghubungi Root, TLD, atau Authoritative server — inilah keuntungan utama caching DNS.",
+      mode: "cache", from:"resolver", to:"resolver", msg:"Cache HIT!",
+      cacheStatus: "Ada di cache!", referral:"Dilewati (tidak perlu)", answer:null
+    },
+    {
+      title: "Langkah 3: Resolver Langsung Membalas Client",
+      desc: "Resolver langsung mengirim jawaban dari cache ke client tanpa perlu melakukan query iteratif apa pun. Respons jauh lebih cepat dibanding skenario cache miss.",
+      mode: "recursive", from:"resolver", to:"client", msg:"Jawaban (cache): 93.184.216.34",
+      cacheStatus: "Ada di cache!", referral:"Dilewati (tidak perlu)", answer:"93.184.216.34"
+    }
+  ];
+
+  var dnsIdx = 0;
+  var dnsTimer = null;
+  var dnsAnimToken = 0;
+  var cacheHitMode = false;
+
+  var nEls = {
+    prev: $('#dns-prev'), next: $('#dns-next'), play: $('#dns-play'), reset: $('#dns-reset'),
+    dots: $('#dns-dots'), title: $('#dns-step-title'), desc: $('#dns-step-desc'),
+    modeBadge: $('#dns-mode-badge'), msgType: $('#dns-msg-type'),
+    packet: $('#dns-packet'), packetText: $('#dns-packet-text'),
+    resolverCache: $('#dns-resolver-cache'), toggle: $('#dns-cache-toggle')
+  };
+
+  function currentDnsSteps(){ return cacheHitMode ? dnsStepsHit : dnsStepsMiss; }
+
+  buildDots(nEls.dots, currentDnsSteps().length);
+
+  function setDnsPacketPosition(x,y){
+    nEls.packet.setAttribute('transform', 'translate(' + x + ',' + y + ')');
+  }
+
+  function animateDnsPacket(from, to, duration, onDone){
+    var token = ++dnsAnimToken;
+    var start = null;
+    var p1 = DNS_POS[from], p2 = DNS_POS[to];
+    nEls.packet.setAttribute('opacity','1');
+    function frame(ts){
+      if (token !== dnsAnimToken) return;
+      if (!start) start = ts;
+      var t = Math.min(1, (ts - start) / duration);
+      var ease = t < 0.5 ? 2*t*t : -1 + (4 - 2*t)*t;
+      var x = p1.x + (p2.x - p1.x) * ease;
+      var y = p1.y + (p2.y - p1.y) * ease;
+      setDnsPacketPosition(x,y);
+      if (t < 1) requestAnimationFrame(frame);
+      else if (onDone) onDone();
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function renderDnsStep(idx, animate){
+    var steps = currentDnsSteps();
+    var step = steps[idx];
+    nEls.title.innerHTML = step.title;
+    nEls.desc.innerHTML = step.desc;
+    nEls.msgType.textContent = (step.from + " → " + step.to).toUpperCase();
+    var modeLabel = step.mode === 'recursive' ? 'REKURSIF' : step.mode === 'iterative' ? 'ITERATIF' : 'CACHE HIT';
+    nEls.modeBadge.textContent = modeLabel;
+    nEls.modeBadge.className = 'badge ' + step.mode;
+    nEls.packetText.textContent = step.msg;
+
+    updateDots(nEls.dots, idx);
+    nEls.prev.disabled = (idx === 0);
+    nEls.next.disabled = (idx === steps.length - 1);
+
+    nEls.resolverCache.textContent = "cache: " + step.cacheStatus;
+
+    // info cards
+    var referralCard = $('.info-card[data-field="dns-referral"]');
+    var answerCard = $('.info-card[data-field="dns-answer"]');
+    var cacheCard = $('.info-card[data-field="dns-cache"]');
+
+    setCard(referralCard, step.referral);
+    setCard(answerCard, step.answer);
+    setCard(cacheCard, step.cacheStatus, true);
+
+    if (step.mode === 'cache') {
+      // pulse in place at resolver
+      nEls.packet.style.transition='';
+      setDnsPacketPosition(DNS_POS.resolver.x, DNS_POS.resolver.y - 40);
+      if (animate) {
+        nEls.packet.setAttribute('opacity','1');
+        nEls.packet.animate([
+          { transform: 'translate(' + DNS_POS.resolver.x + 'px,' + (DNS_POS.resolver.y-40) + 'px) scale(1)' },
+          { transform: 'translate(' + DNS_POS.resolver.x + 'px,' + (DNS_POS.resolver.y-40) + 'px) scale(1.15)' },
+          { transform: 'translate(' + DNS_POS.resolver.x + 'px,' + (DNS_POS.resolver.y-40) + 'px) scale(1)' }
+        ], { duration: 600, iterations: 2 });
+        setTimeout(function(){
+          nEls.packet.style.transition = 'opacity .3s';
+          nEls.packet.setAttribute('opacity','0');
+        }, 1200);
+      } else {
+        nEls.packet.setAttribute('opacity','0');
+      }
+    } else if (animate) {
+      nEls.packet.setAttribute('opacity','0');
+      setDnsPacketPosition(DNS_POS[step.from].x, DNS_POS[step.from].y);
+      animateDnsPacket(step.from, step.to, 750, function(){
+        setTimeout(function(){
+          nEls.packet.style.transition = 'opacity .3s';
+          nEls.packet.setAttribute('opacity','0');
+        }, 350);
+      });
+    } else {
+      nEls.packet.style.transition='';
+      nEls.packet.setAttribute('opacity','0');
+      setDnsPacketPosition(DNS_POS[step.to].x, DNS_POS[step.to].y);
+    }
+  }
+
+  function setCard(card, val, forceFill){
+    var vEl = $('.v', card);
+    if (val) {
+      vEl.textContent = val;
+      card.classList.add('filled');
+      card.classList.remove('pending');
+    } else if (!forceFill) {
+      vEl.textContent = '—';
+      card.classList.remove('filled');
+      card.classList.add('pending');
+    }
+  }
+
+  function dnsGoTo(idx, animate){
+    var steps = currentDnsSteps();
+    dnsIdx = Math.max(0, Math.min(steps.length - 1, idx));
+    renderDnsStep(dnsIdx, animate !== false);
+  }
+
+  nEls.next.addEventListener('click', function(){ dnsGoTo(dnsIdx + 1); });
+  nEls.prev.addEventListener('click', function(){ dnsGoTo(dnsIdx - 1); });
+  nEls.reset.addEventListener('click', function(){ stopDnsPlay(); dnsGoTo(0); });
+
+  function stopDnsPlay(){
+    if (dnsTimer) { clearInterval(dnsTimer); dnsTimer = null; }
+    nEls.play.classList.remove('playing');
+    nEls.play.innerHTML = '&#9654; Putar Otomatis';
+  }
+
+  nEls.play.addEventListener('click', function(){
+    if (dnsTimer) { stopDnsPlay(); return; }
+    var steps = currentDnsSteps();
+    if (dnsIdx >= steps.length - 1) { dnsGoTo(0); }
+    nEls.play.classList.add('playing');
+    nEls.play.innerHTML = '&#10074;&#10074; Jeda';
+    dnsTimer = setInterval(function(){
+      var steps2 = currentDnsSteps();
+      if (dnsIdx >= steps2.length - 1) { stopDnsPlay(); return; }
+      dnsGoTo(dnsIdx + 1);
+    }, 1800);
+  });
+
+  nEls.toggle.addEventListener('click', function(){
+    stopDnsPlay();
+    cacheHitMode = !cacheHitMode;
+    nEls.toggle.classList.toggle('on', cacheHitMode);
+    buildDots(nEls.dots, currentDnsSteps().length);
+    dnsGoTo(0, false);
+  });
+
+  renderDnsStep(0, false);
+
+})();
+</script>
+</body>
+</html>

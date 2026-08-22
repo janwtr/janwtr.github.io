@@ -1,1 +1,121 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Media Pembelajaran Interaktif — Jaringan Komputer</title>
+<style>
+  :root{
+    --bg:#0f1420; --panel:#171e2e; --panel-2:#1e2740; --border:#2b3654;
+    --text:#e8ecf5; --text-dim:#a3add6; --accent:#5aa9ff; --accent-2:#7ee0c4;
+    --radius:14px; --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:var(--font); background:var(--bg); color:var(--text);
+    line-height:1.6; padding:2.5rem 1.25rem 4rem;
+  }
+  .wrap{max-width:960px; margin:0 auto;}
+  header{margin-bottom:2rem;}
+  h1{font-size:1.9rem; margin:0 0 .5rem; letter-spacing:-0.01em;}
+  .lede{color:var(--text-dim); font-size:1.02rem; max-width:70ch;}
+  .badge{
+    display:inline-block; background:var(--panel-2); border:1px solid var(--border);
+    color:var(--accent-2); font-size:.78rem; padding:.2rem .6rem; border-radius:999px;
+    margin-bottom:1rem;
+  }
+  .grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(280px,1fr));
+    gap:1rem; margin-top:1.5rem;
+  }
+  a.card{
+    display:block; background:var(--panel); border:1px solid var(--border);
+    border-radius:var(--radius); padding:1.1rem 1.2rem; text-decoration:none;
+    color:var(--text); transition:transform .15s ease, border-color .15s ease, background .15s ease;
+  }
+  a.card:hover{ transform:translateY(-2px); border-color:var(--accent); background:var(--panel-2); }
+  .num{
+    font-size:.75rem; color:var(--accent); font-weight:700; letter-spacing:.05em;
+    text-transform:uppercase; margin-bottom:.35rem;
+  }
+  .title{font-size:1.05rem; font-weight:600; margin-bottom:.4rem;}
+  .desc{font-size:.88rem; color:var(--text-dim);}
+  footer{
+    margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--border);
+    color:var(--text-dim); font-size:.85rem;
+  }
+  code{background:var(--panel-2); padding:.1rem .4rem; border-radius:6px; font-size:.85em;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="badge">Jaringan Komputer &amp; Praktikum Jaringan Komputer</span>
+    <h1>Media Pembelajaran Interaktif</h1>
+    <p class="lede">
+      Kumpulan 9 alat bantu visual/interaktif untuk melengkapi materi SPADA.
+      Setiap alat berupa satu file HTML mandiri (tanpa dependensi eksternal) —
+      bisa dibuka langsung di browser, di-embed di Moodle lewat resource
+      <em>URL/Page</em> (iframe), atau di-hosting terpisah (mis. GitHub Pages)
+      lalu ditautkan dari SPADA.
+    </p>
+  </header>
 
+  <div class="grid">
+    <a class="card" href="01-vlsm-visualizer.html">
+      <div class="num">01 — Subnetting</div>
+      <div class="title">Visualisasi VLSM</div>
+      <div class="desc">Pemotongan blok alamat IP langkah demi langkah berdasarkan kebutuhan host.</div>
+    </a>
+    <a class="card" href="02-subnet-and-calculator.html">
+      <div class="num">02 — Subnetting</div>
+      <div class="title">Kalkulator Subnet (AND Biner)</div>
+      <div class="desc">Operasi AND biner bit-per-bit untuk menurunkan network address &amp; broadcast.</div>
+    </a>
+    <a class="card" href="03-acl-simulator.html">
+      <div class="num">03 — Keamanan &amp; Routing</div>
+      <div class="title">Simulator Urutan Aturan ACL</div>
+      <div class="desc">Paket diuji baris per baris hingga aturan pertama yang cocok (first-match-wins).</div>
+    </a>
+    <a class="card" href="04-arp-spoofing-animation.html">
+      <div class="num">04 — Keamanan Jaringan</div>
+      <div class="title">Animasi ARP &amp; ARP Spoofing</div>
+      <div class="desc">Alur ARP normal vs serangan spoofing, dengan tabel ARP cache langsung.</div>
+    </a>
+    <a class="card" href="05-dhcp-dns-steppers.html">
+      <div class="num">05 — Layanan Jaringan</div>
+      <div class="title">Animasi DHCP (DORA) &amp; DNS</div>
+      <div class="desc">Proses handshake DHCP dan resolusi DNS rekursif/iteratif, langkah demi langkah.</div>
+    </a>
+    <a class="card" href="06-cdp-discovery-mapper.html">
+      <div class="num">06 — Perangkat &amp; Topologi</div>
+      <div class="title">Pemetaan Topologi via CDP</div>
+      <div class="desc">Membangun peta topologi bertahap dari data neighbor CDP tiap perangkat.</div>
+    </a>
+    <a class="card" href="07-rj45-wiremap-builder.html">
+      <div class="num">07 — Praktikum Kabel</div>
+      <div class="title">Pembuat Wiremap RJ45</div>
+      <div class="desc">Susun pin T568A/T568B, validasi straight-through vs crossover.</div>
+    </a>
+    <a class="card" href="08-traceroute-ttl-stepper.html">
+      <div class="num">08 — Diagnostik Jaringan</div>
+      <div class="title">Animasi Traceroute (TTL)</div>
+      <div class="desc">TTL berkurang tiap hop dan balasan ICMP Time Exceeded, hop demi hop.</div>
+    </a>
+    <a class="card" href="09-cli-navigator-switch-race.html">
+      <div class="num">09 — CLI &amp; Switching</div>
+      <div class="title">Navigator CLI &amp; Pembelajaran MAC Switch</div>
+      <div class="desc">Peta mode CLI Cisco yang bisa diklik, plus simulasi flood vs forward pada switch.</div>
+    </a>
+  </div>
+
+  <footer>
+    Dibuat sebagai materi pendukung (bukan pengganti) modul SPADA Jaringan Komputer
+    &amp; Praktikum Jaringan Komputer. Tidak memerlukan plugin Moodle apa pun —
+    cukup file HTML statis. Untuk hosting di GitHub Pages: unggah seluruh folder
+    ini ke repositori, aktifkan Pages, lalu tautkan <code>index.html</code>
+    atau file masing-masing alat dari SPADA.
+  </footer>
+</div>
+</body>
+</html>

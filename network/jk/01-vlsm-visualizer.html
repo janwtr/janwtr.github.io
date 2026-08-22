@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visualisasi VLSM — Pemotongan Blok Alamat IP</title>
+<style>
+  :root {
+    --bg: #f5f7fa;
+    --panel-bg: #ffffff;
+    --text: #1c2530;
+    --text-muted: #5b6675;
+    --border: #dbe1e8;
+    --accent: #2f6fed;
+    --accent-hover: #1f56c9;
+    --danger-bg: #fdecec;
+    --danger-border: #f0a8a8;
+    --danger-text: #9a2020;
+    --free-bg: #e4e8ee;
+    --free-text: #8b95a3;
+    --radius: 10px;
+    --gap: 1.25rem;
+    --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+    --c1: #2f6fed;
+    --c2: #14b8a6;
+    --c3: #f59e0b;
+    --c4: #ef4444;
+    --c5: #8b5cf6;
+    --c6: #ec4899;
+    --c7: #10b981;
+    --c8: #f97316;
+    --c9: #0ea5e9;
+    --c10: #a855f7;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.5;
+  }
+
+  .wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  header h1 {
+    font-size: 1.65rem;
+    margin: 0 0 0.5rem;
+    letter-spacing: -0.01em;
+  }
+
+  .intro {
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    margin-bottom: var(--gap);
+    color: var(--text-muted);
+    font-size: 0.95rem;
+  }
+
+  .intro p { margin: 0 0 0.5rem; }
+  .intro p:last-child { margin-bottom: 0; }
+  .intro strong { color: var(--text); }
+  .intro code {
+    font-family: var(--mono);
+    background: var(--free-bg);
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    font-size: 0.87em;
+  }
+
+  .panel {
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: var(--gap);
+  }
+
+  .panel h2 {
+    font-size: 1.05rem;
+    margin: 0 0 0.9rem;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .field label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: var(--text);
+  }
+
+  .field .hint {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 0.3rem;
+  }
+
+  input[type="text"], textarea {
+    width: 100%;
+    font-family: var(--mono);
+    font-size: 0.92rem;
+    padding: 0.55rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fbfcfe;
+    color: var(--text);
+    resize: vertical;
+  }
+
+  textarea { min-height: 5.5rem; }
+
+  input:focus, textarea:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+    border-color: var(--accent);
+  }
+
+  .actions {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  button {
+    font-family: var(--sans);
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.6rem 1.1rem;
+    border-radius: 7px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.05s ease;
+  }
+  button:active { transform: translateY(1px); }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover { background: var(--accent-hover); }
+
+  .btn-secondary {
+    background: var(--free-bg);
+    color: var(--text);
+    border-color: var(--border);
+  }
+  .btn-secondary:hover { background: #d7dde6; }
+
+  .btn-secondary:disabled, .btn-primary:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .error-box {
+    background: var(--danger-bg);
+    border: 1px solid var(--danger-border);
+    color: var(--danger-text);
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    font-size: 0.9rem;
+    margin-bottom: var(--gap);
+    display: none;
+  }
+  .error-box.show { display: block; }
+
+  .results-area { display: none; }
+  .results-area.show { display: block; }
+
+  .stepper-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .step-indicator {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-family: var(--mono);
+    min-width: 5.5rem;
+  }
+
+  .step-explain {
+    background: #eef3ff;
+    border: 1px solid #c7d8fb;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-size: 0.88rem;
+    margin-bottom: 1rem;
+    color: #1c3a80;
+    min-height: 1.5rem;
+  }
+  .step-explain b { color: #10245c; }
+  .step-explain .math {
+    font-family: var(--mono);
+    background: #ffffffaa;
+    padding: 0.05rem 0.3rem;
+    border-radius: 4px;
+  }
+
+  .bar-outer {
+    width: 100%;
+    height: 68px;
+    background: var(--free-bg);
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    border: 1px solid var(--border);
+    position: relative;
+  }
+
+  .bar-seg {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-align: center;
+    overflow: hidden;
+    white-space: nowrap;
+    padding: 0 2px;
+    flex-shrink: 0;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.5s cubic-bezier(.2,.7,.3,1), opacity 0.4s ease;
+    opacity: 0;
+  }
+  .bar-seg.revealed {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+
+  .bar-seg .seg-label {
+    transform: scaleX(1);
+    display: block;
+    padding: 0 3px;
+  }
+  /* keep label from squishing while parent scales */
+  .bar-seg { transform: scaleX(0); }
+  .bar-seg.revealed .seg-inner { transform: none; }
+
+  .bar-free {
+    height: 100%;
+    background: repeating-linear-gradient(45deg, var(--free-bg), var(--free-bg) 8px, #d8dde5 8px, #d8dde5 16px);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--free-text);
+    font-size: 0.7rem;
+    font-weight: 600;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem 1.1rem;
+    margin-top: 0.9rem;
+    font-size: 0.82rem;
+  }
+  .legend-item { display: flex; align-items: center; gap: 0.4rem; }
+  .legend-swatch {
+    width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0;
+  }
+  .legend-item.dim { opacity: 0.35; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+  }
+  caption { text-align: left; }
+
+  thead th {
+    text-align: left;
+    background: var(--free-bg);
+    padding: 0.55rem 0.6rem;
+    font-weight: 700;
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+  }
+
+  tbody td {
+    padding: 0.5rem 0.6rem;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    white-space: nowrap;
+  }
+  tbody td:first-child { font-family: var(--sans); font-weight: 600; }
+
+  tbody tr.row-pending { opacity: 0.3; }
+
+  .table-scroll { overflow-x: auto; }
+
+  .name-dot {
+    display: inline-block;
+    width: 10px; height: 10px; border-radius: 50%;
+    margin-right: 0.4rem;
+    vertical-align: middle;
+  }
+
+  footer.credit {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    margin-top: 2rem;
+  }
+
+  @media (max-width: 640px) {
+    .wrap { padding: 1.25rem 1rem 3rem; }
+    .bar-outer { height: 56px; }
+    thead th, tbody td { padding: 0.45rem 0.4rem; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Visualisasi VLSM — Pemotongan Blok Alamat IP</h1>
+  </header>
+
+  <div class="intro">
+    <p><strong>VLSM (Variable Length Subnet Masking)</strong> adalah teknik membagi satu blok alamat IP menjadi beberapa subnet dengan ukuran <em>berbeda-beda</em>, disesuaikan dengan jumlah host yang dibutuhkan tiap segmen jaringan, sehingga alamat IP tidak terbuang sia-sia seperti pada subnetting klasik yang ukurannya seragam.</p>
+    <p>Urutan pemotongan <strong>selalu dari kebutuhan host terbesar ke terkecil</strong>. Ini penting karena blok yang lebih besar butuh alamat awal yang selaras (aligned) dengan ukurannya sendiri — jika blok kecil dipotong duluan, sisa ruang bisa terfragmentasi sehingga blok besar berikutnya tidak lagi muat meskipun total alamat sisa sebenarnya cukup.</p>
+    <p>Hint: setiap alamat network dan broadcast dihitung dengan operasi <strong>biner AND</strong> antara alamat IP dan subnet mask — <code>Network = IP AND Mask</code>, lalu <code>Broadcast = Network OR (NOT Mask)</code>.</p>
+  </div>
+
+  <div class="panel">
+    <h2>1. Masukkan Data</h2>
+    <div class="form-grid">
+      <div class="field">
+        <label for="baseNet">Alamat Jaringan Awal (Base Network / CIDR)</label>
+        <input type="text" id="baseNet" value="192.168.1.0/24" autocomplete="off" spellcheck="false">
+        <div class="hint">Contoh: 192.168.1.0/24</div>
+      </div>
+      <div class="field">
+        <label for="reqList">Daftar Kebutuhan Host (satu baris per subnet, format: <code>Nama, jumlah_host</code>)</label>
+        <textarea id="reqList" spellcheck="false">Kantor A, 50
+Kantor B, 25
+Kantor C, 10
+Link WAN, 2</textarea>
+        <div class="hint">Baris kosong akan diabaikan. Urutan input tidak masalah — sistem akan mengurutkan otomatis dari kebutuhan terbesar.</div>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn-primary" id="btnCalc">Hitung &amp; Visualisasikan</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="error-box" id="errorBox" role="alert"></div>
+
+  <div class="results-area" id="resultsArea">
+    <div class="panel">
+      <h2>2. Visualisasi Pemotongan Blok (Step-by-Step)</h2>
+      <div class="stepper-controls">
+        <button type="button" class="btn-secondary" id="btnPrev">◀ Sebelumnya</button>
+        <button type="button" class="btn-secondary" id="btnNext">Langkah Berikutnya ▶</button>
+        <button type="button" class="btn-secondary" id="btnAll">Tampilkan Semua</button>
+        <button type="button" class="btn-secondary" id="btnReset">Ulangi dari Awal</button>
+        <span class="step-indicator" id="stepIndicator">Langkah 0 / 0</span>
+      </div>
+      <div class="step-explain" id="stepExplain"></div>
+      <div class="bar-outer" id="barOuter"></div>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <div class="panel">
+      <h2>3. Tabel Hasil</h2>
+      <div class="table-scroll">
+        <table id="resultTable">
+          <thead>
+            <tr>
+              <th>Nama</th>
+              <th>Host Dibutuhkan</th>
+              <th>CIDR</th>
+              <th>Subnet Mask</th>
+              <th>Network Address</th>
+              <th>Usable Range</th>
+              <th>Broadcast Address</th>
+            </tr>
+          </thead>
+          <tbody id="resultTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <footer class="credit">Alat bantu belajar Jaringan Komputer — VLSM Visualizer</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var COLORS = ["c1","c2","c3","c4","c5","c6","c7","c8","c9","c10"];
+
+  // ---------- IP MATH HELPERS ----------
+
+  function ipToInt(ip) {
+    var parts = ip.split(".");
+    if (parts.length !== 4) return null;
+    var out = 0;
+    for (var i = 0; i < 4; i++) {
+      if (!/^\d{1,3}$/.test(parts[i])) return null;
+      var n = parseInt(parts[i], 10);
+      if (isNaN(n) || n < 0 || n > 255) return null;
+      out = out * 256 + n;
+    }
+    return out >>> 0;
+  }
+
+  function intToIp(n) {
+    n = n >>> 0;
+    return [
+      (n >>> 24) & 255,
+      (n >>> 16) & 255,
+      (n >>> 8) & 255,
+      n & 255
+    ].join(".");
+  }
+
+  function maskFromPrefix(prefix) {
+    if (prefix === 0) return 0;
+    return (0xFFFFFFFF << (32 - prefix)) >>> 0;
+  }
+
+  function prefixToMaskStr(prefix) {
+    return intToIp(maskFromPrefix(prefix));
+  }
+
+  // Smallest prefix length (largest block-hosts) that fits `hostsNeeded` usable hosts.
+  // hosts formula: usable = 2^(32-prefix) - 2 (except /31,/32 edge handled minimally, not needed here)
+  function smallestPrefixForHosts(hostsNeeded) {
+    for (var hostBits = 0; hostBits <= 30; hostBits++) {
+      var total = Math.pow(2, hostBits);
+      var usable = total - 2;
+      if (usable >= hostsNeeded) {
+        return 32 - hostBits;
+      }
+    }
+    return null; // impossible (too many hosts, > /2 range)
+  }
+
+  function blockSize(prefix) {
+    return Math.pow(2, 32 - prefix);
+  }
+
+  // ---------- PARSING / VALIDATION ----------
+
+  function parseBaseNetwork(str) {
+    str = (str || "").trim();
+    var m = str.match(/^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s*\/\s*(\d{1,2})$/);
+    if (!m) {
+      throw new Error("Format alamat jaringan awal tidak valid. Gunakan format CIDR, contoh: 192.168.1.0/24");
+    }
+    var ipStr = m[1];
+    var prefix = parseInt(m[2], 10);
+    var ipInt = ipToInt(ipStr);
+    if (ipInt === null) {
+      throw new Error("Alamat IP awal tidak valid: " + ipStr);
+    }
+    if (isNaN(prefix) || prefix < 0 || prefix > 32) {
+      throw new Error("Prefix CIDR harus di antara /0 sampai /32.");
+    }
+    // normalize to actual network address for that prefix
+    var mask = maskFromPrefix(prefix);
+    var networkInt = (ipInt & mask) >>> 0;
+    return { networkInt: networkInt, prefix: prefix, originalStr: ipStr };
+  }
+
+  function parseRequirements(text) {
+    var lines = (text || "").split("\n");
+    var reqs = [];
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i].trim();
+      if (line === "") continue;
+      var idx = line.lastIndexOf(",");
+      if (idx === -1) {
+        throw new Error("Baris tidak valid (harus format \"Nama, jumlah_host\"): \"" + line + "\"");
+      }
+      var name = line.substring(0, idx).trim();
+      var hostStr = line.substring(idx + 1).trim();
+      if (name === "") {
+        throw new Error("Nama subnet tidak boleh kosong pada baris: \"" + line + "\"");
+      }
+      if (!/^\d+$/.test(hostStr)) {
+        throw new Error("Jumlah host harus berupa angka bulat positif pada baris: \"" + line + "\"");
+      }
+      var hosts = parseInt(hostStr, 10);
+      if (hosts <= 0) {
+        throw new Error("Jumlah host harus lebih dari 0 pada baris: \"" + line + "\"");
+      }
+      reqs.push({ name: name, hosts: hosts });
+    }
+    if (reqs.length === 0) {
+      throw new Error("Masukkan minimal satu kebutuhan subnet.");
+    }
+    return reqs;
+  }
+
+  // ---------- VLSM CARVING ----------
+
+  function carveVLSM(base, reqs) {
+    // sort descending by hosts (stable-ish: keep original relative order for ties via index)
+    var indexed = reqs.map(function (r, i) { return { r: r, i: i }; });
+    indexed.sort(function (a, b) {
+      if (b.r.hosts !== a.r.hosts) return b.r.hosts - a.r.hosts;
+      return a.i - b.i;
+    });
+
+    var results = [];
+    var cursor = base.networkInt;
+    var baseSize = blockSize(base.prefix);
+    var baseEnd = (base.networkInt + baseSize) >>> 0; // exclusive upper bound (as number, careful with 2^32 overflow)
+    var baseEndNum = base.networkInt + baseSize; // use plain number math to avoid 32-bit wrap issues at boundary
+
+    for (var k = 0; k < indexed.length; k++) {
+      var item = indexed[k].r;
+      var prefix = smallestPrefixForHosts(item.hosts);
+      if (prefix === null) {
+        throw new Error("Kebutuhan host untuk \"" + item.name + "\" (" + item.hosts + ") terlalu besar untuk dialokasikan.");
+      }
+      var size = blockSize(prefix);
+      var netStart = cursor;
+      var netEndNum = netStart + size;
+
+      if (netEndNum > baseEndNum) {
+        throw new Error(
+          "Alamat tidak cukup! Subnet \"" + item.name + "\" membutuhkan blok /" + prefix +
+          " (" + size + " alamat) tetapi ruang alamat pada " + intToIp(base.networkInt) + "/" + base.prefix +
+          " sudah habis setelah mengalokasikan subnet-subnet sebelumnya. Perbesar blok awal atau kurangi jumlah/besar kebutuhan host."
+        );
+      }
+
+      var broadcastInt = netStart + size - 1;
+      var firstHost = size > 2 ? netStart + 1 : netStart;
+      var lastHost = size > 2 ? broadcastInt - 1 : broadcastInt;
+      var usableCount = size > 2 ? size - 2 : 0;
+
+      results.push({
+        name: item.name,
+        hostsNeeded: item.hosts,
+        prefix: prefix,
+        hostBits: 32 - prefix,
+        blockSize: size,
+        maskStr: prefixToMaskStr(prefix),
+        networkInt: netStart,
+        networkStr: intToIp(netStart),
+        broadcastInt: broadcastInt,
+        broadcastStr: intToIp(broadcastInt),
+        firstHostStr: intToIp(firstHost),
+        lastHostStr: intToIp(lastHost),
+        usableCount: usableCount,
+        offsetFromBase: netStart - base.networkInt
+      });
+
+      cursor = netStart + size;
+    }
+
+    return {
+      base: base,
+      baseSize: baseSize,
+      results: results,
+      freeRemaining: baseEndNum - cursor
+    };
+  }
+
+  // ---------- UI STATE ----------
+
+  var state = {
+    carveResult: null,
+    step: 0 // number of subnets revealed (0 = none)
+  };
+
+  var el = {
+    baseNet: document.getElementById("baseNet"),
+    reqList: document.getElementById("reqList"),
+    btnCalc: document.getElementById("btnCalc"),
+    errorBox: document.getElementById("errorBox"),
+    resultsArea: document.getElementById("resultsArea"),
+    btnPrev: document.getElementById("btnPrev"),
+    btnNext: document.getElementById("btnNext"),
+    btnAll: document.getElementById("btnAll"),
+    btnReset: document.getElementById("btnReset"),
+    stepIndicator: document.getElementById("stepIndicator"),
+    stepExplain: document.getElementById("stepExplain"),
+    barOuter: document.getElementById("barOuter"),
+    legend: document.getElementById("legend"),
+    resultTbody: document.getElementById("resultTbody")
+  };
+
+  function showError(msg) {
+    el.errorBox.textContent = msg;
+    el.errorBox.classList.add("show");
+    el.resultsArea.classList.remove("show");
+  }
+
+  function clearError() {
+    el.errorBox.textContent = "";
+    el.errorBox.classList.remove("show");
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function buildBar(cr) {
+    el.barOuter.innerHTML = "";
+    var baseSize = cr.baseSize;
+    var results = cr.results;
+
+    for (var i = 0; i < results.length; i++) {
+      var r = results[i];
+      var pct = (r.blockSize / baseSize) * 100;
+      var seg = document.createElement("div");
+      seg.className = "bar-seg";
+      seg.id = "seg-" + i;
+      seg.style.width = pct + "%";
+      seg.style.background = "var(--" + COLORS[i % COLORS.length] + ")";
+      var labelText = pct > 6 ? (r.name + " /" + r.prefix) : ("/" + r.prefix);
+      seg.title = r.name + " — " + r.networkStr + "/" + r.prefix + " (" + r.blockSize + " alamat)";
+      seg.innerHTML = '<span class="seg-label">' + escapeHtml(labelText) + '</span>';
+      el.barOuter.appendChild(seg);
+    }
+
+    var freeDiv = document.createElement("div");
+    freeDiv.className = "bar-free";
+    freeDiv.id = "seg-free";
+    var usedSize = results.reduce(function (a, r) { return a + r.blockSize; }, 0);
+    var freeSize = baseSize - usedSize;
+    var freePct = (freeSize / baseSize) * 100;
+    freeDiv.style.width = freePct + "%";
+    if (freeSize > 0 && freePct > 4) {
+      freeDiv.textContent = "Sisa: " + freeSize + " alamat";
+    }
+    el.barOuter.appendChild(freeDiv);
+  }
+
+  function buildLegend(cr) {
+    el.legend.innerHTML = "";
+    for (var i = 0; i < cr.results.length; i++) {
+      var r = cr.results[i];
+      var item = document.createElement("div");
+      item.className = "legend-item";
+      item.id = "legend-" + i;
+      var swatch = document.createElement("span");
+      swatch.className = "legend-swatch";
+      swatch.style.background = "var(--" + COLORS[i % COLORS.length] + ")";
+      item.appendChild(swatch);
+      var label = document.createElement("span");
+      label.textContent = r.name + " (/" + r.prefix + ", " + r.blockSize + " alamat)";
+      item.appendChild(label);
+      el.legend.appendChild(item);
+    }
+    var freeItem = document.createElement("div");
+    freeItem.className = "legend-item";
+    var freeSwatch = document.createElement("span");
+    freeSwatch.className = "legend-swatch";
+    freeSwatch.style.background = "repeating-linear-gradient(45deg, #d8dde5, #d8dde5 3px, #c3c9d2 3px, #c3c9d2 6px)";
+    freeItem.appendChild(freeSwatch);
+    var freeLabel = document.createElement("span");
+    freeLabel.textContent = "Ruang bebas / belum dialokasikan";
+    freeItem.appendChild(freeLabel);
+    el.legend.appendChild(freeItem);
+  }
+
+  function buildTable(cr) {
+    el.resultTbody.innerHTML = "";
+    for (var i = 0; i < cr.results.length; i++) {
+      var r = cr.results[i];
+      var tr = document.createElement("tr");
+      tr.id = "row-" + i;
+      tr.className = "row-pending";
+
+      var tdName = document.createElement("td");
+      var dot = document.createElement("span");
+      dot.className = "name-dot";
+      dot.style.background = "var(--" + COLORS[i % COLORS.length] + ")";
+      tdName.appendChild(dot);
+      tdName.appendChild(document.createTextNode(r.name));
+      tr.appendChild(tdName);
+
+      var cells = [
+        r.hostsNeeded,
+        "/" + r.prefix,
+        r.maskStr,
+        r.networkStr,
+        r.firstHostStr + " – " + r.lastHostStr,
+        r.broadcastStr
+      ];
+      for (var j = 0; j < cells.length; j++) {
+        var td = document.createElement("td");
+        td.textContent = cells[j];
+        tr.appendChild(td);
+      }
+      el.resultTbody.appendChild(tr);
+    }
+  }
+
+  function explainForStep(cr, stepIdx) {
+    // stepIdx is 0-based index of subnet just revealed
+    var r = cr.results[stepIdx];
+    var hostBits = r.hostBits;
+    var usable = r.blockSize - 2;
+    var html =
+      "<b>" + escapeHtml(r.name) + "</b> membutuhkan <b>" + r.hostsNeeded + " host</b>. " +
+      "Dicari <span class=\"math\">2^h - 2 &ge; " + r.hostsNeeded + "</span> &rarr; bit host minimum " +
+      "<span class=\"math\">h = " + hostBits + "</span> (2^" + hostBits + " - 2 = " + usable + " host usable), " +
+      "sehingga prefix yang dipakai adalah <b>/" + r.prefix + "</b> (blok berisi " + r.blockSize + " alamat). " +
+      "Blok dialokasikan mulai dari <span class=\"math\">" + r.networkStr + "</span> hingga " +
+      "<span class=\"math\">" + r.broadcastStr + "</span> (Network AND Mask menghasilkan alamat network ini).";
+    el.stepExplain.innerHTML = html;
+  }
+
+  function updateStepUI() {
+    var cr = state.carveResult;
+    if (!cr) return;
+    var total = cr.results.length;
+    el.stepIndicator.textContent = "Langkah " + state.step + " / " + total;
+    el.btnPrev.disabled = state.step <= 0;
+    el.btnNext.disabled = state.step >= total;
+    el.btnAll.disabled = state.step >= total;
+
+    for (var i = 0; i < total; i++) {
+      var seg = document.getElementById("seg-" + i);
+      var legendItem = document.getElementById("legend-" + i);
+      var row = document.getElementById("row-" + i);
+      var revealed = i < state.step;
+      if (seg) seg.classList.toggle("revealed", revealed);
+      if (legendItem) legendItem.classList.toggle("dim", !revealed);
+      if (row) row.classList.toggle("row-pending", !revealed);
+    }
+
+    var freeDiv = document.getElementById("seg-free");
+    if (freeDiv) {
+      freeDiv.style.visibility = "visible";
+    }
+
+    if (state.step === 0) {
+      el.stepExplain.innerHTML = "Klik <b>\"Langkah Berikutnya\"</b> untuk mulai memotong blok alamat, diurutkan dari kebutuhan host terbesar ke terkecil.";
+    } else if (state.step <= total) {
+      explainForStep(cr, state.step - 1);
+    }
+  }
+
+  function goNext() {
+    var cr = state.carveResult;
+    if (!cr) return;
+    if (state.step < cr.results.length) {
+      state.step++;
+      updateStepUI();
+    }
+  }
+
+  function goPrev() {
+    if (state.step > 0) {
+      state.step--;
+      updateStepUI();
+    }
+  }
+
+  function showAll() {
+    var cr = state.carveResult;
+    if (!cr) return;
+    state.step = cr.results.length;
+    updateStepUI();
+  }
+
+  function resetSteps() {
+    state.step = 0;
+    updateStepUI();
+  }
+
+  function runCalculation() {
+    clearError();
+    var base, reqs, cr;
+    try {
+      base = parseBaseNetwork(el.baseNet.value);
+      reqs = parseRequirements(el.reqList.value);
+      cr = carveVLSM(base, reqs);
+    } catch (e) {
+      state.carveResult = null;
+      el.resultsArea.classList.remove("show");
+      showError(e.message || "Terjadi kesalahan saat memproses input.");
+      return;
+    }
+
+    state.carveResult = cr;
+    state.step = 0;
+
+    buildBar(cr);
+    buildLegend(cr);
+    buildTable(cr);
+    el.resultsArea.classList.add("show");
+    updateStepUI();
+  }
+
+  el.btnCalc.addEventListener("click", runCalculation);
+  el.btnNext.addEventListener("click", goNext);
+  el.btnPrev.addEventListener("click", goPrev);
+  el.btnAll.addEventListener("click", showAll);
+  el.btnReset.addEventListener("click", resetSteps);
+
+  el.baseNet.addEventListener("keydown", function (ev) {
+    if (ev.key === "Enter") runCalculation();
+  });
+
+  // Run once on load with the default example.
+  runCalculation();
+})();
+</script>
+</body>
+</html>

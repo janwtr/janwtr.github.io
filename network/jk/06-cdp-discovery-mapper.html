@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pemetaan Topologi via CDP — Penemuan Bertingkat</title>
+<style>
+  :root{
+    --bg:#0f1720;
+    --panel:#16212c;
+    --panel-2:#1c2a37;
+    --border:#2c3e4f;
+    --text:#e6edf3;
+    --text-dim:#9fb0c0;
+    --accent:#4fd1c5;
+    --accent-2:#63b3ed;
+    --warn:#f6ad55;
+    --danger:#fc8181;
+    --ok:#68d391;
+    --node-fill:#1c2a37;
+    --node-stroke:#4fd1c5;
+    --node-current:#f6ad55;
+    --edge:#3a5164;
+    --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    padding:20px;
+    min-width:320px;
+  }
+  .wrap{max-width:1180px;margin:0 auto;}
+
+  header h1{
+    font-size:1.5rem;
+    margin:0 0 6px 0;
+    color:var(--text);
+  }
+  header h1 .sub{
+    display:block;
+    font-size:0.85rem;
+    font-weight:400;
+    color:var(--accent-2);
+    margin-top:4px;
+  }
+
+  .intro{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-left:4px solid var(--accent-2);
+    border-radius:8px;
+    padding:14px 16px;
+    margin:14px 0 18px 0;
+    font-size:0.92rem;
+    line-height:1.55;
+    color:var(--text-dim);
+  }
+  .intro p{margin:0 0 8px 0;}
+  .intro p:last-child{margin-bottom:0;}
+  .intro .sec-note{
+    color:var(--warn);
+    font-weight:600;
+  }
+  .intro .sec-note::before{
+    content:"⚠ Catatan keamanan: ";
+    color:var(--warn);
+  }
+
+  .toolbar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:center;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:12px 14px;
+    margin-bottom:16px;
+  }
+  .toolbar label{
+    font-size:0.82rem;
+    color:var(--text-dim);
+    margin-right:4px;
+  }
+  select, button{
+    font-family:var(--sans);
+    font-size:0.88rem;
+    border-radius:6px;
+    border:1px solid var(--border);
+    padding:8px 12px;
+    cursor:pointer;
+  }
+  select{
+    background:var(--panel-2);
+    color:var(--text);
+  }
+  button{
+    background:var(--accent);
+    color:#0b1a1a;
+    font-weight:600;
+    border:none;
+    transition:filter 0.15s ease, transform 0.05s ease;
+  }
+  button:hover:not(:disabled){filter:brightness(1.08);}
+  button:active:not(:disabled){transform:translateY(1px);}
+  button:disabled{
+    background:#2c3e4f;
+    color:#6b7f8f;
+    cursor:not-allowed;
+  }
+  button.secondary{
+    background:transparent;
+    color:var(--text-dim);
+    border:1px solid var(--border);
+  }
+  button.secondary:hover:not(:disabled){
+    color:var(--text);
+    border-color:var(--accent-2);
+  }
+  .spacer{flex:1;}
+
+  .status-strip{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:16px;
+  }
+  .pill{
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:999px;
+    padding:6px 14px;
+    font-size:0.82rem;
+    color:var(--text-dim);
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .pill b{color:var(--text);}
+  .pill.here{border-color:var(--node-current);}
+  .pill.here b{color:var(--node-current);}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+  .dot.current{background:var(--node-current);}
+  .dot.progress{background:var(--accent-2);}
+
+  .grid{
+    display:grid;
+    grid-template-columns:1.15fr 1fr;
+    gap:16px;
+  }
+  @media (max-width:900px){
+    .grid{grid-template-columns:1fr;}
+  }
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+  .panel-head{
+    padding:10px 14px;
+    border-bottom:1px solid var(--border);
+    font-size:0.82rem;
+    font-weight:600;
+    color:var(--text-dim);
+    letter-spacing:0.02em;
+    text-transform:uppercase;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .panel-head .hint{
+    font-weight:400;
+    text-transform:none;
+    font-size:0.75rem;
+    color:#6b7f8f;
+  }
+
+  /* Graph panel */
+  #graphSvg{
+    width:100%;
+    height:420px;
+    display:block;
+    background:
+      radial-gradient(circle at 1px 1px, #223244 1px, transparent 0) 0 0/22px 22px,
+      var(--panel);
+  }
+  .edge-line{
+    stroke:var(--edge);
+    stroke-width:2;
+    transition:stroke 0.3s ease;
+  }
+  .edge-label{
+    fill:var(--text-dim);
+    font-family:var(--mono);
+    font-size:9px;
+  }
+  .node-circle{
+    fill:var(--node-fill);
+    stroke:var(--node-stroke);
+    stroke-width:2;
+    cursor:pointer;
+    transition:stroke 0.2s ease, r 0.2s ease, fill 0.2s ease;
+  }
+  .node-group:hover .node-circle{
+    fill:#22333f;
+    stroke:var(--accent);
+    r:30;
+  }
+  .node-group.current .node-circle{
+    stroke:var(--node-current);
+    stroke-width:3;
+    fill:#2a2013;
+  }
+  .node-group.unvisited .node-circle{
+    stroke-dasharray:4 3;
+  }
+  .node-label{
+    fill:var(--text);
+    font-family:var(--mono);
+    font-size:13px;
+    font-weight:700;
+    text-anchor:middle;
+    pointer-events:none;
+  }
+  .node-sub{
+    fill:var(--text-dim);
+    font-family:var(--mono);
+    font-size:8.5px;
+    text-anchor:middle;
+    pointer-events:none;
+  }
+  .here-badge{
+    fill:var(--node-current);
+    font-family:var(--sans);
+    font-size:9px;
+    font-weight:700;
+    text-anchor:middle;
+    pointer-events:none;
+  }
+  .ghost-hint{
+    fill:#4a6272;
+    font-family:var(--mono);
+    font-size:9px;
+    text-anchor:middle;
+    pointer-events:none;
+  }
+
+  /* CLI panel */
+  #cliOutput{
+    flex:1;
+    background:#0a1119;
+    color:#8ce99a;
+    font-family:var(--mono);
+    font-size:0.82rem;
+    line-height:1.5;
+    padding:14px;
+    margin:0;
+    white-space:pre-wrap;
+    word-break:break-word;
+    height:420px;
+    overflow-y:auto;
+  }
+  #cliOutput .prompt{color:#63b3ed;}
+  #cliOutput .cmd{color:#f6e05e;}
+  #cliOutput .header-row{color:#a0aec0;}
+  #cliOutput .hop-msg{color:#63b3ed;font-style:italic;}
+  #cliOutput .sys-msg{color:#6b7f8f;}
+  #cliOutput .new-dev{color:#68d391;font-weight:700;}
+
+  .legend{
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+    padding:10px 14px;
+    border-top:1px solid var(--border);
+    font-size:0.75rem;
+    color:var(--text-dim);
+  }
+  .legend span{display:flex;align-items:center;gap:5px;}
+  .legend .lg-dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--node-stroke);background:var(--node-fill);}
+  .legend .lg-dot.cur{border-color:var(--node-current);background:#2a2013;}
+
+  .banner{
+    margin-top:16px;
+    padding:14px 16px;
+    border-radius:8px;
+    font-size:0.92rem;
+    display:none;
+    align-items:center;
+    gap:10px;
+  }
+  .banner.show{display:flex;}
+  .banner.complete{
+    background:rgba(104,211,145,0.12);
+    border:1px solid var(--ok);
+    color:var(--ok);
+  }
+
+  footer{
+    margin-top:22px;
+    font-size:0.72rem;
+    color:#4a6272;
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Pemetaan Topologi via CDP
+      <span class="sub">Penemuan Bertingkat (Chained Discovery) — Simulasi <code>show cdp neighbors</code></span>
+    </h1>
+  </header>
+
+  <div class="intro">
+    <p>Cisco Discovery Protocol (CDP) hanya membocorkan informasi tentang perangkat yang <strong>terhubung langsung</strong> (satu hop) ke port perangkat tempat perintah dijalankan — bukan seluruh jaringan. Karena itu, untuk memetakan topologi secara utuh, seorang teknisi harus "berpindah" (login/SSH/console) ke tiap perangkat tetangga yang baru ditemukan lalu menjalankan <code>show cdp neighbors</code> lagi di sana, mengulangi proses ini secara bertingkat sampai seluruh perangkat dan tautan terpetakan.</p>
+    <p>Simulasi di bawah ini meniru proses tersebut: setiap kali Anda menjalankan perintah pada perangkat "tempat Anda berada", hanya tetangga langsungnya yang tersingkap ke peta topologi.</p>
+    <p class="sec-note">CDP adalah protokol milik Cisco (proprietary) yang beroperasi di Layer 2 tanpa autentikasi — praktik terbaik keamanan jaringan biasanya menonaktifkannya pada port akses/edge yang tidak tepercaya agar informasi perangkat tidak bocor ke pihak luar.</p>
+  </div>
+
+  <div class="toolbar">
+    <label for="startSelect">Perangkat awal:</label>
+    <select id="startSelect"></select>
+    <button id="startBtn">Mulai Sesi</button>
+    <div class="spacer"></div>
+    <button id="runBtn">▶ Jalankan <code style="font-family:inherit">show cdp neighbors</code></button>
+    <button id="resetBtn" class="secondary">⟲ Reset</button>
+  </div>
+
+  <div class="status-strip">
+    <div class="pill here"><span class="dot current"></span>Anda berada di: <b id="hereLabel">—</b></div>
+    <div class="pill"><span class="dot progress"></span>Perangkat ditemukan: <b id="nodeCount">0</b>/<span id="nodeTotal">0</span></div>
+    <div class="pill">Tautan (link) ditemukan: <b id="edgeCount">0</b>/<span id="edgeTotal">0</span></div>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="panel-head">
+        <span>🗺 Peta Topologi yang Sudah Ditemukan</span>
+        <span class="hint">klik node untuk berpindah (hop)</span>
+      </div>
+      <svg id="graphSvg" viewBox="0 0 800 460" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="legend">
+        <span><span class="lg-dot"></span> Sudah ditemukan</span>
+        <span><span class="lg-dot cur"></span> Anda di sini sekarang</span>
+        <span>garis putus = perangkat, belum di-cdp dari sana</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <span>💻 Terminal CLI (Simulasi Console/SSH)</span>
+        <span class="hint">gaya output Cisco IOS</span>
+      </div>
+      <pre id="cliOutput"></pre>
+    </div>
+  </div>
+
+  <div id="completeBanner" class="banner complete">
+    ✅ <span>Topologi lengkap berhasil dipetakan! Semua <b id="doneCount"></b> perangkat dan seluruh tautan sudah ditemukan lewat proses penemuan bertingkat.</span>
+  </div>
+
+  <footer>Simulasi edukatif untuk mata kuliah Jaringan Komputer — tidak terhubung ke perangkat nyata mana pun.</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- Simulated network definition ----------
+  var devices = {
+    SW1: { platform: "cisco WS-C2960-24TT-L", cap: "S I", x: 400, y: 70  },
+    SW2: { platform: "cisco WS-C2960-24TT-L", cap: "S I", x: 180, y: 210 },
+    SW3: { platform: "cisco WS-C2960-24TT-L", cap: "S I", x: 620, y: 210 },
+    R1:  { platform: "cisco 2911",            cap: "R S I", x: 180, y: 390 },
+    R2:  { platform: "cisco 2911",            cap: "R S I", x: 620, y: 390 }
+  };
+  var deviceOrder = ["SW1","SW2","SW3","R1","R2"];
+
+  var links = [
+    { a:"SW1", b:"SW2", portA:"Gig 0/1", portB:"Gig 0/1" },
+    { a:"SW1", b:"SW3", portA:"Gig 0/2", portB:"Gig 0/1" },
+    { a:"SW2", b:"R1",  portA:"Gig 0/2", portB:"Gig 0/0" },
+    { a:"SW3", b:"R2",  portA:"Gig 0/2", portB:"Gig 0/0" },
+    { a:"R1",  b:"R2",  portA:"Gig 0/1", portB:"Gig 0/1" }
+  ];
+
+  function edgeKey(a,b){ return [a,b].sort().join("__"); }
+
+  function neighborsOf(dev){
+    var out = [];
+    links.forEach(function(l){
+      if(l.a === dev){ out.push({neighbor:l.b, localPort:l.portA, remotePort:l.portB}); }
+      else if(l.b === dev){ out.push({neighbor:l.a, localPort:l.portB, remotePort:l.portA}); }
+    });
+    return out;
+  }
+
+  // ---------- State ----------
+  var state = {
+    started: false,
+    current: null,
+    discoveredNodes: {},   // deviceId -> true
+    discoveredEdges: {},   // key -> {a,b,portA,portB}
+    ranOn: {}               // deviceId -> true (command already executed there)
+  };
+
+  // ---------- DOM refs ----------
+  var startSelect = document.getElementById("startSelect");
+  var startBtn = document.getElementById("startBtn");
+  var runBtn = document.getElementById("runBtn");
+  var resetBtn = document.getElementById("resetBtn");
+  var hereLabel = document.getElementById("hereLabel");
+  var nodeCountEl = document.getElementById("nodeCount");
+  var nodeTotalEl = document.getElementById("nodeTotal");
+  var edgeCountEl = document.getElementById("edgeCount");
+  var edgeTotalEl = document.getElementById("edgeTotal");
+  var svg = document.getElementById("graphSvg");
+  var cli = document.getElementById("cliOutput");
+  var completeBanner = document.getElementById("completeBanner");
+  var doneCountEl = document.getElementById("doneCount");
+
+  nodeTotalEl.textContent = deviceOrder.length;
+  edgeTotalEl.textContent = links.length;
+
+  deviceOrder.forEach(function(d){
+    var opt = document.createElement("option");
+    opt.value = d; opt.textContent = d;
+    startSelect.appendChild(opt);
+  });
+
+  // ---------- CLI helpers ----------
+  function cliAppend(html){
+    var atBottom = cli.scrollHeight - cli.clientHeight <= cli.scrollTop + 4;
+    cli.insertAdjacentHTML("beforeend", html);
+    if(atBottom){ cli.scrollTop = cli.scrollHeight; }
+  }
+  function esc(s){
+    return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+  function pad(str, len){
+    str = String(str);
+    while(str.length < len){ str += " "; }
+    return str;
+  }
+
+  function printCdpOutput(dev, neigh){
+    var lines = [];
+    lines.push('<span class="prompt">' + esc(dev) + '#</span><span class="cmd">show cdp neighbors</span>');
+    lines.push('<span class="header-row">Capability Codes: R - Router, T - Trans Bridge, B - Source Route Bridge</span>');
+    lines.push('<span class="header-row">                  S - Switch, H - Host, I - IGMP, r - Repeater, P - Phone</span>');
+    lines.push("");
+    lines.push('<span class="header-row">' + pad("Device ID",17) + pad("Local Intrfce",17) + pad("Holdtme",10) + pad("Capability",11) + pad("Platform",18) + "Port ID" + "</span>");
+
+    if(neigh.length === 0){
+      lines.push('<span class="sys-msg">(tidak ada tetangga CDP terdeteksi pada perangkat ini)</span>');
+    } else {
+      neigh.forEach(function(n){
+        var info = devices[n.neighbor];
+        var hold = 120 + Math.floor(Math.random()*61);
+        var isNew = !state.discoveredNodes[n.neighbor];
+        var idCell = pad(n.neighbor, 17);
+        var row = idCell + pad(n.localPort,17) + pad(hold,10) + pad(info.cap,11) + pad(info.platform,18) + n.remotePort;
+        lines.push('<span class="' + (isNew ? "new-dev" : "") + '">' + esc(row) + '</span>');
+      });
+    }
+    lines.push("");
+    cliAppend(lines.join("\n") + "\n");
+  }
+
+  function printHop(from, to){
+    cliAppend(
+      '<span class="hop-msg">--- Membuka sesi console/SSH dari ' + esc(from) + ' ke ' + esc(to) + ' ---</span>\n' +
+      '<span class="sys-msg">Trying ' + esc(to) + ' ... Open</span>\n' +
+      '<span class="prompt">' + esc(to) + '></span> <span class="sys-msg">(sesi aktif)</span>\n\n'
+    );
+  }
+
+  function printSystem(msg){
+    cliAppend('<span class="sys-msg">' + esc(msg) + '</span>\n\n');
+  }
+
+  // ---------- Graph rendering ----------
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function svgEl(tag, attrs){
+    var el = document.createElementNS(SVG_NS, tag);
+    for(var k in attrs){ el.setAttribute(k, attrs[k]); }
+    return el;
+  }
+
+  function renderGraph(){
+    svg.innerHTML = "";
+
+    // ghost hint: show total device count faintly if nothing discovered yet
+    if(Object.keys(state.discoveredNodes).length === 0){
+      var hint = svgEl("text", {x:400, y:230, class:"ghost-hint"});
+      hint.textContent = "Belum ada perangkat ditemukan — pilih perangkat awal & mulai sesi.";
+      svg.appendChild(hint);
+      return;
+    }
+
+    // edges first (under nodes)
+    Object.keys(state.discoveredEdges).forEach(function(key){
+      var e = state.discoveredEdges[key];
+      var pa = devices[e.a], pb = devices[e.b];
+      var line = svgEl("line", {
+        x1:pa.x, y1:pa.y, x2:pb.x, y2:pb.y, class:"edge-line"
+      });
+      svg.appendChild(line);
+      var mx = (pa.x+pb.x)/2, my = (pa.y+pb.y)/2;
+      var lbl = svgEl("text", {x:mx, y:my-4, class:"edge-label", "text-anchor":"middle"});
+      lbl.textContent = e.portA + " ↔ " + e.portB;
+      svg.appendChild(lbl);
+    });
+
+    // nodes
+    Object.keys(state.discoveredNodes).forEach(function(id){
+      var info = devices[id];
+      var isCurrent = (id === state.current);
+      var visited = !!state.ranOn[id];
+      var g = svgEl("g", {
+        class:"node-group " + (isCurrent ? "current" : "") + (!visited ? " unvisited" : ""),
+        "data-dev": id
+      });
+      var circle = svgEl("circle", {cx:info.x, cy:info.y, r:26, class:"node-circle"});
+      g.appendChild(circle);
+      var label = svgEl("text", {x:info.x, y:info.y+4, class:"node-label"});
+      label.textContent = id;
+      g.appendChild(label);
+      var sub = svgEl("text", {x:info.x, y:info.y+38, class:"node-sub"});
+      sub.textContent = info.platform.replace("cisco ","");
+      g.appendChild(sub);
+      if(isCurrent){
+        var badge = svgEl("text", {x:info.x, y:info.y-36, class:"here-badge"});
+        badge.textContent = "▼ ANDA DI SINI";
+        g.appendChild(badge);
+      }
+      g.style.cursor = "pointer";
+      g.addEventListener("click", function(){ onNodeClick(id); });
+      svg.appendChild(g);
+    });
+  }
+
+  // ---------- Actions ----------
+  function onNodeClick(id){
+    if(!state.started) return;
+    if(id === state.current) return;
+    if(!state.discoveredNodes[id]) return; // not reachable yet
+    var from = state.current;
+    printHop(from, id);
+    state.current = id;
+    updateStatus();
+    renderGraph();
+  }
+
+  function updateStatus(){
+    hereLabel.textContent = state.current || "—";
+    nodeCountEl.textContent = Object.keys(state.discoveredNodes).length;
+    edgeCountEl.textContent = Object.keys(state.discoveredEdges).length;
+    runBtn.disabled = !state.started;
+    checkComplete();
+  }
+
+  function checkComplete(){
+    var allEdges = Object.keys(state.discoveredEdges).length === links.length;
+    var allNodes = Object.keys(state.discoveredNodes).length === deviceOrder.length;
+    if(allEdges && allNodes){
+      doneCountEl.textContent = deviceOrder.length;
+      completeBanner.classList.add("show");
+    } else {
+      completeBanner.classList.remove("show");
+    }
+  }
+
+  function startSession(){
+    var chosen = startSelect.value;
+    state.started = true;
+    state.current = chosen;
+    state.discoveredNodes = {};
+    state.discoveredEdges = {};
+    state.ranOn = {};
+    state.discoveredNodes[chosen] = true;
+
+    cli.innerHTML = "";
+    printSystem("Sesi dimulai. Anda kini terhubung ke " + chosen + " melalui console.\nJalankan 'show cdp neighbors' untuk melihat tetangga langsungnya.");
+    updateStatus();
+    renderGraph();
+    startSelect.disabled = true;
+  }
+
+  function runCdp(){
+    if(!state.started) return;
+    var dev = state.current;
+    var neigh = neighborsOf(dev);
+
+    neigh.forEach(function(n){
+      state.discoveredNodes[n.neighbor] = true;
+      var key = edgeKey(dev, n.neighbor);
+      if(!state.discoveredEdges[key]){
+        var l = links.filter(function(x){ return edgeKey(x.a,x.b) === key; })[0];
+        state.discoveredEdges[key] = l;
+      }
+    });
+    state.ranOn[dev] = true;
+
+    printCdpOutput(dev, neigh);
+    updateStatus();
+    renderGraph();
+  }
+
+  function resetAll(){
+    state.started = false;
+    state.current = null;
+    state.discoveredNodes = {};
+    state.discoveredEdges = {};
+    state.ranOn = {};
+    cli.innerHTML = "";
+    printSystem("Simulasi direset. Pilih perangkat awal lalu klik 'Mulai Sesi' untuk memulai kembali proses penemuan CDP bertingkat.");
+    startSelect.disabled = false;
+    updateStatus();
+    renderGraph();
+  }
+
+  startBtn.addEventListener("click", startSession);
+  runBtn.addEventListener("click", runCdp);
+  resetBtn.addEventListener("click", resetAll);
+
+  // ---------- init ----------
+  startSelect.value = "SW1";
+  runBtn.disabled = true;
+  printSystem("Selamat datang. Pilih perangkat awal (default SW1) lalu klik 'Mulai Sesi'.");
+  renderGraph();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Simulator Urutan Aturan ACL</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+:root{
+  --bg:#0f172a;
+  --panel:#16213a;
+  --panel-2:#1c2947;
+  --border:#2c3a5c;
+  --text:#e6ebf5;
+  --text-dim:#9aa8c7;
+  --accent:#5b8def;
+  --permit:#33c07c;
+  --permit-bg:#0f3327;
+  --deny:#e8546a;
+  --deny-bg:#3a1420;
+  --pending:#c8a94e;
+  --pending-bg:#3a3013;
+  --neutral:#3c4b73;
+  --implicit:#5a6685;
+  --radius:10px;
+  --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--sans);
+  padding:24px;
+  min-height:100vh;
+}
+.wrap{max-width:1180px;margin:0 auto;}
+h1{font-size:1.5rem;margin:0 0 6px;}
+.subtitle{color:var(--text-dim);font-size:0.95rem;margin-bottom:18px;}
+.intro{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:14px 18px;
+  font-size:0.92rem;
+  line-height:1.55;
+  color:var(--text-dim);
+  margin-bottom:22px;
+}
+.intro strong{color:var(--text);}
+.layout{
+  display:grid;
+  grid-template-columns:1.5fr 1fr;
+  gap:22px;
+}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;}
+}
+.panel{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:16px 18px;
+  margin-bottom:20px;
+}
+.panel h2{
+  font-size:1.02rem;
+  margin:0 0 12px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.rule-list{display:flex;flex-direction:column;gap:8px;}
+.rule{
+  display:grid;
+  grid-template-columns:34px 30px 1fr auto;
+  align-items:center;
+  gap:10px;
+  background:var(--panel-2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:8px 10px;
+  transition:background .25s, border-color .25s, transform .2s, box-shadow .25s;
+  font-family:var(--mono);
+  font-size:0.85rem;
+}
+.rule.state-pending{}
+.rule.state-checking{
+  border-color:var(--pending);
+  background:var(--pending-bg);
+  box-shadow:0 0 0 2px rgba(200,169,78,0.25);
+}
+.rule.state-nomatch{
+  border-color:var(--neutral);
+  opacity:0.55;
+}
+.rule.state-match.permit{
+  border-color:var(--permit);
+  background:var(--permit-bg);
+  box-shadow:0 0 0 3px rgba(51,192,124,0.25);
+  transform:scale(1.01);
+}
+.rule.state-match.deny{
+  border-color:var(--deny);
+  background:var(--deny-bg);
+  box-shadow:0 0 0 3px rgba(232,84,106,0.25);
+  transform:scale(1.01);
+}
+.rule .seq{color:var(--text-dim);text-align:right;}
+.rule .badge{
+  font-weight:700;
+  font-size:0.68rem;
+  padding:2px 6px;
+  border-radius:5px;
+  text-align:center;
+  letter-spacing:0.03em;
+}
+.badge.permit{background:rgba(51,192,124,0.18);color:var(--permit);}
+.badge.deny{background:rgba(232,84,106,0.18);color:var(--deny);}
+.rule .body{color:var(--text);white-space:nowrap;overflow-x:auto;}
+.rule .status-icon{
+  width:22px;height:22px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.75rem;font-weight:700;flex-shrink:0;
+  background:var(--neutral);color:#fff;
+}
+.rule.state-checking .status-icon{background:var(--pending);color:#1a1400;}
+.rule.state-nomatch .status-icon{background:var(--neutral);}
+.rule.state-match .status-icon{background:#fff;color:#000;}
+.rule .ctrls{display:flex;gap:4px;}
+.rule .ctrls button{
+  background:var(--panel);
+  border:1px solid var(--border);
+  color:var(--text-dim);
+  border-radius:5px;
+  width:24px;height:24px;
+  cursor:pointer;
+  font-size:0.75rem;
+  line-height:1;
+}
+.rule .ctrls button:hover{color:var(--text);border-color:var(--accent);}
+.rule.implicit{
+  opacity:0.65;
+  font-style:italic;
+  border-style:dashed;
+}
+.rule.implicit .body{color:var(--text-dim);}
+.rule.implicit.state-match{
+  opacity:1;
+  font-style:normal;
+  border-style:solid;
+}
+
+.edit-form{
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:6px;
+  margin-top:14px;
+  padding-top:12px;
+  border-top:1px dashed var(--border);
+}
+.edit-form label{
+  font-size:0.68rem;
+  color:var(--text-dim);
+  display:block;
+  margin-bottom:2px;
+}
+.edit-form input, .edit-form select{
+  width:100%;
+  background:var(--bg);
+  border:1px solid var(--border);
+  color:var(--text);
+  border-radius:6px;
+  padding:5px 6px;
+  font-size:0.8rem;
+  font-family:var(--mono);
+}
+.edit-form .addbtn{
+  grid-column:1/-1;
+  margin-top:4px;
+}
+button.primary{
+  background:var(--accent);
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  padding:8px 14px;
+  font-size:0.85rem;
+  font-weight:600;
+  cursor:pointer;
+}
+button.primary:hover{filter:brightness(1.1);}
+button.secondary{
+  background:var(--panel-2);
+  color:var(--text);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:8px 14px;
+  font-size:0.85rem;
+  cursor:pointer;
+}
+button.secondary:hover{border-color:var(--accent);}
+button:disabled{opacity:0.4;cursor:not-allowed;}
+
+.packet-form{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.packet-form .full{grid-column:1/-1;}
+.packet-form label{font-size:0.72rem;color:var(--text-dim);display:block;margin-bottom:3px;}
+.packet-form input, .packet-form select{
+  width:100%;background:var(--bg);border:1px solid var(--border);
+  color:var(--text);border-radius:6px;padding:7px 8px;font-size:0.85rem;
+  font-family:var(--mono);
+}
+.presets{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+.preset-btn{
+  background:var(--panel-2);
+  border:1px solid var(--border);
+  color:var(--text-dim);
+  border-radius:20px;
+  padding:5px 12px;
+  font-size:0.72rem;
+  cursor:pointer;
+  font-family:var(--mono);
+}
+.preset-btn:hover{border-color:var(--accent);color:var(--text);}
+
+.action-row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;}
+
+.packet-badge{
+  font-family:var(--mono);
+  font-size:0.85rem;
+  background:var(--panel-2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:10px 12px;
+  margin-top:14px;
+  color:var(--text-dim);
+}
+.packet-badge b{color:var(--text);}
+
+.result-box{
+  margin-top:16px;
+  border-radius:var(--radius);
+  padding:18px;
+  text-align:center;
+  font-size:1.15rem;
+  font-weight:700;
+  border:2px solid var(--border);
+  background:var(--panel-2);
+  color:var(--text-dim);
+  transition:all .3s;
+}
+.result-box.permit{
+  border-color:var(--permit);
+  background:var(--permit-bg);
+  color:var(--permit);
+}
+.result-box.deny{
+  border-color:var(--deny);
+  background:var(--deny-bg);
+  color:var(--deny);
+}
+.result-box .sub{
+  display:block;
+  font-weight:400;
+  font-size:0.78rem;
+  margin-top:6px;
+  color:inherit;
+  opacity:0.85;
+}
+
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:0.75rem;color:var(--text-dim);margin-top:10px;}
+.legend span{display:inline-flex;align-items:center;gap:5px;}
+.legend i{width:11px;height:11px;border-radius:3px;display:inline-block;}
+.legend .c-pending{background:var(--pending);}
+.legend .c-nomatch{background:var(--neutral);}
+.legend .c-permit{background:var(--permit);}
+.legend .c-deny{background:var(--deny);}
+
+.footer-note{color:var(--text-dim);font-size:0.72rem;margin-top:24px;text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Simulator Urutan Aturan ACL</h1>
+  <div class="subtitle">Paket Berjalan Melalui Daftar Aturan</div>
+
+  <div class="intro">
+    Access Control List (ACL) bekerja dengan prinsip <strong>first-match-wins</strong>: setiap paket yang masuk akan diuji terhadap aturan-aturan ACL secara berurutan dari atas ke bawah, dan begitu paket cocok (match) dengan sebuah aturan, aksi aturan tersebut (permit/deny) langsung diterapkan tanpa memeriksa aturan-aturan berikutnya. Jika paket tidak cocok dengan satupun aturan yang didefinisikan pengguna, ia akan jatuh ke aturan tersirat di akhir daftar yaitu <strong>implicit deny any any</strong>, yang secara diam-diam menolak semua paket yang tersisa. Karena itu, <strong>urutan aturan sangat menentukan hasil akhir</strong> — mengubah urutan dua aturan yang tumpang tindih bisa mengubah total keputusan ACL terhadap paket yang sama.
+  </div>
+
+  <div class="layout">
+    <div class="col-left">
+      <div class="panel">
+        <h2>📋 Daftar Aturan ACL</h2>
+        <div class="rule-list" id="ruleList"></div>
+
+        <div class="edit-form" id="editForm">
+          <div>
+            <label>Aksi</label>
+            <select id="f-action">
+              <option value="permit">permit</option>
+              <option value="deny">deny</option>
+            </select>
+          </div>
+          <div>
+            <label>Protokol</label>
+            <select id="f-proto">
+              <option value="ip">ip</option>
+              <option value="tcp">tcp</option>
+              <option value="udp">udp</option>
+              <option value="icmp">icmp</option>
+            </select>
+          </div>
+          <div>
+            <label>Sumber IP</label>
+            <input id="f-srcip" placeholder="192.168.1.0 / any">
+          </div>
+          <div>
+            <label>Wildcard Sumber</label>
+            <input id="f-srcwc" placeholder="0.0.0.255">
+          </div>
+          <div>
+            <label>Tujuan IP</label>
+            <input id="f-dstip" placeholder="any">
+          </div>
+          <div>
+            <label>Wildcard Tujuan</label>
+            <input id="f-dstwc" placeholder="0.0.0.0">
+          </div>
+          <div>
+            <label>Port (opsional)</label>
+            <input id="f-port" placeholder="eq 80, atau kosongkan">
+          </div>
+          <div class="addbtn">
+            <button class="primary" id="addRuleBtn" type="button">+ Tambah Aturan</button>
+            <button class="secondary" id="resetRulesBtn" type="button">Reset ke Default</button>
+          </div>
+        </div>
+
+        <div class="legend">
+          <span><i class="c-pending"></i>Sedang diperiksa</span>
+          <span><i class="c-nomatch"></i>Tidak cocok</span>
+          <span><i class="c-permit"></i>MATCH — Permit</span>
+          <span><i class="c-deny"></i>MATCH — Deny</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-right">
+      <div class="panel">
+        <h2>📦 Paket Uji</h2>
+        <div class="presets" id="presets"></div>
+        <div class="packet-form">
+          <div>
+            <label>Protokol</label>
+            <select id="p-proto">
+              <option value="tcp">tcp</option>
+              <option value="udp">udp</option>
+              <option value="icmp">icmp</option>
+            </select>
+          </div>
+          <div>
+            <label>Port Tujuan</label>
+            <input id="p-port" placeholder="mis. 80 (kosong utk icmp)">
+          </div>
+          <div class="full">
+            <label>Alamat IP Sumber</label>
+            <input id="p-src" placeholder="192.168.1.5" value="192.168.1.5">
+          </div>
+          <div class="full">
+            <label>Alamat IP Tujuan</label>
+            <input id="p-dst" placeholder="8.8.8.8" value="8.8.8.8">
+          </div>
+        </div>
+        <div class="packet-badge" id="packetBadge">Belum ada paket dikirim.</div>
+
+        <div class="action-row">
+          <button class="primary" id="sendBtn">🚀 Kirim Paket / Uji Paket</button>
+          <button class="secondary" id="stepBtn" disabled>Langkah Berikutnya ⏭</button>
+          <button class="secondary" id="autoBtn" disabled>▶ Putar Otomatis</button>
+          <button class="secondary" id="clearBtn" disabled>↺ Ulangi</button>
+        </div>
+
+        <div class="result-box" id="resultBox">Menunggu paket…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-note">Mata Kuliah Jaringan Komputer — Simulasi evaluasi ACL first-match-wins &amp; implicit deny.</div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- IP / wildcard helpers ----------
+  function ipToInt(ip){
+    var parts = ip.trim().split('.').map(Number);
+    if(parts.length!==4 || parts.some(function(p){return isNaN(p)||p<0||p>255;})) return null;
+    return ((parts[0]<<24)>>>0) + (parts[1]<<16) + (parts[2]<<8) + parts[3];
+  }
+
+  function matchIpWildcard(packetIpStr, ruleIpStr, wildcardStr){
+    // "any" always matches
+    if(ruleIpStr === 'any') return true;
+    var packetInt = ipToInt(packetIpStr);
+    var ruleInt = ipToInt(ruleIpStr);
+    var wcInt = ipToInt(wildcardStr || '0.0.0.0');
+    if(packetInt===null || ruleInt===null || wcInt===null) return false;
+    var careMask = (~wcInt) >>> 0; // bits that matter = complement of wildcard
+    return ((packetInt & careMask) >>> 0) === ((ruleInt & careMask) >>> 0);
+  }
+
+  function matchProto(ruleProto, pktProto){
+    if(ruleProto === 'ip') return true; // ip matches any protocol
+    return ruleProto === pktProto;
+  }
+
+  function matchPort(rulePortSpec, pktPort, ruleProto){
+    // rulePortSpec examples: '', 'eq 80', 'any'
+    if(!rulePortSpec || rulePortSpec.trim()==='' || rulePortSpec.trim()==='any') return true;
+    // port rules only meaningfully apply to tcp/udp
+    var spec = rulePortSpec.trim();
+    var m = spec.match(/^eq\s+(\d+)$/i);
+    if(m){
+      if(ruleProto==='ip' || ruleProto==='icmp') return true; // no port concept, ignore
+      if(pktPort === null || pktPort === undefined || pktPort==='') return false;
+      return String(pktPort) === m[1];
+    }
+    return true; // unrecognized spec -> don't block
+  }
+
+  function ruleMatchesPacket(rule, pkt){
+    if(!matchProto(rule.proto, pkt.proto)) return false;
+    if(!matchIpWildcard(pkt.src, rule.srcIp, rule.srcWc)) return false;
+    if(!matchIpWildcard(pkt.dst, rule.dstIp, rule.dstWc)) return false;
+    if(!matchPort(rule.port, pkt.port, rule.proto)) return false;
+    return true;
+  }
+
+  function ruleToText(rule){
+    var parts = [rule.seq, rule.action, rule.proto];
+    parts.push(rule.srcIp === 'any' ? 'any' : (rule.srcIp + ' ' + (rule.srcWc||'0.0.0.0')));
+    parts.push(rule.dstIp === 'any' ? 'any' : (rule.dstIp + ' ' + (rule.dstWc||'0.0.0.0')));
+    if(rule.port && rule.port.trim()!=='') parts.push(rule.port.trim());
+    return parts.join(' ');
+  }
+
+  // ---------- Default rules ----------
+  function defaultRules(){
+    return [
+      {seq:10, action:'permit', proto:'tcp', srcIp:'192.168.1.0', srcWc:'0.0.0.255', dstIp:'any', dstWc:'', port:'eq 80'},
+      {seq:20, action:'deny',   proto:'tcp', srcIp:'192.168.1.0', srcWc:'0.0.0.255', dstIp:'any', dstWc:'', port:'eq 23'},
+      {seq:30, action:'permit', proto:'udp', srcIp:'192.168.2.0', srcWc:'0.0.0.255', dstIp:'any', dstWc:'', port:'eq 53'},
+      {seq:40, action:'deny',   proto:'ip',  srcIp:'192.168.1.100', srcWc:'0.0.0.0', dstIp:'any', dstWc:'', port:''},
+      {seq:50, action:'permit', proto:'ip',  srcIp:'192.168.0.0', srcWc:'0.0.255.255', dstIp:'any', dstWc:'', port:''}
+    ];
+  }
+
+  var rules = defaultRules();
+
+  // ---------- Presets ----------
+  var presets = [
+    {label:'Web dari LAN1 (permit)', proto:'tcp', src:'192.168.1.5', dst:'8.8.8.8', port:'80'},
+    {label:'Telnet dari LAN1 (deny)', proto:'tcp', src:'192.168.1.5', dst:'8.8.8.8', port:'23'},
+    {label:'DNS dari LAN2 (permit)', proto:'udp', src:'192.168.2.10', dst:'8.8.8.8', port:'53'},
+    {label:'ICMP dari host diblok', proto:'icmp', src:'192.168.1.100', dst:'1.1.1.1', port:''},
+    {label:'Web dari LAN5 (permit umum)', proto:'tcp', src:'192.168.5.5', dst:'8.8.8.8', port:'80'},
+    {label:'Di luar jaringan (implicit deny)', proto:'tcp', src:'10.0.0.5', dst:'8.8.8.8', port:'80'}
+  ];
+
+  // ---------- State ----------
+  var testState = null; // {pkt, order(includes implicit), idx, done, finalRuleIdx}
+
+  // ---------- DOM refs ----------
+  var ruleListEl = document.getElementById('ruleList');
+  var presetsEl = document.getElementById('presets');
+  var resultBox = document.getElementById('resultBox');
+  var packetBadge = document.getElementById('packetBadge');
+  var sendBtn = document.getElementById('sendBtn');
+  var stepBtn = document.getElementById('stepBtn');
+  var autoBtn = document.getElementById('autoBtn');
+  var clearBtn = document.getElementById('clearBtn');
+  var autoTimer = null;
+
+  function renderPresets(){
+    presetsEl.innerHTML = '';
+    presets.forEach(function(p){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'preset-btn';
+      b.textContent = p.label;
+      b.addEventListener('click', function(){
+        document.getElementById('p-proto').value = p.proto;
+        document.getElementById('p-src').value = p.src;
+        document.getElementById('p-dst').value = p.dst;
+        document.getElementById('p-port').value = p.port;
+      });
+      presetsEl.appendChild(b);
+    });
+  }
+
+  function renderRules(){
+    ruleListEl.innerHTML = '';
+    rules.forEach(function(rule, idx){
+      ruleListEl.appendChild(buildRuleEl(rule, idx, false));
+    });
+    // implicit deny row
+    var implicitRule = {seq:'—', action:'deny', proto:'ip', srcIp:'any', srcWc:'', dstIp:'any', dstWc:'', port:''};
+    ruleListEl.appendChild(buildRuleEl(implicitRule, rules.length, true));
+    applyStateClasses();
+  }
+
+  function buildRuleEl(rule, idx, isImplicit){
+    var div = document.createElement('div');
+    div.className = 'rule' + (isImplicit ? ' implicit' : '');
+    div.dataset.idx = idx;
+
+    var seq = document.createElement('div');
+    seq.className = 'seq';
+    seq.textContent = rule.seq;
+
+    var badge = document.createElement('div');
+    badge.className = 'badge ' + rule.action;
+    badge.textContent = rule.action;
+
+    var body = document.createElement('div');
+    body.className = 'body';
+    var text = isImplicit ? 'implicit deny ip any any' : ruleToText(rule).replace(/^\S+\s\S+\s/, '');
+    body.textContent = text;
+
+    var ctrls = document.createElement('div');
+    ctrls.className = 'ctrls';
+    if(!isImplicit){
+      var up = document.createElement('button'); up.type='button'; up.textContent='↑'; up.title='Naikkan';
+      up.addEventListener('click', function(){ moveRule(idx, -1); });
+      var down = document.createElement('button'); down.type='button'; down.textContent='↓'; down.title='Turunkan';
+      down.addEventListener('click', function(){ moveRule(idx, 1); });
+      var del = document.createElement('button'); del.type='button'; del.textContent='✕'; del.title='Hapus';
+      del.addEventListener('click', function(){ deleteRule(idx); });
+      ctrls.appendChild(up); ctrls.appendChild(down); ctrls.appendChild(del);
+    }
+
+    var statusIcon = document.createElement('div');
+    statusIcon.className = 'status-icon';
+    statusIcon.textContent = '';
+
+    // layout order: seq badge body(+status inline) ctrls
+    var bodyWrap = document.createElement('div');
+    bodyWrap.style.display='flex';
+    bodyWrap.style.alignItems='center';
+    bodyWrap.style.gap='8px';
+    bodyWrap.appendChild(statusIcon);
+    bodyWrap.appendChild(body);
+
+    div.appendChild(seq);
+    div.appendChild(badge);
+    div.appendChild(bodyWrap);
+    div.appendChild(ctrls);
+
+    return div;
+  }
+
+  function moveRule(idx, dir){
+    var newIdx = idx + dir;
+    if(newIdx<0 || newIdx>=rules.length) return;
+    var tmp = rules[idx];
+    rules[idx] = rules[newIdx];
+    rules[newIdx] = tmp;
+    resetTest();
+    renderRules();
+  }
+
+  function deleteRule(idx){
+    rules.splice(idx,1);
+    resetTest();
+    renderRules();
+  }
+
+  function addRuleFromForm(){
+    var action = document.getElementById('f-action').value;
+    var proto = document.getElementById('f-proto').value;
+    var srcIp = document.getElementById('f-srcip').value.trim() || 'any';
+    var srcWc = document.getElementById('f-srcwc').value.trim();
+    var dstIp = document.getElementById('f-dstip').value.trim() || 'any';
+    var dstWc = document.getElementById('f-dstwc').value.trim();
+    var port = document.getElementById('f-port').value.trim();
+
+    if(srcIp!=='any' && ipToInt(srcIp)===null){ alert('Alamat IP Sumber tidak valid.'); return; }
+    if(dstIp!=='any' && ipToInt(dstIp)===null){ alert('Alamat IP Tujuan tidak valid.'); return; }
+    if(srcIp!=='any' && srcWc && ipToInt(srcWc)===null){ alert('Wildcard Sumber tidak valid.'); return; }
+    if(dstIp!=='any' && dstWc && ipToInt(dstWc)===null){ alert('Wildcard Tujuan tidak valid.'); return; }
+
+    var maxSeq = rules.reduce(function(m,r){return Math.max(m, typeof r.seq==='number'?r.seq:0);},0);
+    rules.push({
+      seq: maxSeq + 10,
+      action: action, proto: proto,
+      srcIp: srcIp, srcWc: srcWc || '0.0.0.0',
+      dstIp: dstIp, dstWc: dstWc || '0.0.0.0',
+      port: port
+    });
+    resetTest();
+    renderRules();
+  }
+
+  // ---------- Test flow ----------
+  function readPacket(){
+    var proto = document.getElementById('p-proto').value;
+    var src = document.getElementById('p-src').value.trim();
+    var dst = document.getElementById('p-dst').value.trim();
+    var portRaw = document.getElementById('p-port').value.trim();
+    var port = portRaw === '' ? null : portRaw;
+    return {proto:proto, src:src, dst:dst, port:port};
+  }
+
+  function startTest(){
+    var pkt = readPacket();
+    if(ipToInt(pkt.src)===null){ alert('Alamat IP Sumber paket tidak valid.'); return; }
+    if(ipToInt(pkt.dst)===null){ alert('Alamat IP Tujuan paket tidak valid.'); return; }
+
+    // Build evaluation order = user rules + implicit deny
+    var evalRules = rules.slice();
+    var implicitRule = {seq:'—', action:'deny', proto:'ip', srcIp:'any', srcWc:'', dstIp:'any', dstWc:'', port:'', implicit:true};
+    evalRules.push(implicitRule);
+
+    testState = {
+      pkt: pkt,
+      evalRules: evalRules,
+      idx: -1,      // index of last processed rule (-1 = not started)
+      done: false,
+      finalIdx: null
+    };
+
+    packetBadge.innerHTML = 'Menguji paket: <b>' + pkt.proto.toUpperCase() + '</b> src <b>' + pkt.src +
+      '</b> &rarr; dst <b>' + pkt.dst + '</b>' + (pkt.port ? (' port <b>' + pkt.port + '</b>') : '');
+
+    resultBox.className = 'result-box';
+    resultBox.textContent = 'Siap diuji. Tekan "Langkah Berikutnya" atau "Putar Otomatis".';
+
+    renderRules();
+    stepBtn.disabled = false;
+    autoBtn.disabled = false;
+    clearBtn.disabled = false;
+    sendBtn.disabled = true;
+  }
+
+  function step(){
+    if(!testState || testState.done) return;
+    testState.idx++;
+    var i = testState.idx;
+    if(i >= testState.evalRules.length){
+      testState.done = true;
+      finishAuto();
+      return;
+    }
+    var rule = testState.evalRules[i];
+    var matched = ruleMatchesPacket(rule, testState.pkt);
+    if(matched){
+      testState.finalIdx = i;
+      testState.done = true;
+      showFinal(rule);
+    } else {
+      applyStateClasses();
+      if(i === testState.evalRules.length - 1){
+        // shouldn't happen since implicit always matches
+        testState.done = true;
+        finishAuto();
+      }
+    }
+    applyStateClasses();
+    if(testState.done){
+      stepBtn.disabled = true;
+      autoBtn.disabled = true;
+    }
+  }
+
+  function applyStateClasses(){
+    var els = ruleListEl.children;
+    for(var i=0;i<els.length;i++){
+      var el = els[i];
+      el.classList.remove('state-pending','state-checking','state-nomatch','state-match');
+      var iconEl = el.querySelector('.status-icon');
+      if(!testState){
+        iconEl.textContent='';
+        continue;
+      }
+      if(i < testState.idx || (testState.done && i < testState.idx)){
+        el.classList.add('state-nomatch');
+        iconEl.textContent = '✕';
+      } else if(i === testState.idx){
+        if(testState.done && testState.finalIdx === i){
+          el.classList.add('state-match');
+          iconEl.textContent = '✓';
+        } else if(testState.done){
+          // final rule was implicit and this is not it (shouldn't occur)
+          el.classList.add('state-nomatch');
+          iconEl.textContent = '✕';
+        } else {
+          el.classList.add('state-checking');
+          iconEl.textContent = '?';
+        }
+      } else {
+        el.classList.add('state-pending');
+        iconEl.textContent = '';
+      }
+    }
+  }
+
+  function showFinal(rule){
+    var isImplicit = !!rule.implicit;
+    resultBox.className = 'result-box ' + rule.action;
+    var actionLabel = rule.action === 'permit' ? 'PERMIT (Diizinkan)' : 'DENY (Ditolak)';
+    var ruleLabel = isImplicit ? 'implicit deny any any (tidak ada aturan yang cocok)' : ('aturan sequence ' + rule.seq + ': ' + ruleToText(rule));
+    resultBox.innerHTML = actionLabel + '<span class="sub">Cocok pada ' + ruleLabel + '</span>';
+  }
+
+  function finishAuto(){
+    stepBtn.disabled = true;
+    autoBtn.disabled = true;
+    if(autoTimer){ clearInterval(autoTimer); autoTimer = null; autoBtn.textContent = '▶ Putar Otomatis'; }
+  }
+
+  function toggleAuto(){
+    if(autoTimer){
+      clearInterval(autoTimer);
+      autoTimer = null;
+      autoBtn.textContent = '▶ Putar Otomatis';
+      return;
+    }
+    autoBtn.textContent = '⏸ Berhenti';
+    autoTimer = setInterval(function(){
+      if(!testState || testState.done){
+        clearInterval(autoTimer);
+        autoTimer = null;
+        autoBtn.textContent = '▶ Putar Otomatis';
+        return;
+      }
+      step();
+    }, 700);
+  }
+
+  function resetTest(){
+    testState = null;
+    if(autoTimer){ clearInterval(autoTimer); autoTimer=null; autoBtn.textContent='▶ Putar Otomatis'; }
+    resultBox.className = 'result-box';
+    resultBox.textContent = 'Menunggu paket…';
+    packetBadge.textContent = 'Belum ada paket dikirim.';
+    stepBtn.disabled = true;
+    autoBtn.disabled = true;
+    clearBtn.disabled = true;
+    sendBtn.disabled = false;
+    renderRules();
+  }
+
+  // ---------- Wire up ----------
+  document.getElementById('addRuleBtn').addEventListener('click', addRuleFromForm);
+  document.getElementById('resetRulesBtn').addEventListener('click', function(){
+    rules = defaultRules();
+    resetTest();
+  });
+  sendBtn.addEventListener('click', startTest);
+  stepBtn.addEventListener('click', step);
+  autoBtn.addEventListener('click', toggleAuto);
+  clearBtn.addEventListener('click', resetTest);
+
+  renderPresets();
+  renderRules();
+})();
+</script>
+</body>
+</html>

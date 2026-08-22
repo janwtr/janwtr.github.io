@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kalkulator Subnetting — Langkah Operasi AND Biner</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #16213a;
+    --panel-2: #1c2947;
+    --border: #2c3a5e;
+    --text: #e6ecf7;
+    --text-dim: #9fb0cc;
+    --accent: #4da3ff;
+    --accent-2: #7cd6ff;
+    --net-color: #4da3ff;
+    --net-bg: rgba(77,163,255,0.18);
+    --host-color: #ffb04d;
+    --host-bg: rgba(255,176,77,0.15);
+    --and-color: #4dffa0;
+    --and-bg: rgba(77,255,160,0.18);
+    --error: #ff6b6b;
+    --error-bg: rgba(255,107,107,0.12);
+    --success: #4dffa0;
+    --radius: 10px;
+    --mono: "SFMono-Regular", "Consolas", "Menlo", "Courier New", monospace;
+    --sans: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.5;
+  }
+
+  body {
+    padding: 24px 16px 60px;
+  }
+
+  .wrap {
+    max-width: 980px;
+    margin: 0 auto;
+  }
+
+  header.page-header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  header.page-header h1 {
+    font-size: 1.7rem;
+    margin: 0 0 6px;
+    color: var(--accent-2);
+  }
+
+  header.page-header p {
+    color: var(--text-dim);
+    margin: 0;
+    font-size: 0.95rem;
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .input-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1 1 280px;
+  }
+
+  .field label {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+  }
+
+  .field input {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-family: var(--mono);
+    font-size: 1rem;
+  }
+
+  .field input:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  .hint {
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    margin-top: 4px;
+  }
+
+  button {
+    font-family: var(--sans);
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.05s ease, filter 0.15s ease;
+  }
+
+  button:active { transform: translateY(1px); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  #btnHitung {
+    background: var(--accent);
+    color: #04142b;
+  }
+  #btnHitung:hover:not(:disabled) { filter: brightness(1.1); }
+
+  .step-controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+  }
+
+  .btn-secondary {
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border) !important;
+  }
+  .btn-secondary:hover:not(:disabled) { filter: brightness(1.2); }
+
+  .error-box {
+    background: var(--error-bg);
+    border: 1px solid var(--error);
+    color: var(--error);
+    padding: 12px 14px;
+    border-radius: 8px;
+    margin-top: 14px;
+    font-size: 0.9rem;
+    display: none;
+  }
+  .error-box.show { display: block; }
+
+  h2.section-title {
+    font-size: 1.05rem;
+    color: var(--accent-2);
+    margin: 0 0 12px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+  }
+
+  .octet-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 0.95rem;
+    margin-bottom: 6px;
+  }
+  .octet-table th, .octet-table td {
+    padding: 6px 8px;
+    text-align: center;
+    border: 1px solid var(--border);
+  }
+  .octet-table th {
+    background: var(--panel-2);
+    color: var(--text-dim);
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 0.8rem;
+  }
+
+  .bit-grid-wrap {
+    overflow-x: auto;
+    padding-bottom: 6px;
+  }
+
+  .bit-row {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    margin-bottom: 6px;
+    font-family: var(--mono);
+    min-width: fit-content;
+  }
+
+  .bit-row .row-label {
+    width: 110px;
+    flex: 0 0 110px;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    font-family: var(--sans);
+    text-align: right;
+    padding-right: 8px;
+  }
+
+  .octet-group {
+    display: flex;
+    gap: 2px;
+    padding: 2px;
+    border-radius: 4px;
+  }
+
+  .octet-sep {
+    width: 10px;
+    flex: 0 0 10px;
+  }
+
+  .bit {
+    width: 26px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-weight: 700;
+    background: var(--panel-2);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    transition: background 0.25s ease, color 0.25s ease, transform 0.2s ease, box-shadow 0.25s ease;
+  }
+
+  .bit.net { background: var(--net-bg); color: var(--net-color); border-color: var(--net-color); }
+  .bit.host { background: var(--host-bg); color: var(--host-color); border-color: var(--host-color); }
+  .bit.and-active {
+    background: var(--and-bg);
+    color: var(--and-color);
+    border-color: var(--and-color);
+    transform: scale(1.12);
+    box-shadow: 0 0 10px rgba(77,255,160,0.6);
+  }
+  .bit.and-done { background: var(--and-bg); color: var(--and-color); border-color: var(--and-color); }
+  .bit.pending { opacity: 0.35; }
+
+  .legend {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    margin: 10px 0 4px;
+  }
+  .legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .legend .swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    display: inline-block;
+  }
+  .swatch.net { background: var(--net-color); }
+  .swatch.host { background: var(--host-color); }
+  .swatch.and { background: var(--and-color); }
+
+  .step-note {
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: var(--panel-2);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    color: var(--text);
+    min-height: 1.4em;
+  }
+
+  .progress-text {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-top: 8px;
+  }
+
+  table.summary {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+  }
+  table.summary th, table.summary td {
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    text-align: left;
+  }
+  table.summary th {
+    background: var(--panel-2);
+    width: 42%;
+    color: var(--text-dim);
+    font-weight: 600;
+  }
+  table.summary td {
+    font-family: var(--mono);
+    color: var(--success);
+    font-weight: 600;
+  }
+
+  .conv-block {
+    margin-bottom: 14px;
+  }
+  .conv-block .oct-label {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+
+  .hidden { display: none !important; }
+
+  footer {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 0.78rem;
+    margin-top: 30px;
+  }
+
+  @media (max-width: 640px) {
+    .bit { width: 20px; height: 26px; font-size: 0.85rem; }
+    .bit-row .row-label { width: 80px; flex: 0 0 80px; font-size: 0.72rem; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="page-header">
+    <h1>Kalkulator Subnetting — Langkah Operasi AND Biner</h1>
+    <p>Belajar subnetting dengan melihat proses konversi biner dan operasi AND secara bertahap, bukan cuma hasil akhirnya.</p>
+  </header>
+
+  <section class="card">
+    <h2 class="section-title">1. Masukkan Alamat IP dan Prefix</h2>
+    <div class="input-row">
+      <div class="field">
+        <label for="ipInput">Alamat IP</label>
+        <input id="ipInput" type="text" value="192.168.10.130" placeholder="contoh: 192.168.10.130" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="field">
+        <label for="prefixInput">Prefix CIDR (0–32) atau Subnet Mask</label>
+        <input id="prefixInput" type="text" value="/26" placeholder="contoh: /26 atau 255.255.255.192" autocomplete="off" spellcheck="false">
+        <div class="hint">Boleh diisi "26", "/26", atau langsung subnet mask "255.255.255.192".</div>
+      </div>
+      <div>
+        <button id="btnHitung">Hitung</button>
+      </div>
+    </div>
+    <div class="error-box" id="errorBox"></div>
+  </section>
+
+  <div id="resultsArea" class="hidden">
+
+    <section class="card">
+      <h2 class="section-title">2. Konversi ke Biner</h2>
+      <div class="conv-block">
+        <div class="oct-label">Alamat IP</div>
+        <table class="octet-table" id="ipOctetTable"></table>
+      </div>
+      <div class="conv-block">
+        <div class="oct-label">Subnet Mask (dari prefix /<span id="prefixEcho"></span>)</div>
+        <table class="octet-table" id="maskOctetTable"></table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="section-title">3. Operasi AND Bit-per-Bit (IP AND Mask = Network Address)</h2>
+      <div class="legend">
+        <span><span class="swatch net"></span> Network bit (mask = 1)</span>
+        <span><span class="swatch host"></span> Host bit (mask = 0)</span>
+        <span><span class="swatch and"></span> Bit hasil AND yang sudah diproses</span>
+      </div>
+      <div class="bit-grid-wrap">
+        <div class="bit-row" id="rowIP">
+          <div class="row-label">IP (biner)</div>
+        </div>
+        <div class="bit-row" id="rowMask">
+          <div class="row-label">Mask (biner)</div>
+        </div>
+        <div class="bit-row" id="rowAnd">
+          <div class="row-label">AND → Network</div>
+        </div>
+      </div>
+      <div class="step-note" id="stepNote">Klik "Langkah Berikutnya" untuk mulai proses AND bit demi bit.</div>
+      <div class="progress-text" id="progressText"></div>
+      <div class="step-controls">
+        <button class="btn-secondary" id="btnPrev" disabled>Langkah Sebelumnya</button>
+        <button id="btnNext">Langkah Berikutnya</button>
+        <button class="btn-secondary" id="btnAutoAll">Tampilkan Semua Langkah</button>
+        <button class="btn-secondary" id="btnReset">Ulangi dari Awal</button>
+      </div>
+    </section>
+
+    <section class="card hidden" id="derivedCard">
+      <h2 class="section-title">4. Menurunkan Alamat Broadcast dan Rentang Host</h2>
+      <div class="conv-block">
+        <div class="oct-label">Wildcard Mask (kebalikan/NOT dari subnet mask)</div>
+        <table class="octet-table" id="wildcardOctetTable"></table>
+      </div>
+      <div class="conv-block">
+        <div class="oct-label">Broadcast = Network Address OR Wildcard Mask</div>
+        <table class="octet-table" id="broadcastOctetTable"></table>
+      </div>
+      <div class="step-note" id="derivedNote"></div>
+    </section>
+
+    <section class="card hidden" id="summaryCard">
+      <h2 class="section-title">5. Ringkasan Hasil</h2>
+      <div style="overflow-x:auto;">
+      <table class="summary" id="summaryTable"></table>
+      </div>
+    </section>
+
+  </div>
+
+  <footer>Materi Jaringan Komputer &middot; Kalkulator Subnetting Edukatif &middot; Dibuat untuk pembelajaran offline/online</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- Helper: IP <-> binary <-> integer ----------
+
+  function isValidIPv4(str) {
+    if (typeof str !== "string") return false;
+    var parts = str.trim().split(".");
+    if (parts.length !== 4) return false;
+    for (var i = 0; i < 4; i++) {
+      var p = parts[i];
+      if (!/^\d{1,3}$/.test(p)) return false;
+      if (p.length > 1 && p[0] === "0") return false; // no leading zeros like "01"
+      var n = parseInt(p, 10);
+      if (n < 0 || n > 255) return false;
+    }
+    return true;
+  }
+
+  function ipToOctets(str) {
+    return str.trim().split(".").map(function (p) { return parseInt(p, 10); });
+  }
+
+  function octetToBin(n) {
+    return n.toString(2).padStart(8, "0");
+  }
+
+  function octetsToBinArray(octets) {
+    return octets.map(octetToBin);
+  }
+
+  function binOctetsToOctets(binArr) {
+    return binArr.map(function (b) { return parseInt(b, 2); });
+  }
+
+  function octetsToStr(octets) {
+    return octets.join(".");
+  }
+
+  // Validate a dotted mask is a legitimate contiguous subnet mask; return prefix length or null
+  function maskStrToPrefix(str) {
+    if (!isValidIPv4(str)) return null;
+    var octets = ipToOctets(str);
+    var bin = octetsToBinArray(octets).join("");
+    // must be all 1s followed by all 0s
+    if (!/^1*0*$/.test(bin)) return null;
+    var ones = 0;
+    for (var i = 0; i < bin.length; i++) {
+      if (bin[i] === "1") ones++;
+      else break;
+    }
+    // re-verify contiguous
+    var expect = "1".repeat(ones) + "0".repeat(32 - ones);
+    if (expect !== bin) return null;
+    return ones;
+  }
+
+  function prefixToMaskOctets(prefix) {
+    var bin = "1".repeat(prefix) + "0".repeat(32 - prefix);
+    var octetsBin = [bin.slice(0,8), bin.slice(8,16), bin.slice(16,24), bin.slice(24,32)];
+    return binOctetsToOctets(octetsBin);
+  }
+
+  function invertOctets(octets) {
+    return octets.map(function (o) { return 255 - o; });
+  }
+
+  function andOctets(a, b) {
+    var r = [];
+    for (var i = 0; i < 4; i++) r.push(a[i] & b[i]);
+    return r;
+  }
+
+  function orOctets(a, b) {
+    var r = [];
+    for (var i = 0; i < 4; i++) r.push(a[i] | b[i]);
+    return r;
+  }
+
+  function ipToLong(octets) {
+    return (octets[0] * 16777216) + (octets[1] * 65536) + (octets[2] * 256) + octets[3];
+  }
+
+  function longToOctets(n) {
+    return [
+      (n >>> 24) & 255,
+      (n >>> 16) & 255,
+      (n >>> 8) & 255,
+      n & 255
+    ];
+  }
+
+  // ---------- Input parsing ----------
+
+  function parsePrefixInput(raw, ipOctetsForMaskCheck) {
+    var s = raw.trim();
+    if (s === "") return { error: "Prefix / subnet mask tidak boleh kosong." };
+
+    // Try CIDR form: "/26" or "26"
+    var cidrCandidate = s.startsWith("/") ? s.slice(1) : s;
+    if (/^\d{1,2}$/.test(cidrCandidate)) {
+      var n = parseInt(cidrCandidate, 10);
+      if (n < 0 || n > 32) {
+        return { error: "Prefix CIDR harus di antara 0 dan 32 (Anda memasukkan /" + n + ")." };
+      }
+      return { prefix: n };
+    }
+
+    // Try dotted mask form
+    if (s.indexOf(".") !== -1) {
+      if (!isValidIPv4(s)) {
+        return { error: "Format subnet mask tidak valid: \"" + raw + "\". Gunakan format seperti 255.255.255.192." };
+      }
+      var pfx = maskStrToPrefix(s);
+      if (pfx === null) {
+        return { error: "\"" + raw + "\" bukan subnet mask yang valid (bit 1 harus berurutan di kiri, diikuti bit 0)." };
+      }
+      return { prefix: pfx };
+    }
+
+    return { error: "Format prefix/mask tidak dikenali: \"" + raw + "\". Gunakan contoh: /26, 26, atau 255.255.255.192." };
+  }
+
+  // ---------- State ----------
+
+  var state = null; // holds computed data + stepper position
+
+  // ---------- DOM refs ----------
+
+  var ipInput = document.getElementById("ipInput");
+  var prefixInput = document.getElementById("prefixInput");
+  var btnHitung = document.getElementById("btnHitung");
+  var errorBox = document.getElementById("errorBox");
+  var resultsArea = document.getElementById("resultsArea");
+
+  var ipOctetTable = document.getElementById("ipOctetTable");
+  var maskOctetTable = document.getElementById("maskOctetTable");
+  var prefixEcho = document.getElementById("prefixEcho");
+
+  var rowIP = document.getElementById("rowIP");
+  var rowMask = document.getElementById("rowMask");
+  var rowAnd = document.getElementById("rowAnd");
+  var stepNote = document.getElementById("stepNote");
+  var progressText = document.getElementById("progressText");
+
+  var btnPrev = document.getElementById("btnPrev");
+  var btnNext = document.getElementById("btnNext");
+  var btnAutoAll = document.getElementById("btnAutoAll");
+  var btnReset = document.getElementById("btnReset");
+
+  var derivedCard = document.getElementById("derivedCard");
+  var wildcardOctetTable = document.getElementById("wildcardOctetTable");
+  var broadcastOctetTable = document.getElementById("broadcastOctetTable");
+  var derivedNote = document.getElementById("derivedNote");
+
+  var summaryCard = document.getElementById("summaryCard");
+  var summaryTable = document.getElementById("summaryTable");
+
+  // ---------- Rendering helpers ----------
+
+  function showError(msg) {
+    errorBox.textContent = msg;
+    errorBox.classList.add("show");
+    resultsArea.classList.add("hidden");
+  }
+
+  function clearError() {
+    errorBox.textContent = "";
+    errorBox.classList.remove("show");
+  }
+
+  function renderOctetTable(tableEl, octets, binArr) {
+    var thead = "<tr><th>Oktet</th>" + octets.map(function (o, i) {
+      return "<th>#" + (i + 1) + "</th>";
+    }).join("") + "</tr>";
+    var decRow = "<tr><td>Desimal</td>" + octets.map(function (o) {
+      return "<td>" + o + "</td>";
+    }).join("") + "</tr>";
+    var binRow = "<tr><td>Biner</td>" + binArr.map(function (b) {
+      return "<td>" + b + "</td>";
+    }).join("") + "</tr>";
+    tableEl.innerHTML = thead + decRow + binRow;
+  }
+
+  function buildBitCells(rowEl, binArr, classFn) {
+    // classFn(octetIdx, bitIdx) -> extra class string
+    // remove existing bit groups (keep label)
+    var label = rowEl.querySelector(".row-label");
+    rowEl.innerHTML = "";
+    rowEl.appendChild(label);
+    var cells = [];
+    binArr.forEach(function (octetBin, octetIdx) {
+      var group = document.createElement("div");
+      group.className = "octet-group";
+      for (var bitIdx = 0; bitIdx < 8; bitIdx++) {
+        var cell = document.createElement("div");
+        var extra = classFn ? classFn(octetIdx, bitIdx) : "";
+        cell.className = "bit " + extra;
+        cell.textContent = octetBin[bitIdx];
+        cell.dataset.octet = octetIdx;
+        cell.dataset.bit = bitIdx;
+        group.appendChild(cell);
+        cells.push(cell);
+      }
+      rowEl.appendChild(group);
+      if (octetIdx < 3) {
+        var sep = document.createElement("div");
+        sep.className = "octet-sep";
+        rowEl.appendChild(sep);
+      }
+    });
+    return cells;
+  }
+
+  // ---------- Compute + init stepper ----------
+
+  function compute(ipStr, prefixResult) {
+    var ipOctets = ipToOctets(ipStr);
+    var ipBin = octetsToBinArray(ipOctets);
+    var prefix = prefixResult.prefix;
+    var maskOctets = prefixToMaskOctets(prefix);
+    var maskBin = octetsToBinArray(maskOctets);
+    var networkOctets = andOctets(ipOctets, maskOctets);
+    var wildcardOctets = invertOctets(maskOctets);
+    var broadcastOctets = orOctets(networkOctets, wildcardOctets);
+
+    var networkLong = ipToLong(networkOctets);
+    var broadcastLong = ipToLong(broadcastOctets);
+
+    var totalHosts = Math.pow(2, 32 - prefix);
+    var usableHosts, firstHost, lastHost;
+
+    if (prefix >= 31) {
+      // /31 and /32: no traditional usable host range
+      usableHosts = prefix === 32 ? 1 : 2;
+      firstHost = prefix === 32 ? octetsToStr(networkOctets) : octetsToStr(networkOctets);
+      lastHost = prefix === 32 ? octetsToStr(networkOctets) : octetsToStr(broadcastOctets);
+    } else {
+      usableHosts = totalHosts - 2;
+      firstHost = octetsToStr(longToOctets(networkLong + 1));
+      lastHost = octetsToStr(longToOctets(broadcastLong - 1));
+    }
+
+    return {
+      ipOctets: ipOctets, ipBin: ipBin,
+      prefix: prefix,
+      maskOctets: maskOctets, maskBin: maskBin,
+      networkOctets: networkOctets,
+      wildcardOctets: wildcardOctets,
+      broadcastOctets: broadcastOctets,
+      totalHosts: totalHosts,
+      usableHosts: usableHosts,
+      firstHost: firstHost,
+      lastHost: lastHost
+    };
+  }
+
+  function initStepper(data) {
+    // flatten 32 bit positions across 4 octets
+    var positions = [];
+    for (var o = 0; o < 4; o++) {
+      for (var b = 0; b < 8; b++) positions.push({ octet: o, bit: b });
+    }
+    state.positions = positions;
+    state.stepIndex = -1; // -1 = nothing revealed yet
+
+    // static classes for IP row: none special (just raw bits)
+    state.ipCells = buildBitCells(rowIP, data.ipBin, function () { return ""; });
+    // mask row: color net vs host bits based on prefix
+    state.maskCells = buildBitCells(rowMask, data.maskBin, function (octetIdx, bitIdx) {
+      var globalIdx = octetIdx * 8 + bitIdx;
+      return globalIdx < data.prefix ? "net" : "host";
+    });
+    // AND result row: start all pending, blank content until revealed
+    var networkBin = octetsToBinArray(data.networkOctets);
+    state.networkBin = networkBin;
+    state.andCells = buildBitCells(rowAnd, networkBin, function () { return "pending"; });
+    state.andCells.forEach(function (c) { c.textContent = "·"; });
+
+    updateProgressText();
+    stepNote.textContent = 'Klik "Langkah Berikutnya" untuk mulai proses AND bit demi bit (IP AND Mask, oktet 1 dulu).';
+    btnPrev.disabled = true;
+    btnNext.disabled = false;
+  }
+
+  function updateProgressText() {
+    var total = state.positions.length;
+    var done = state.stepIndex + 1;
+    progressText.textContent = "Progres: " + Math.max(done,0) + " / " + total + " bit diproses.";
+  }
+
+  function applyStepVisual(idx, opts) {
+    // idx: index into state.positions to mark as AND-done (and clear previous active marker)
+    var pos = state.positions[idx];
+    var globalIdx = pos.octet * 8 + pos.bit;
+    var ipBitChar = state.ipBinFlat[globalIdx];
+    var maskBitChar = state.maskBinFlat[globalIdx];
+    var andBitChar = (ipBitChar === "1" && maskBitChar === "1") ? "1" : "0";
+
+    var cell = state.andCells[globalIdx];
+    cell.textContent = andBitChar;
+    cell.classList.remove("pending");
+    cell.classList.add("and-done");
+
+    // highlight corresponding ip/mask cells briefly
+    var ipCell = state.ipCells[globalIdx];
+    var maskCell = state.maskCells[globalIdx];
+    [ipCell, maskCell, cell].forEach(function (c) {
+      c.classList.add("and-active");
+      setTimeout(function () { c.classList.remove("and-active"); }, 350);
+    });
+
+    var octetNum = pos.octet + 1;
+    stepNote.textContent = "Oktet " + octetNum + ", bit ke-" + (pos.bit + 1) + ": IP=" + ipBitChar + " AND Mask=" + maskBitChar + " → hasil = " + andBitChar + ".";
+  }
+
+  function stepNext() {
+    if (state.stepIndex >= state.positions.length - 1) return;
+    state.stepIndex++;
+    applyStepVisual(state.stepIndex);
+    updateProgressText();
+    btnPrev.disabled = false;
+    if (state.stepIndex >= state.positions.length - 1) {
+      btnNext.disabled = true;
+      finalizeAfterAllSteps();
+    }
+  }
+
+  function stepPrev() {
+    if (state.stepIndex < 0) return;
+    var pos = state.positions[state.stepIndex];
+    var globalIdx = pos.octet * 8 + pos.bit;
+    var cell = state.andCells[globalIdx];
+    cell.textContent = "·";
+    cell.classList.remove("and-done");
+    cell.classList.add("pending");
+    state.stepIndex--;
+    updateProgressText();
+    btnNext.disabled = false;
+    if (state.stepIndex < 0) {
+      btnPrev.disabled = true;
+      stepNote.textContent = 'Klik "Langkah Berikutnya" untuk mulai proses AND bit demi bit.';
+    } else {
+      var prevPos = state.positions[state.stepIndex];
+      var prevGlobal = prevPos.octet * 8 + prevPos.bit;
+      var ipBitChar = state.ipBinFlat[prevGlobal];
+      var maskBitChar = state.maskBinFlat[prevGlobal];
+      var andBitChar = (ipBitChar === "1" && maskBitChar === "1") ? "1" : "0";
+      stepNote.textContent = "Oktet " + (prevPos.octet + 1) + ", bit ke-" + (prevPos.bit + 1) + ": IP=" + ipBitChar + " AND Mask=" + maskBitChar + " → hasil = " + andBitChar + ".";
+    }
+    derivedCard.classList.add("hidden");
+    summaryCard.classList.add("hidden");
+  }
+
+  function showAllSteps() {
+    while (state.stepIndex < state.positions.length - 1) {
+      state.stepIndex++;
+      applyStepVisual(state.stepIndex);
+    }
+    updateProgressText();
+    btnNext.disabled = true;
+    btnPrev.disabled = false;
+    finalizeAfterAllSteps();
+  }
+
+  function resetStepper() {
+    initStepper(state.data);
+    derivedCard.classList.add("hidden");
+    summaryCard.classList.add("hidden");
+  }
+
+  function finalizeAfterAllSteps() {
+    var data = state.data;
+    stepNote.textContent = "Selesai! Semua 32 bit telah diproses dengan AND. Network Address = " + octetsToStr(data.networkOctets) + ".";
+    renderDerived(data);
+    renderSummary(data);
+    derivedCard.classList.remove("hidden");
+    summaryCard.classList.remove("hidden");
+  }
+
+  function renderDerived(data) {
+    renderOctetTable(wildcardOctetTable, data.wildcardOctets, octetsToBinArray(data.wildcardOctets));
+    renderOctetTable(broadcastOctetTable, data.broadcastOctets, octetsToBinArray(data.broadcastOctets));
+    derivedNote.textContent = "Wildcard mask = kebalikan bit dari subnet mask (255 − setiap oktet mask). Broadcast Address = Network Address OR Wildcard Mask, oktet per oktet.";
+  }
+
+  function renderSummary(data) {
+    var rows = [
+      ["Alamat IP", octetsToStr(data.ipOctets)],
+      ["Prefix CIDR", "/" + data.prefix],
+      ["Subnet Mask", octetsToStr(data.maskOctets)],
+      ["Wildcard Mask", octetsToStr(data.wildcardOctets)],
+      ["Network Address", octetsToStr(data.networkOctets)],
+      ["Broadcast Address", octetsToStr(data.broadcastOctets)],
+      ["Host Pertama (First Usable)", data.firstHost],
+      ["Host Terakhir (Last Usable)", data.lastHost],
+      ["Total Alamat dalam Subnet", data.totalHosts.toLocaleString("id-ID")],
+      ["Jumlah Host Usable", data.usableHosts.toLocaleString("id-ID")]
+    ];
+    summaryTable.innerHTML = rows.map(function (r) {
+      return "<tr><th>" + r[0] + "</th><td>" + r[1] + "</td></tr>";
+    }).join("");
+  }
+
+  // ---------- Main handler ----------
+
+  function handleHitung() {
+    clearError();
+    var ipRaw = ipInput.value;
+    var prefixRaw = prefixInput.value;
+
+    if (!ipRaw || ipRaw.trim() === "") {
+      showError("Alamat IP tidak boleh kosong.");
+      return;
+    }
+    if (!isValidIPv4(ipRaw)) {
+      showError("Alamat IP \"" + ipRaw + "\" tidak valid. Format yang benar: empat angka 0–255 dipisah titik, contoh 192.168.10.130 (tanpa angka nol di depan seperti 010).");
+      return;
+    }
+
+    var prefixResult = parsePrefixInput(prefixRaw);
+    if (prefixResult.error) {
+      showError(prefixResult.error);
+      return;
+    }
+
+    var data;
+    try {
+      data = compute(ipRaw.trim(), prefixResult);
+    } catch (e) {
+      showError("Terjadi kesalahan saat menghitung: " + e.message);
+      return;
+    }
+
+    resultsArea.classList.remove("hidden");
+    derivedCard.classList.add("hidden");
+    summaryCard.classList.add("hidden");
+
+    renderOctetTable(ipOctetTable, data.ipOctets, data.ipBin);
+    renderOctetTable(maskOctetTable, data.maskOctets, data.maskBin);
+    prefixEcho.textContent = data.prefix;
+
+    state = { data: data };
+    state.ipBinFlat = data.ipBin.join("");
+    state.maskBinFlat = data.maskBin.join("");
+    initStepper(data);
+  }
+
+  btnHitung.addEventListener("click", handleHitung);
+  btnNext.addEventListener("click", function () { if (state) stepNext(); });
+  btnPrev.addEventListener("click", function () { if (state) stepPrev(); });
+  btnAutoAll.addEventListener("click", function () { if (state) showAllSteps(); });
+  btnReset.addEventListener("click", function () { if (state) resetStepper(); });
+
+  [ipInput, prefixInput].forEach(function (el) {
+    el.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") handleHitung();
+    });
+  });
+
+  // run default example on load
+  handleHitung();
+})();
+</script>
+</body>
+</html>

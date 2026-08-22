@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Animasi Traceroute — TTL dan ICMP Time Exceeded</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  :root{
+    --bg: #f3f5f9;
+    --panel: #ffffff;
+    --panel-border: #e0e4ec;
+    --text: #1c2333;
+    --text-dim: #5b6478;
+    --accent: #2f6fed;
+    --probe: #2f6fed;
+    --probe-glow: rgba(47,111,237,0.35);
+    --reply: #f97316;
+    --reply-glow: rgba(249,115,22,0.35);
+    --success: #16a34a;
+    --danger: #dc2626;
+    --router-bg: #eef2fb;
+    --router-border: #c7d3ec;
+    --host-bg: #e9f8ee;
+    --host-border: #a9dfb8;
+    --term-bg: #0d1117;
+    --term-text: #d5dde8;
+    --term-green: #58d68d;
+    --term-dim: #6e7a8f;
+    --radius: 12px;
+    --shadow: 0 2px 10px rgba(20,30,60,0.06);
+    font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--text);
+    padding: 20px 16px 48px;
+    min-width: 320px;
+  }
+
+  .wrap{
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+
+  h1{
+    font-size: 1.5rem;
+    margin: 0 0 6px;
+  }
+
+  .intro{
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    box-shadow: var(--shadow);
+    margin-bottom: 18px;
+    line-height: 1.55;
+    font-size: 0.95rem;
+    color: var(--text-dim);
+  }
+  .intro b{ color: var(--text); }
+
+  .panel{
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 16px 18px;
+    margin-bottom: 18px;
+  }
+
+  .panel h2{
+    font-size: 1rem;
+    margin: 0 0 12px;
+    color: var(--text);
+  }
+
+  /* ------- controls ------- */
+  .controls{
+    display:flex;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    align-items: center;
+  }
+
+  button{
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    cursor: pointer;
+    color: #fff;
+    background: var(--accent);
+    transition: filter .15s ease, transform .05s ease;
+  }
+  button:hover{ filter: brightness(1.08); }
+  button:active{ transform: scale(0.97); }
+  button:disabled{ opacity: 0.45; cursor: not-allowed; filter:none; }
+  button.secondary{ background:#5b6478; }
+  button.danger{ background: var(--danger); }
+
+  .toggle-row{
+    display:flex;
+    align-items:center;
+    gap: 8px;
+    font-size: 0.88rem;
+    color: var(--text-dim);
+    background: var(--router-bg);
+    border: 1px solid var(--router-border);
+    padding: 8px 12px;
+    border-radius: 8px;
+  }
+  .toggle-row input{ width:16px; height:16px; accent-color: var(--reply); cursor:pointer; }
+  .toggle-row label{ cursor:pointer; }
+
+  .status-line{
+    margin-top: 12px;
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    min-height: 1.3em;
+  }
+  .status-line b{ color: var(--accent); }
+  .status-line.done b{ color: var(--success); }
+
+  /* ------- legend ------- */
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap: 16px;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    margin-top: 10px;
+  }
+  .legend span{ display:flex; align-items:center; gap:6px; }
+  .swatch{ width:22px; height:4px; border-radius: 2px; display:inline-block; }
+  .swatch.probe{ background: var(--probe); }
+  .swatch.reply{ background: var(--reply); }
+
+  /* ------- topology ------- */
+  .topo-scroll{
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .topo{
+    position: relative;
+    min-width: 760px;
+    height: 230px;
+    margin-top: 6px;
+  }
+
+  .lane{
+    position:absolute;
+    left: 3%;
+    right: 3%;
+    height: 2px;
+    background: repeating-linear-gradient(to right, var(--panel-border) 0 6px, transparent 6px 12px);
+  }
+  .lane.forward{ top: 78px; }
+  .lane.backward{ top: 136px; }
+  .lane::after{
+    content:'';
+    position:absolute;
+    right:-2px; top:50%;
+    width:0; height:0;
+    transform: translateY(-50%);
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-left: 8px solid var(--panel-border);
+  }
+  .lane.backward::after{
+    right: auto; left: -2px;
+    border-left: none;
+    border-right: 8px solid var(--panel-border);
+  }
+  .lane-label{
+    position:absolute;
+    left: 3%;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    font-style: italic;
+  }
+  .lane-label.forward{ top: 58px; }
+  .lane-label.backward{ top: 142px; }
+
+  .nodes{
+    position:absolute;
+    left: 3%; right: 3%; top: 0;
+    display:flex;
+    justify-content: space-between;
+    height: 100%;
+  }
+  .node{
+    display:flex;
+    flex-direction: column;
+    align-items:center;
+    width: 92px;
+    text-align:center;
+  }
+  .node .icon{
+    width: 54px; height: 54px;
+    border-radius: 50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size: 1.5rem;
+    background: var(--router-bg);
+    border: 2px solid var(--router-border);
+    transition: box-shadow .25s ease, border-color .25s ease, background .25s ease;
+    margin-top: 4px;
+  }
+  .node.host .icon{ background: var(--host-bg); border-color: var(--host-border); }
+  .node .name{ font-size: 0.78rem; font-weight: 700; margin-top: 8px; }
+  .node .ip{ font-size: 0.72rem; color: var(--text-dim); font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; margin-top: 2px; min-height: 1.1em; }
+  .node .ip.unknown{ color: var(--text-dim); opacity: 0.55; }
+  .node .ip.lost{ color: var(--danger); }
+
+  .node.active .icon{
+    box-shadow: 0 0 0 6px var(--probe-glow);
+    border-color: var(--probe);
+  }
+  .node.replying .icon{
+    box-shadow: 0 0 0 6px var(--reply-glow);
+    border-color: var(--reply);
+  }
+  .node.done .icon{ border-color: var(--success); }
+  .node.destination-reached .icon{
+    box-shadow: 0 0 0 6px rgba(22,163,74,0.35);
+    border-color: var(--success);
+  }
+
+  /* ------- packet ------- */
+  .packet{
+    position:absolute;
+    top: 78px;
+    left: 3%;
+    transform: translate(-50%, -50%);
+    display:flex;
+    align-items:center;
+    gap: 5px;
+    background: var(--probe);
+    color:#fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 5px 9px;
+    border-radius: 20px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: left var(--seg-dur, 0.6s) linear, top 0.25s ease, opacity 0.2s ease, background 0.2s ease;
+    z-index: 5;
+  }
+  .packet.visible{ opacity: 1; }
+  .packet.reply-mode{ background: var(--reply); top: 136px; }
+  .packet.lost{ background: var(--danger); }
+
+  /* ------- results table ------- */
+  .term{
+    background: var(--term-bg);
+    color: var(--term-text);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 0.85rem;
+    overflow-x: auto;
+  }
+  .term .cmd{ color: var(--term-green); margin-bottom: 8px; }
+  .term table{ border-collapse: collapse; width:100%; min-width: 480px; }
+  .term th, .term td{
+    text-align:left;
+    padding: 4px 14px 4px 0;
+    white-space: nowrap;
+  }
+  .term th{ color: var(--term-dim); font-weight:600; border-bottom: 1px solid #21262d; }
+  .term td.timeout{ color: var(--danger); }
+  .term td.final{ color: var(--term-green); font-weight:700; }
+  .term tr.new-row{ animation: rowIn .35s ease; }
+  @keyframes rowIn{ from{ opacity:0; transform: translateY(-4px);} to{opacity:1; transform:translateY(0);} }
+
+  footer{
+    text-align:center;
+    color: var(--text-dim);
+    font-size: 0.78rem;
+    margin-top: 22px;
+  }
+
+  @media (max-width: 640px){
+    .node{ width: 74px; }
+    .node .icon{ width: 46px; height:46px; font-size:1.25rem; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Animasi Traceroute — TTL dan ICMP Time Exceeded</h1>
+
+  <div class="intro">
+    <p style="margin:0 0 8px;"><b>Traceroute</b> bekerja dengan trik memanfaatkan field <b>TTL (Time To Live)</b> pada header IP. Setiap paket probe dikirim dengan nilai TTL yang membesar satu per satu (1, 2, 3, ...); setiap router yang dilewati akan <b>mengurangi TTL sebesar 1</b> sebelum meneruskan paket.</p>
+    <p style="margin:0 0 8px;">Jika TTL menjadi <b>0</b> di sebuah router, router tersebut <b>membuang paket</b> dan mengirim balasan <b>ICMP Time Exceeded</b> ke sumber — inilah cara sumber "menemukan" alamat IP router itu beserta waktu tempuhnya (RTT).</p>
+    <p style="margin:0;">Proses ini diulang dengan TTL yang terus bertambah sehingga setiap hop di sepanjang jalur terungkap satu demi satu, sampai akhirnya paket benar-benar sampai ke host tujuan, yang membalas dengan <b>ICMP Echo Reply</b> — menandakan trace selesai.</p>
+  </div>
+
+  <div class="panel">
+    <h2>Kontrol Simulasi</h2>
+    <div class="controls">
+      <button id="btnStep">Langkah Berikutnya</button>
+      <button id="btnAuto" class="secondary">Putar Otomatis</button>
+      <button id="btnReset" class="danger">Ulangi dari Awal</button>
+      <div class="toggle-row">
+        <input type="checkbox" id="chkLoss">
+        <label for="chkLoss">Simulasikan Paket Hilang / Timeout pada Hop 4</label>
+      </div>
+    </div>
+    <div class="status-line" id="statusLine">Klik <b>Langkah Berikutnya</b> atau <b>Putar Otomatis</b> untuk memulai trace dengan TTL = 1.</div>
+    <div class="legend">
+      <span><i class="swatch probe"></i> Paket probe (maju), TTL ditampilkan &amp; berkurang tiap hop</span>
+      <span><i class="swatch reply"></i> Balasan ICMP Time Exceeded / Echo Reply (mundur)</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Topologi Jaringan</h2>
+    <div class="topo-scroll">
+      <div class="topo" id="topo">
+        <div class="lane-label forward">jalur probe (maju) &rarr;</div>
+        <div class="lane forward"></div>
+        <div class="lane-label backward">&larr; jalur balasan ICMP (mundur)</div>
+        <div class="lane backward"></div>
+        <div class="nodes" id="nodes"></div>
+        <div class="packet" id="packet"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Hasil Traceroute</h2>
+    <div class="term">
+      <div class="cmd">$ traceroute tujuan.jarkom.id (203.0.113.200), 7 hop maksimum</div>
+      <table>
+        <thead><tr><th>#</th><th>Alamat IP</th><th>RTT (ms)</th><th>Keterangan</th></tr></thead>
+        <tbody id="resultBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>Mata Kuliah Jaringan Komputer &middot; Simulasi edukatif TTL &amp; ICMP Time Exceeded pada traceroute</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---- data model ----
+  // index 0 = source, 1..6 = hops, 7 = destination
+  var nodeDefs = [
+    { name: "Sumber",  ip: "192.168.1.10", icon: "💻", host:true },
+    { name: "Hop 1",   ip: "203.0.113.1",   icon: "📡" },
+    { name: "Hop 2",   ip: "203.0.113.9",   icon: "📡" },
+    { name: "Hop 3",   ip: "198.51.100.17", icon: "📡" },
+    { name: "Hop 4",   ip: "198.51.100.33", icon: "📡" },
+    { name: "Hop 5",   ip: "198.51.100.65", icon: "📡" },
+    { name: "Hop 6",   ip: "192.0.2.14",    icon: "📡" },
+    { name: "Tujuan",  ip: "203.0.113.200", icon: "🖥️", host:true }
+  ];
+  var DEST = nodeDefs.length - 1; // 7
+  var baseRTT = [null, 12, 19, 27, 34, 41, 53, 61]; // index matches node index (1..7)
+  var LOSS_HOP = 4; // fixed preset hop for packet-loss scenario
+
+  var el = {
+    nodesWrap: document.getElementById('nodes'),
+    packet: document.getElementById('packet'),
+    resultBody: document.getElementById('resultBody'),
+    statusLine: document.getElementById('statusLine'),
+    btnStep: document.getElementById('btnStep'),
+    btnAuto: document.getElementById('btnAuto'),
+    btnReset: document.getElementById('btnReset'),
+    chkLoss: document.getElementById('chkLoss'),
+    topo: document.getElementById('topo')
+  };
+
+  var nodeEls = [];
+
+  function buildNodes(){
+    el.nodesWrap.innerHTML = '';
+    nodeEls = [];
+    nodeDefs.forEach(function(def, i){
+      var d = document.createElement('div');
+      d.className = 'node' + (def.host ? ' host' : '');
+      d.innerHTML =
+        '<div class="icon">' + def.icon + '</div>' +
+        '<div class="name">' + def.name + '</div>' +
+        '<div class="ip unknown" data-ip>' + (i === 0 ? def.ip : '???.???.???.???') + '</div>';
+      el.nodesWrap.appendChild(d);
+      nodeEls.push(d);
+    });
+  }
+
+  function centerPct(i){
+    return (i + 0.5) / nodeDefs.length * 100;
+  }
+
+  // ---- state ----
+  var ttl = 1;
+  var running = false;      // a round animation currently in progress
+  var autoPlay = false;
+  var finished = false;
+  var rowIndex = 0;
+
+  function setStatus(text, done){
+    el.statusLine.innerHTML = text;
+    el.statusLine.className = 'status-line' + (done ? ' done' : '');
+  }
+
+  function delay(ms){ return new Promise(function(res){ setTimeout(res, ms); }); }
+
+  function clearNodeStates(){
+    nodeEls.forEach(function(n){ n.classList.remove('active','replying'); });
+  }
+
+  function movePacket(fromIdx, toIdx, mode, ttlLabel){
+    // mode: 'forward' | 'backward'
+    return new Promise(function(resolve){
+      var pct = el.packet;
+      pct.classList.remove('reply-mode','lost');
+      if (mode === 'backward') pct.classList.add('reply-mode');
+      pct.style.setProperty('--seg-dur', '0.65s');
+      pct.textContent = ttlLabel;
+      pct.style.left = centerPct(fromIdx) + '%';
+      pct.classList.add('visible');
+      // force reflow so the browser registers start position before transitioning
+      void pct.offsetWidth;
+      requestAnimationFrame(function(){
+        pct.style.left = centerPct(toIdx) + '%';
+      });
+      setTimeout(resolve, 680);
+    });
+  }
+
+  function jitter(n){ return n + Math.floor(Math.random() * 7) - 3; }
+
+  function addRow(html){
+    var tr = document.createElement('tr');
+    tr.className = 'new-row';
+    tr.innerHTML = html;
+    el.resultBody.appendChild(tr);
+    rowIndex++;
+  }
+
+  function revealIp(idx, lost){
+    var ipEl = nodeEls[idx].querySelector('[data-ip]');
+    if (lost){
+      ipEl.textContent = '* * *';
+      ipEl.className = 'ip lost';
+    } else {
+      ipEl.textContent = nodeDefs[idx].ip;
+      ipEl.className = 'ip';
+    }
+  }
+
+  function setButtonsDuringRun(disabled){
+    el.btnStep.disabled = disabled || finished;
+    el.chkLoss.disabled = disabled;
+  }
+
+  async function runRound(){
+    if (running || finished) return;
+    running = true;
+    setButtonsDuringRun(true);
+    clearNodeStates();
+
+    var lossActive = el.chkLoss.checked && ttl === LOSS_HOP;
+    setStatus('Mengirim probe dengan <b>TTL = ' + ttl + '</b> ...');
+
+    var cur = 0;
+    var arrivedIdx = -1;
+    var remaining = ttl;
+
+    for (var h = 1; h <= ttl && h <= DEST; h++){
+      nodeEls[h].classList.add('active');
+      await movePacket(cur, h, 'forward', 'TTL=' + remaining);
+      cur = h;
+      arrivedIdx = h;
+
+      if (h === DEST){
+        remaining = Math.max(remaining - 1, remaining); // destination replies regardless of TTL math
+        break;
+      }
+      remaining -= 1;
+      if (remaining <= 0){
+        break;
+      }
+    }
+
+    el.packet.classList.remove('visible');
+    nodeEls.forEach(function(n){ n.classList.remove('active'); });
+
+    var isDestination = (arrivedIdx === DEST);
+    var rtt = jitter(baseRTT[arrivedIdx]);
+
+    if (isDestination){
+      // ICMP Echo Reply
+      nodeEls[arrivedIdx].classList.add('replying');
+      setStatus('Hop ' + arrivedIdx + ' adalah <b>tujuan akhir</b> &mdash; mengirim balasan <b>ICMP Echo Reply</b> ...');
+      await delay(250);
+      await movePacket(arrivedIdx, 0, 'backward', 'Echo Reply');
+      el.packet.classList.remove('visible');
+      revealIp(arrivedIdx, false);
+      nodeEls[arrivedIdx].classList.remove('replying');
+      nodeEls[arrivedIdx].classList.add('destination-reached');
+      addRow(
+        '<td>' + ttl + '</td>' +
+        '<td>' + nodeDefs[arrivedIdx].ip + '</td>' +
+        '<td>' + rtt + ' ms</td>' +
+        '<td class="final">Tujuan tercapai (ICMP Echo Reply)</td>'
+      );
+      finished = true;
+      setStatus('Trace <b>selesai</b>! Paket berhasil mencapai tujuan pada TTL = ' + ttl + '.', true);
+    } else if (lossActive){
+      setStatus('Hop ' + ttl + ' <b>tidak membalas</b> (paket hilang / timeout) ...');
+      await delay(650);
+      revealIp(arrivedIdx, true);
+      addRow(
+        '<td>' + ttl + '</td>' +
+        '<td>* * *</td>' +
+        '<td class="timeout">* * *</td>' +
+        '<td class="timeout">Request Timed Out (paket hilang)</td>'
+      );
+      nodeEls[arrivedIdx].classList.remove('replying');
+      setStatus('Hop ' + ttl + ' timeout. Lanjutkan ke TTL berikutnya.');
+      ttl += 1;
+    } else {
+      // ICMP Time Exceeded
+      nodeEls[arrivedIdx].classList.add('replying');
+      setStatus('TTL habis di Hop ' + ttl + ' &mdash; router membalas <b>ICMP Time Exceeded</b> ...');
+      await delay(250);
+      await movePacket(arrivedIdx, 0, 'backward', 'Time Exceeded');
+      el.packet.classList.remove('visible');
+      revealIp(arrivedIdx, false);
+      nodeEls[arrivedIdx].classList.remove('replying');
+      addRow(
+        '<td>' + ttl + '</td>' +
+        '<td>' + nodeDefs[arrivedIdx].ip + '</td>' +
+        '<td>' + rtt + ' ms</td>' +
+        '<td>ICMP Time Exceeded</td>'
+      );
+      setStatus('Hop ' + ttl + ' ditemukan: ' + nodeDefs[arrivedIdx].ip + ' (' + rtt + ' ms). Siap untuk TTL = ' + (ttl + 1) + '.');
+      ttl += 1;
+    }
+
+    running = false;
+    setButtonsDuringRun(false);
+    if (finished){
+      el.btnStep.disabled = true;
+      el.btnAuto.disabled = true;
+      el.btnAuto.textContent = 'Putar Otomatis';
+      autoPlay = false;
+    }
+  }
+
+  async function autoLoop(){
+    while (autoPlay && !finished){
+      await runRound();
+      if (!finished) await delay(450);
+    }
+  }
+
+  el.btnStep.addEventListener('click', function(){
+    if (!running && !finished) runRound();
+  });
+
+  el.btnAuto.addEventListener('click', function(){
+    if (finished) return;
+    autoPlay = !autoPlay;
+    el.btnAuto.textContent = autoPlay ? 'Hentikan Otomatis' : 'Putar Otomatis';
+    if (autoPlay) autoLoop();
+  });
+
+  el.btnReset.addEventListener('click', function(){
+    ttl = 1;
+    running = false;
+    autoPlay = false;
+    finished = false;
+    rowIndex = 0;
+    el.resultBody.innerHTML = '';
+    el.btnStep.disabled = false;
+    el.btnAuto.disabled = false;
+    el.btnAuto.textContent = 'Putar Otomatis';
+    el.packet.classList.remove('visible');
+    buildNodes();
+    setStatus('Klik <b>Langkah Berikutnya</b> atau <b>Putar Otomatis</b> untuk memulai trace dengan TTL = 1.');
+  });
+
+  buildNodes();
+})();
+</script>
+</body>
+</html>

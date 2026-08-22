@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Animasi ARP dan ARP Spoofing — Alur Normal vs Serangan</title>
+<style>
+  :root{
+    --bg:#0f172a;
+    --panel:#16213c;
+    --panel-2:#1c2947;
+    --border:#2c3b5e;
+    --text:#e7ecf7;
+    --text-dim:#9fb0d0;
+    --accent:#4da3ff;
+    --accent-2:#6ee7b7;
+    --danger:#ff5c6c;
+    --warn:#ffb020;
+    --ok:#3ddc84;
+    --node-fill:#1e2b4d;
+    --node-stroke:#4da3ff;
+    --attacker-stroke:#ff5c6c;
+    --shadow: 0 8px 24px rgba(0,0,0,.35);
+    --radius:14px;
+    font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: radial-gradient(1200px 700px at 20% -10%, #1a2547 0%, var(--bg) 60%);
+    color:var(--text);
+    min-height:100vh;
+    padding:24px;
+    line-height:1.5;
+  }
+
+  .wrap{max-width:1180px;margin:0 auto;}
+
+  header h1{
+    font-size:1.55rem;
+    margin:0 0 6px 0;
+    font-weight:700;
+    letter-spacing:.2px;
+  }
+  header .sub{
+    color:var(--text-dim);
+    font-size:.95rem;
+    margin-bottom:18px;
+  }
+
+  .info-box{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:16px 18px;
+    margin-bottom:20px;
+    font-size:.92rem;
+    color:var(--text-dim);
+    box-shadow:var(--shadow);
+  }
+  .info-box b{color:var(--text);}
+  .info-box .mitigasi{
+    margin-top:8px;
+    display:block;
+    color:var(--ok);
+    font-weight:600;
+  }
+
+  .tabs{
+    display:flex;
+    gap:10px;
+    margin-bottom:16px;
+    flex-wrap:wrap;
+  }
+  .tab-btn{
+    flex:1 1 220px;
+    padding:12px 16px;
+    border-radius:12px;
+    border:1px solid var(--border);
+    background:var(--panel);
+    color:var(--text-dim);
+    font-size:.95rem;
+    font-weight:600;
+    cursor:pointer;
+    transition:.15s ease;
+    text-align:center;
+  }
+  .tab-btn:hover{border-color:var(--accent);}
+  .tab-btn.active{
+    background:linear-gradient(135deg,#1c2f57,#182449);
+    color:var(--text);
+    border-color:var(--accent);
+    box-shadow:0 0 0 1px var(--accent) inset, var(--shadow);
+  }
+  .tab-btn.active.attack{
+    border-color:var(--danger);
+    box-shadow:0 0 0 1px var(--danger) inset, var(--shadow);
+  }
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:18px;
+    margin-bottom:18px;
+  }
+
+  .controls{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:14px;
+  }
+  .btn{
+    padding:10px 16px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:var(--panel-2);
+    color:var(--text);
+    font-size:.9rem;
+    font-weight:600;
+    cursor:pointer;
+    transition:.15s ease;
+  }
+  .btn:hover{border-color:var(--accent); background:#233761;}
+  .btn:disabled{opacity:.45; cursor:not-allowed;}
+  .btn.primary{background:var(--accent); border-color:var(--accent); color:#06152f;}
+  .btn.primary:hover{background:#6bb6ff;}
+  .btn.danger{background:var(--danger); border-color:var(--danger); color:#2b0006;}
+  .btn.danger:hover{background:#ff8b96;}
+  .btn.ghost{background:transparent;}
+
+  .status-line{
+    flex:1 1 260px;
+    min-width:220px;
+    font-size:.9rem;
+    color:var(--text-dim);
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:10px 14px;
+  }
+  .status-line b{color:var(--accent);}
+  .mode-attack .status-line b{color:var(--danger);}
+
+  .stage{
+    width:100%;
+    background:#0c1630;
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    overflow:hidden;
+  }
+  svg{display:block;width:100%;height:auto;}
+
+  .node-label{fill:var(--text);font-size:14px;font-weight:700;}
+  .node-sub{fill:var(--text-dim);font-size:11.5px;}
+  .node-mac{fill:var(--text-dim);font-size:11px;font-family:monospace;}
+
+  .legend{
+    display:flex;
+    gap:18px;
+    flex-wrap:wrap;
+    margin-top:12px;
+    font-size:.82rem;
+    color:var(--text-dim);
+  }
+  .legend .dot{
+    display:inline-block;width:10px;height:10px;border-radius:50%;
+    margin-right:6px;vertical-align:middle;
+  }
+  .legend .l-normal .dot{background:var(--accent);}
+  .legend .l-bad .dot{background:var(--danger);}
+  .legend .l-data .dot{background:var(--warn);}
+
+  .tables{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+    margin-top:6px;
+  }
+  @media (max-width:720px){
+    .tables{grid-template-columns:1fr;}
+  }
+  .cache-card{
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:14px;
+  }
+  .cache-card h3{
+    margin:0 0 10px 0;
+    font-size:.95rem;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .cache-card h3 .dotnode{
+    width:10px;height:10px;border-radius:50%;
+    background:var(--accent);display:inline-block;
+  }
+  table.arp{
+    width:100%;
+    border-collapse:collapse;
+    font-size:.85rem;
+  }
+  table.arp th, table.arp td{
+    text-align:left;
+    padding:7px 8px;
+    border-bottom:1px solid var(--border);
+  }
+  table.arp th{color:var(--text-dim); font-weight:600; font-size:.78rem; text-transform:uppercase; letter-spacing:.03em;}
+  table.arp td.mac{font-family:monospace;}
+  tr.row-ok td{color:var(--ok);}
+  tr.row-bad td{color:var(--danger); font-weight:600;}
+  tr.row-bad td.status-badge{
+    background:rgba(255,92,108,.12);
+    border-radius:6px;
+  }
+  .empty-row td{color:var(--text-dim); font-style:italic;}
+  .badge{
+    display:inline-block;
+    padding:2px 8px;
+    border-radius:999px;
+    font-size:.72rem;
+    font-weight:700;
+  }
+  .badge.ok{background:rgba(61,220,132,.15); color:var(--ok);}
+  .badge.bad{background:rgba(255,92,108,.18); color:var(--danger);}
+
+  footer{
+    text-align:center;
+    color:var(--text-dim);
+    font-size:.78rem;
+    margin-top:26px;
+  }
+
+  /* packet pulse */
+  .packet-glow{
+    filter:drop-shadow(0 0 6px currentColor);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Animasi ARP dan ARP Spoofing — Alur Normal vs Serangan</h1>
+    <div class="sub">Mata Kuliah Jaringan Komputer &middot; Visualisasi interaktif protokol ARP (Address Resolution Protocol)</div>
+  </header>
+
+  <div class="info-box">
+    <b>Apa itu ARP Spoofing?</b> ARP Spoofing (ARP Poisoning) adalah serangan di jaringan lokal di mana penyerang
+    mengirimkan pesan ARP palsu (forged/gratuitous ARP reply) untuk mengaitkan alamat MAC miliknya dengan alamat IP
+    korban, sehingga korban salah mengira penyerang adalah gateway atau host tujuan yang sah. Serangan ini berhasil
+    karena protokol ARP dirancang tanpa mekanisme autentikasi — setiap balasan ARP yang diterima langsung dipercaya
+    dan disimpan ke ARP cache tanpa verifikasi.
+    <span class="mitigasi">Mitigasi: Dynamic ARP Inspection (DAI) pada switch, entri ARP statis untuk perangkat
+    kritikal, port security, serta penggunaan enkripsi end-to-end agar trafik tidak berguna meski disadap.</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" id="tabNormal" onclick="setMode('normal')">Mode Normal (ARP Request / Reply)</button>
+    <button class="tab-btn attack" id="tabAttack" onclick="setMode('attack')">Mode Serangan (ARP Spoofing)</button>
+  </div>
+
+  <div class="panel" id="modePanel">
+    <div class="controls">
+      <button class="btn primary" id="btnNext" onclick="stepForward()">Langkah Berikutnya &rarr;</button>
+      <button class="btn" id="btnAuto" onclick="toggleAutoplay()">Putar Otomatis</button>
+      <button class="btn ghost" id="btnReset" onclick="resetMode()">Reset</button>
+      <div class="status-line" id="statusLine">Klik <b>"Langkah Berikutnya"</b> untuk memulai simulasi ARP normal.</div>
+    </div>
+
+    <div class="stage">
+      <svg id="svgStage" viewBox="0 0 900 420" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrowBlue" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L8,3 L0,6 Z" fill="#4da3ff"></path>
+          </marker>
+          <marker id="arrowRed" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L8,3 L0,6 Z" fill="#ff5c6c"></path>
+          </marker>
+          <marker id="arrowWarn" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L8,3 L0,6 Z" fill="#ffb020"></path>
+          </marker>
+        </defs>
+
+        <!-- static link lines -->
+        <line x1="130" y1="320" x2="770" y2="320" stroke="#28365c" stroke-width="2" stroke-dasharray="4 5"></line>
+        <line x1="130" y1="320" x2="450" y2="90" stroke="#28365c" stroke-width="2" stroke-dasharray="4 5"></line>
+        <line x1="770" y1="320" x2="450" y2="90" stroke="#28365c" stroke-width="2" stroke-dasharray="4 5"></line>
+
+        <!-- trail / active path group -->
+        <g id="trailLayer"></g>
+
+        <!-- Host A -->
+        <g id="nodeA">
+          <circle cx="130" cy="320" r="42" fill="var(--node-fill)" stroke="var(--node-stroke)" stroke-width="2.5"></circle>
+          <text x="130" y="313" text-anchor="middle" font-size="22">💻</text>
+          <text x="130" y="332" text-anchor="middle" class="node-mac" font-size="9">A</text>
+          <text x="130" y="378" text-anchor="middle" class="node-label">Host A (PC Korban)</text>
+          <text x="130" y="396" text-anchor="middle" class="node-sub">IP: 192.168.1.10</text>
+          <text x="130" y="410" text-anchor="middle" class="node-mac">MAC: AA:11:11:11:11:11</text>
+        </g>
+
+        <!-- Gateway / Host B -->
+        <g id="nodeB">
+          <circle cx="770" cy="320" r="42" fill="var(--node-fill)" stroke="var(--node-stroke)" stroke-width="2.5"></circle>
+          <text x="770" y="313" text-anchor="middle" font-size="22">📡</text>
+          <text x="770" y="378" text-anchor="middle" class="node-label">Gateway / Router</text>
+          <text x="770" y="396" text-anchor="middle" class="node-sub">IP: 192.168.1.1</text>
+          <text x="770" y="410" text-anchor="middle" class="node-mac">MAC: BB:22:22:22:22:22</text>
+        </g>
+
+        <!-- Attacker -->
+        <g id="nodeC">
+          <circle cx="450" cy="90" r="42" fill="var(--node-fill)" stroke="var(--attacker-stroke)" stroke-width="2.5"></circle>
+          <text x="450" y="83" text-anchor="middle" font-size="22">🕵️</text>
+          <text x="450" y="45" text-anchor="middle" class="node-label">PC Penyerang (Attacker)</text>
+          <text x="450" y="27" text-anchor="middle" class="node-sub">IP: 192.168.1.66</text>
+          <text x="450" y="132" text-anchor="middle" class="node-mac">MAC: CC:66:66:66:66:66</text>
+        </g>
+
+        <!-- moving packets layer -->
+        <g id="packetLayer"></g>
+      </svg>
+    </div>
+
+    <div class="legend">
+      <span class="l-normal"><span class="dot"></span>Trafik ARP sah (request/reply asli)</span>
+      <span class="l-bad"><span class="dot"></span>ARP palsu / berbahaya (spoofed)</span>
+      <span class="l-data"><span class="dot"></span>Trafik data setelah cache diracuni</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="tables">
+      <div class="cache-card">
+        <h3><span class="dotnode"></span>Tabel ARP Cache &mdash; Host A (192.168.1.10)</h3>
+        <table class="arp" id="cacheA">
+          <thead><tr><th>IP</th><th>MAC</th><th>Status</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="cache-card">
+        <h3><span class="dotnode" style="background:var(--node-stroke)"></span>Tabel ARP Cache &mdash; Gateway (192.168.1.1)</h3>
+        <table class="arp" id="cacheB">
+          <thead><tr><th>IP</th><th>MAC</th><th>Status</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <footer>Simulasi edukatif untuk mata kuliah Jaringan Komputer &middot; Tidak terhubung ke jaringan sungguhan.</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var COORD = {
+    A: {x:130, y:320},
+    B: {x:770, y:320},
+    C: {x:450, y:90}
+  };
+
+  var svg = document.getElementById('svgStage');
+  var trailLayer = document.getElementById('trailLayer');
+  var packetLayer = document.getElementById('packetLayer');
+  var statusLine = document.getElementById('statusLine');
+  var modePanel = document.getElementById('modePanel');
+  var btnNext = document.getElementById('btnNext');
+  var btnAuto = document.getElementById('btnAuto');
+  var tabNormal = document.getElementById('tabNormal');
+  var tabAttack = document.getElementById('tabAttack');
+
+  var cacheAbody = document.querySelector('#cacheA tbody');
+  var cacheBbody = document.querySelector('#cacheB tbody');
+
+  var currentMode = 'normal';
+  var stepIndex = 0;
+  var busy = false;
+  var autoTimer = null;
+
+  var cacheA = {}; // ip -> {mac, bad}
+  var cacheB = {};
+
+  function renderCache(bodyEl, cacheObj){
+    var keys = Object.keys(cacheObj);
+    bodyEl.innerHTML = '';
+    if(keys.length === 0){
+      var tr = document.createElement('tr');
+      tr.className = 'empty-row';
+      tr.innerHTML = '<td colspan="3">(kosong — belum ada entri ARP)</td>';
+      bodyEl.appendChild(tr);
+      return;
+    }
+    keys.forEach(function(ip){
+      var entry = cacheObj[ip];
+      var tr = document.createElement('tr');
+      tr.className = entry.bad ? 'row-bad' : 'row-ok';
+      var statusHtml = entry.bad
+        ? '<span class="badge bad">DIRACUNI</span>'
+        : '<span class="badge ok">SAH</span>';
+      tr.innerHTML = '<td>'+ip+'</td><td class="mac">'+entry.mac+'</td><td class="status-badge">'+statusHtml+'</td>';
+      bodyEl.appendChild(tr);
+    });
+  }
+
+  function resetCaches(){
+    cacheA = {};
+    cacheB = {};
+    renderCache(cacheAbody, cacheA);
+    renderCache(cacheBbody, cacheB);
+  }
+
+  function clearVisuals(){
+    trailLayer.innerHTML = '';
+    packetLayer.innerHTML = '';
+  }
+
+  function setStatus(html){
+    statusLine.innerHTML = html;
+  }
+
+  // ---- animation primitives ----
+  function ns(tag){ return document.createElementNS('http://www.w3.org/2000/svg', tag); }
+
+  function drawTrail(x1,y1,x2,y2,color,marker,dashed){
+    var line = ns('line');
+    line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+    line.setAttribute('stroke', color);
+    line.setAttribute('stroke-width', '2.5');
+    if(dashed) line.setAttribute('stroke-dasharray', '6 5');
+    line.setAttribute('marker-end', 'url(#'+marker+')');
+    line.setAttribute('opacity', '0.85');
+    trailLayer.appendChild(line);
+    return line;
+  }
+
+  // animate a packet (emoji + label) from (x1,y1) to (x2,y2)
+  function animatePacket(opts){
+    return new Promise(function(resolve){
+      var duration = opts.duration || 1400;
+      var g = ns('g');
+      var circle = ns('circle');
+      circle.setAttribute('r', '15');
+      circle.setAttribute('fill', opts.color);
+      circle.setAttribute('opacity', '0.95');
+      circle.setAttribute('class', 'packet-glow');
+      circle.setAttribute('style', 'color:'+opts.color+';');
+      var icon = ns('text');
+      icon.setAttribute('text-anchor', 'middle');
+      icon.setAttribute('dy', '5');
+      icon.setAttribute('font-size', '14');
+      icon.textContent = opts.icon || '✉';
+
+      var label = ns('text');
+      label.setAttribute('text-anchor', 'middle');
+      label.setAttribute('font-size', '11');
+      label.setAttribute('fill', opts.color);
+      label.setAttribute('font-weight', '700');
+      label.setAttribute('dy', '-22');
+
+      var labelLines = (opts.label || '').split('\n');
+      labelLines.forEach(function(line, i){
+        var tspan = ns('tspan');
+        tspan.setAttribute('x', '0');
+        tspan.setAttribute('dy', i === 0 ? '0' : '13');
+        tspan.textContent = line;
+        label.appendChild(tspan);
+      });
+
+      g.appendChild(circle);
+      g.appendChild(icon);
+      g.appendChild(label);
+      packetLayer.appendChild(g);
+
+      var x1 = opts.x1, y1 = opts.y1, x2 = opts.x2, y2 = opts.y2;
+      var start = null;
+
+      function frame(ts){
+        if(start === null) start = ts;
+        var t = Math.min(1, (ts - start) / duration);
+        var ease = t < 0.5 ? 2*t*t : -1+(4-2*t)*t; // easeInOutQuad
+        var x = x1 + (x2 - x1) * ease;
+        var y = y1 + (y2 - y1) * ease;
+        g.setAttribute('transform', 'translate('+x+','+y+')');
+        if(t < 1){
+          requestAnimationFrame(frame);
+        } else {
+          packetLayer.removeChild(g);
+          resolve();
+        }
+      }
+      requestAnimationFrame(frame);
+    });
+  }
+
+  function delay(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+
+  // ---- step definitions ----
+  var normalSteps = [
+    {
+      run: function(){
+        setStatus('<b>Langkah 1/4:</b> Host A melakukan <i>broadcast</i> ARP Request ke seluruh jaringan (tujuan FF:FF:FF:FF:FF:FF): "Who has 192.168.1.1? Tell 192.168.1.10".');
+        drawTrail(COORD.A.x, COORD.A.y, COORD.B.x, COORD.B.y, '#4da3ff', 'arrowBlue', true);
+        drawTrail(COORD.A.x, COORD.A.y, COORD.C.x, COORD.C.y, '#4da3ff', 'arrowBlue', true);
+        return Promise.all([
+          animatePacket({x1:COORD.A.x,y1:COORD.A.y,x2:COORD.B.x,y2:COORD.B.y,color:'#4da3ff',icon:'❓',label:'ARP Request\n(Broadcast)',duration:1300}),
+          animatePacket({x1:COORD.A.x,y1:COORD.A.y,x2:COORD.C.x,y2:COORD.C.y,color:'#4da3ff',icon:'❓',label:'ARP Request\n(Broadcast)',duration:1300})
+        ]);
+      }
+    },
+    {
+      run: function(){
+        setStatus('<b>Langkah 2/4:</b> Gateway (192.168.1.1) mengenali permintaan tersebut dan mengirim balasan <i>unicast</i> berisi MAC aslinya langsung ke Host A.');
+        clearVisuals();
+        drawTrail(COORD.B.x, COORD.B.y, COORD.A.x, COORD.A.y, '#4da3ff', 'arrowBlue', false);
+        return animatePacket({x1:COORD.B.x,y1:COORD.B.y,x2:COORD.A.x,y2:COORD.A.y,color:'#4da3ff',icon:'✅',label:'ARP Reply:\n192.168.1.1 di BB:22:22:22:22:22',duration:1400});
+      }
+    },
+    {
+      run: function(){
+        setStatus('<b>Langkah 3/4:</b> Host A menyimpan pasangan IP-MAC yang diterima ke dalam ARP cache-nya.');
+        cacheA['192.168.1.1'] = {mac:'BB:22:22:22:22:22', bad:false};
+        renderCache(cacheAbody, cacheA);
+        return delay(600);
+      }
+    },
+    {
+      run: function(){
+        setStatus('<b>Langkah 4/4 — Selesai:</b> ARP cache Host A sudah benar. Kini Host A dapat mengirim data langsung ke Gateway menggunakan MAC yang sah, tanpa perantara.');
+        clearVisuals();
+        return delay(200);
+      }
+    }
+  ];
+
+  var attackSteps = [
+    {
+      run: function(){
+        setStatus('<b>Langkah 1/6:</b> Attacker mengirim <i>forged ARP reply</i> ke Host A, mengaku sebagai Gateway: "192.168.1.1 is at CC:66:66:66:66:66" (padahal Host A tidak pernah meminta ini / gratuitous ARP).');
+        drawTrail(COORD.C.x, COORD.C.y, COORD.A.x, COORD.A.y, '#ff5c6c', 'arrowRed', false);
+        return animatePacket({x1:COORD.C.x,y1:COORD.C.y,x2:COORD.A.x,y2:COORD.A.y,color:'#ff5c6c',icon:'⚠',label:'ARP Reply PALSU:\n192.168.1.1 di CC:66:66:66:66:66',duration:1400});
+      }
+    },
+    {
+      run: function(){
+        setStatus('<b>Langkah 2/6:</b> Host A mempercayai balasan tanpa verifikasi &mdash; ARP cache-nya diracuni: entri Gateway kini menunjuk ke MAC Attacker.');
+        cacheA['192.168.1.1'] = {mac:'CC:66:66:66:66:66', bad:true};
+        renderCache(cacheAbody, cacheA);
+        return delay(700);
+      }
+    },
+    {
+      run: function(){
+        setStatus('<b>Langkah 3/6:</b> Attacker juga mengirim <i>forged ARP reply</i> ke Gateway, mengaku sebagai Host A: "192.168.1.10 is at CC:66:66:66:66:66".');
+        clearVisuals();
+        drawTrail(COORD.C.x, COORD.C.y, COORD.B.x, COORD.B.y, '#ff5c6c', 'arrowRed', false);
+        return animatePacket({x1:COORD.C.x,y1:COORD.C.y,x2:COORD.B.x,y2:COORD.B.y,color:'#ff5c6c',icon:'⚠',label:'ARP Reply PALSU:\n192.168.1.10 di CC:66:66:66:66:66',duration:1400});
+      }
+    },
+    {
+      run: function(){
+        setStatus('<b>Langkah 4/6:</b> Gateway juga tertipu &mdash; ARP cache-nya diracuni: entri Host A kini menunjuk ke MAC Attacker.');
+        cacheB['192.168.1.10'] = {mac:'CC:66:66:66:66:66', bad:true};
+        renderCache(cacheBbody, cacheB);
+        return delay(700);
+      }
+    },
+    {
+      run: function(){
+        setStatus('<b>Langkah 5/6:</b> Sekarang Host A mengirim data untuk Gateway, tetapi karena cache sudah diracuni, paket justru dikirim ke Attacker terlebih dahulu (Man-in-the-Middle).');
+        clearVisuals();
+        drawTrail(COORD.A.x, COORD.A.y, COORD.C.x, COORD.C.y, '#ffb020', 'arrowWarn', false);
+        return animatePacket({x1:COORD.A.x,y1:COORD.A.y,x2:COORD.C.x,y2:COORD.C.y,color:'#ffb020',icon:'📦',label:'Data untuk Gateway\n(disangka aman)',duration:1300});
+      }
+    },
+    {
+      run: function(){
+        setStatus('<b>Langkah 6/6 — Selesai:</b> Attacker meneruskan paket ke Gateway asli setelah menyadapnya. Semua trafik antara Host A &harr; Gateway kini melewati Attacker tanpa disadari korban.');
+        drawTrail(COORD.C.x, COORD.C.y, COORD.B.x, COORD.B.y, '#ffb020', 'arrowWarn', false);
+        return animatePacket({x1:COORD.C.x,y1:COORD.C.y,x2:COORD.B.x,y2:COORD.B.y,color:'#ffb020',icon:'📦',label:'Diteruskan setelah disadap\n(MITM)',duration:1300});
+      }
+    }
+  ];
+
+  function getSteps(){
+    return currentMode === 'normal' ? normalSteps : attackSteps;
+  }
+
+  function setMode(mode){
+    if(busy) return;
+    stopAutoplay();
+    currentMode = mode;
+    stepIndex = 0;
+    busy = false;
+    resetCaches();
+    clearVisuals();
+    if(mode === 'normal'){
+      tabNormal.classList.add('active');
+      tabAttack.classList.remove('active');
+      modePanel.classList.remove('mode-attack');
+      setStatus('Klik <b>"Langkah Berikutnya"</b> untuk memulai simulasi ARP normal.');
+    } else {
+      tabAttack.classList.add('active');
+      tabNormal.classList.remove('active');
+      modePanel.classList.add('mode-attack');
+      setStatus('Klik <b>"Langkah Berikutnya"</b> untuk memulai simulasi ARP Spoofing.');
+    }
+    updateButtons();
+  }
+
+  function updateButtons(){
+    var steps = getSteps();
+    var finished = stepIndex >= steps.length;
+    btnNext.disabled = busy || finished;
+    btnAuto.textContent = autoTimer ? 'Berhenti' : 'Putar Otomatis';
+    btnAuto.disabled = busy && !autoTimer ? true : (finished && !autoTimer);
+  }
+
+  function stepForward(){
+    if(busy) return;
+    var steps = getSteps();
+    if(stepIndex >= steps.length){
+      updateButtons();
+      return;
+    }
+    busy = true;
+    updateButtons();
+    var step = steps[stepIndex];
+    Promise.resolve(step.run()).then(function(){
+      stepIndex++;
+      busy = false;
+      updateButtons();
+      if(stepIndex >= steps.length){
+        stopAutoplay();
+      }
+    });
+  }
+
+  function toggleAutoplay(){
+    if(autoTimer){
+      stopAutoplay();
+      return;
+    }
+    var steps = getSteps();
+    if(stepIndex >= steps.length){
+      resetMode();
+    }
+    btnAuto.textContent = 'Berhenti';
+    autoRun();
+  }
+
+  function autoRun(){
+    var steps = getSteps();
+    if(stepIndex >= steps.length){
+      stopAutoplay();
+      return;
+    }
+    if(busy){
+      autoTimer = setTimeout(autoRun, 200);
+      return;
+    }
+    var before = stepIndex;
+    stepForward();
+    autoTimer = setTimeout(function(){
+      autoRun();
+    }, 1900);
+  }
+
+  function stopAutoplay(){
+    if(autoTimer){
+      clearTimeout(autoTimer);
+      autoTimer = null;
+    }
+    btnAuto.textContent = 'Putar Otomatis';
+    updateButtons();
+  }
+
+  function resetMode(){
+    stopAutoplay();
+    stepIndex = 0;
+    busy = false;
+    resetCaches();
+    clearVisuals();
+    if(currentMode === 'normal'){
+      setStatus('Klik <b>"Langkah Berikutnya"</b> untuk memulai simulasi ARP normal.');
+    } else {
+      setStatus('Klik <b>"Langkah Berikutnya"</b> untuk memulai simulasi ARP Spoofing.');
+    }
+    updateButtons();
+  }
+
+  window.setMode = setMode;
+  window.stepForward = stepForward;
+  window.toggleAutoplay = toggleAutoplay;
+  window.resetMode = resetMode;
+
+  resetCaches();
+  updateButtons();
+})();
+</script>
+</body>
+</html>
