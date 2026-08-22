@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pemilih Konektivitas IoT</title>
+<style>
+  :root{
+    --navy:#1F3864; --blue-bg:#DCE6F1; --yellow-bg:#FFF2CC; --gray-bg:#F2F2F2;
+    --green:#2E7D32; --text-muted:#595959; --border:#BFBFBF; --white:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  body{ font-family: Arial, Helvetica, sans-serif; margin:0; padding:24px 16px 60px; background:#fafbfc; color:#222; }
+  .wrap{max-width:1000px; margin:0 auto;}
+  h1{color:var(--navy); font-size:1.5rem; margin-bottom:4px;}
+  .subtitle{color:var(--text-muted); margin-top:0; margin-bottom:20px; font-size:0.95rem;}
+
+  .grid{display:grid; grid-template-columns:1fr 1.05fr; gap:22px; margin-bottom:26px;}
+  @media (max-width:820px){ .grid{grid-template-columns:1fr;} }
+
+  .panel{background:var(--white); border:1.5px solid var(--border); border-radius:10px; padding:18px;}
+  .panel h2{font-size:1.02rem; color:var(--navy); margin-top:0;}
+  .field{margin-bottom:18px;}
+  .field label{display:block; font-weight:bold; color:var(--navy); font-size:0.88rem; margin-bottom:6px;}
+  .field input[type=range]{width:100%;}
+  .range-labels{display:flex; justify-content:space-between; font-size:0.72rem; color:var(--text-muted);}
+
+  .result-box{border-radius:10px; border:2px solid var(--navy); background:var(--blue-bg); padding:14px; text-align:center; margin-top:6px;}
+  .result-box .proto-name{font-size:1.4rem; font-weight:bold; color:var(--navy); margin:2px 0;}
+  .result-box .reason{font-size:0.83rem; color:var(--text-muted); text-align:left; margin-top:8px; line-height:1.5;}
+
+  .plane-wrap{position:relative;}
+  .opt-dot{
+    position:absolute; width:16px; height:16px; border-radius:50%; background:var(--navy); border:2px solid white;
+    transform:translate(-50%,-50%); box-shadow:0 0 0 2px var(--navy);
+  }
+  .opt-label{
+    position:absolute; transform:translate(-50%, 6px); font-size:0.74rem; font-weight:bold; color:var(--navy);
+    text-align:center; width:100px; pointer-events:none;
+  }
+  .target-dot{
+    position:absolute; width:14px; height:14px; border-radius:50%; background:var(--green);
+    transform:translate(-50%,-50%); transition:left 0.25s, top 0.25s; box-shadow:0 0 0 4px rgba(46,125,50,0.25);
+  }
+  .nearest-line{position:absolute; height:2px; background:repeating-linear-gradient(90deg,var(--green) 0 6px, transparent 6px 10px); transform-origin:0 0; pointer-events:none;}
+
+  .scenario-cards{display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-top:10px;}
+  @media (max-width:700px){ .scenario-cards{grid-template-columns:1fr;} }
+  .scenario-card{
+    border:1.5px solid var(--border); border-radius:8px; padding:12px 14px; cursor:pointer; background:var(--gray-bg);
+    transition:background 0.2s;
+  }
+  .scenario-card:hover{background:var(--yellow-bg);}
+  .scenario-card .q{font-size:0.85rem; font-weight:bold; color:#333;}
+  .scenario-card .a{display:none; font-size:0.82rem; color:var(--text-muted); margin-top:8px; line-height:1.5; border-top:1px dashed var(--border); padding-top:8px;}
+  .scenario-card.open .a{display:block;}
+  .scenario-card .a strong{color:var(--navy);}
+
+  footer{margin-top:28px; font-size:0.75rem; color:var(--text-muted); text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Pemilih Konektivitas IoT</h1>
+  <p class="subtitle">Media pembelajaran interaktif — Internet of Things, Bab 6: Konektivitas IoT dan Perkenalan Alat Simulasi</p>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>Atur kebutuhan skenario Anda</h2>
+      <div class="field">
+        <label>Jangkauan yang dibutuhkan</label>
+        <input type="range" id="range-slider" min="0" max="100" value="30">
+        <div class="range-labels"><span>Sangat dekat (meter)</span><span>Sangat jauh (kilometer)</span></div>
+      </div>
+      <div class="field">
+        <label>Toleransi konsumsi daya (baterai)</label>
+        <input type="range" id="power-slider" min="0" max="100" value="60">
+        <div class="range-labels"><span>Harus sangat hemat daya</span><span>Daya bukan masalah (listrik PLN)</span></div>
+      </div>
+      <div class="result-box">
+        <div style="font-size:0.78rem; color:var(--text-muted);">Opsi konektivitas paling sesuai:</div>
+        <div class="proto-name" id="result-name">—</div>
+        <div class="reason" id="result-reason"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Peta Jangkauan vs Konsumsi Daya</h2>
+      <div class="plane-wrap" id="plane" style="height:280px; border:1px solid var(--border); border-radius:8px; background:var(--gray-bg);">
+      </div>
+      <div style="display:flex; justify-content:space-between; font-size:0.72rem; color:var(--text-muted); margin-top:4px;">
+        <span>&larr; Jangkauan pendek</span><span>Jangkauan jauh &rarr;</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Latihan: Cocokkan Skenario dengan Konektivitas</h2>
+    <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0;">Klik tiap kartu untuk melihat jawaban dan penjelasannya.</p>
+    <div class="scenario-cards" id="scenario-cards"></div>
+  </div>
+
+  <footer>Internet of Things (IFE3261331) — media pembelajaran pendamping, dibuat berdasarkan Buku Ajar Bab 6.</footer>
+</div>
+
+<script>
+// Options positioned on a 0-100 x (range) / 0-100 y (power tolerance, 0=must be very frugal) plane
+var OPTIONS = [
+  { name:'Bluetooth / BLE', x:12, y:15, desc:'Jangkauan sangat dekat, sangat hemat daya — cocok wearable device.' },
+  { name:'WiFi', x:38, y:70, desc:'Jangkauan menengah, butuh daya relatif stabil — cocok perangkat rumah/kantor.' },
+  { name:'Seluler (NB-IoT)', x:78, y:45, desc:'Jangkauan luas mengandalkan infrastruktur operator — cocok perangkat bergerak.' },
+  { name:'LoRa / LPWAN', x:92, y:10, desc:'Jangkauan sangat jauh, sangat hemat daya — cocok sensor tersebar luas.' }
+];
+
+var plane = document.getElementById('plane');
+
+function renderOptions(){
+  var rect = { w: plane.clientWidth, h: plane.clientHeight };
+  OPTIONS.forEach(function(o, i){
+    var dot = document.createElement('div');
+    dot.className = 'opt-dot';
+    dot.id = 'opt-dot-' + i;
+    dot.style.left = (o.x/100 * rect.w) + 'px';
+    dot.style.top = ((100-o.y)/100 * rect.h) + 'px';
+    plane.appendChild(dot);
+    var label = document.createElement('div');
+    label.className = 'opt-label';
+    label.id = 'opt-label-' + i;
+    label.textContent = o.name;
+    label.style.left = (o.x/100 * rect.w) + 'px';
+    label.style.top = ((100-o.y)/100 * rect.h) + 'px';
+    plane.appendChild(label);
+  });
+  var target = document.createElement('div');
+  target.className = 'target-dot';
+  target.id = 'target-dot';
+  plane.appendChild(target);
+}
+renderOptions();
+
+var rangeSlider = document.getElementById('range-slider');
+var powerSlider = document.getElementById('power-slider');
+
+function update(){
+  var rx = +rangeSlider.value;
+  var py = +powerSlider.value;
+  var rect = { w: plane.clientWidth, h: plane.clientHeight };
+  var target = document.getElementById('target-dot');
+  target.style.left = (rx/100 * rect.w) + 'px';
+  target.style.top = ((100-py)/100 * rect.h) + 'px';
+
+  var best = null, bestDist = Infinity;
+  OPTIONS.forEach(function(o, i){
+    var d = Math.pow(o.x - rx, 2) + Math.pow(o.y - py, 2);
+    if (d < bestDist){ bestDist = d; best = o; }
+    document.getElementById('opt-dot-' + i).style.boxShadow = '0 0 0 2px #1F3864';
+  });
+  OPTIONS.forEach(function(o, i){
+    if (o === best) document.getElementById('opt-dot-' + i).style.boxShadow = '0 0 0 4px #2E7D32';
+  });
+
+  document.getElementById('result-name').textContent = best.name;
+  var reason = 'Berdasarkan kombinasi jangkauan (' + rx + '/100) dan toleransi daya (' + py + '/100) yang Anda atur, ' + best.name + ' adalah opsi paling dekat karakteristiknya: ' + best.desc;
+  document.getElementById('result-reason').textContent = reason;
+}
+rangeSlider.addEventListener('input', update);
+powerSlider.addEventListener('input', update);
+window.addEventListener('resize', function(){ plane.innerHTML=''; renderOptions(); update(); });
+update();
+
+// ---- Scenario matching exercise ----
+var SCENARIOS = [
+  { q:'Sensor kelembapan tanah tersebar di lahan pertanian 5 hektare, jauh dari akses listrik PLN.', a:'LoRa / LPWAN', why:'Jangkauan sangat jauh dibutuhkan untuk mencakup lahan luas, dan sensor harus bertahan lama tanpa penggantian baterai rutin — kombinasi yang paling cocok dengan LoRa/LPWAN.' },
+  { q:'Wearable device kesehatan (jam tangan pintar) yang dipakai terus-menerus di tubuh.', a:'Bluetooth / BLE', why:'Jarak ke ponsel/gateway sangat dekat dan baterai perangkat sangat kecil — Bluetooth Low Energy dirancang khusus untuk skenario ini.' },
+  { q:'Kamera keamanan rumah yang perlu mengirim video kualitas tinggi terus-menerus ke aplikasi.', a:'WiFi', why:'Kebutuhan kecepatan data tinggi (video) dengan daya listrik yang biasanya tersedia stabil di rumah membuat WiFi paling sesuai, meski jangkauannya menengah.' },
+  { q:'Pelacak GPS pada truk logistik yang bergerak antar kota, jauh dari WiFi rumah/kantor mana pun.', a:'Seluler (NB-IoT)', why:'Perangkat terus bergerak melintasi wilayah luas dan perlu mengandalkan infrastruktur yang sudah tersebar — jaringan seluler (termasuk NB-IoT) paling cocok untuk mobilitas jarak jauh ini.' }
+];
+
+var cardsWrap = document.getElementById('scenario-cards');
+SCENARIOS.forEach(function(s){
+  var card = document.createElement('div');
+  card.className = 'scenario-card';
+  card.innerHTML = '<div class="q">' + s.q + '</div><div class="a">Jawaban: <strong>' + s.a + '</strong><br>' + s.why + '</div>';
+  card.addEventListener('click', function(){ card.classList.toggle('open'); });
+  cardsWrap.appendChild(card);
+});
+</script>
+</body>
+</html>

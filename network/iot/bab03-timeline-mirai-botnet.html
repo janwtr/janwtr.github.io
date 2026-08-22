@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Timeline Interaktif: Botnet Mirai dan Attack Surface IoT</title>
+<style>
+  :root{
+    --navy:#1F3864; --blue-bg:#DCE6F1; --yellow-bg:#FFF2CC; --gray-bg:#F2F2F2;
+    --green:#2E7D32; --red:#B00020; --text-muted:#595959; --border:#BFBFBF; --white:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  body{ font-family: Arial, Helvetica, sans-serif; margin:0; padding:24px 16px 60px; background:#fafbfc; color:#222; }
+  .wrap{max-width:960px; margin:0 auto;}
+  h1{color:var(--navy); font-size:1.5rem; margin-bottom:4px;}
+  .subtitle{color:var(--text-muted); margin-top:0; margin-bottom:20px; font-size:0.95rem;}
+
+  .section-title{font-size:1.02rem; color:var(--navy); margin:26px 0 10px; font-weight:bold;}
+
+  .timeline-nav{display:flex; gap:0; margin-bottom:16px; overflow-x:auto;}
+  .tstep{
+    flex:1; min-width:110px; text-align:center; cursor:pointer; padding:10px 6px; position:relative;
+    border-bottom:4px solid var(--border); font-size:0.78rem; color:var(--text-muted); font-weight:bold;
+  }
+  .tstep .dot{
+    width:22px; height:22px; border-radius:50%; background:var(--white); border:3px solid var(--border); margin:0 auto 6px;
+    display:flex; align-items:center; justify-content:center; font-size:0.72rem; color:var(--text-muted);
+  }
+  .tstep.active{ border-bottom-color:var(--navy); color:var(--navy); }
+  .tstep.active .dot{ border-color:var(--navy); background:var(--navy); color:#fff; }
+  .tstep.done .dot{ border-color:var(--green); background:var(--green); color:#fff; }
+
+  .timeline-content{
+    background:var(--white); border:1.5px solid var(--border); border-radius:10px; padding:20px; min-height:150px;
+  }
+  .timeline-content h3{margin:0 0 8px; color:var(--navy); font-size:1.05rem;}
+  .timeline-content p{font-size:0.9rem; line-height:1.6; margin:0;}
+  .timeline-content .year-badge{display:inline-block; background:var(--yellow-bg); color:var(--navy); font-size:0.74rem; font-weight:bold; padding:2px 9px; border-radius:10px; margin-bottom:8px;}
+
+  .nav-btns{display:flex; gap:10px; margin-top:14px;}
+  .btn{padding:8px 16px; border-radius:6px; border:1.5px solid var(--navy); background:var(--white); color:var(--navy); font-weight:bold; cursor:pointer; font-size:0.84rem;}
+  .btn:disabled{opacity:0.4; cursor:default;}
+  .btn.primary{background:var(--navy); color:#fff;}
+
+  .device-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:12px;}
+  @media (max-width:620px){ .device-grid{grid-template-columns:repeat(2,1fr);} }
+  .device-card{
+    border:1.5px solid var(--border); border-radius:8px; padding:12px; text-align:center; cursor:pointer; background:var(--gray-bg);
+  }
+  .device-card .icon{font-size:1.8rem; display:block;}
+  .device-card .name{font-size:0.78rem; font-weight:bold; color:#333; margin-top:4px;}
+  .device-card .reveal{display:none; font-size:0.74rem; color:var(--text-muted); margin-top:6px; text-align:left; line-height:1.4;}
+  .device-card.open{background:var(--yellow-bg);}
+  .device-card.open .reveal{display:block;}
+
+  .attack-surface-note{
+    margin-top:14px; border-radius:8px; border:1.5px dashed var(--navy); background:var(--blue-bg); padding:12px 14px;
+    font-size:0.85rem; line-height:1.5;
+  }
+
+  footer{margin-top:28px; font-size:0.75rem; color:var(--text-muted); text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Timeline Interaktif: Botnet Mirai dan Attack Surface IoT</h1>
+  <p class="subtitle">Media pembelajaran interaktif — Internet of Things, Bab 3: Keamanan Dasar dan Peluang Karier di Dunia IoT</p>
+
+  <div class="section-title">Bagaimana Botnet Mirai (2016) Terjadi</div>
+  <div class="timeline-nav" id="timeline-nav"></div>
+  <div class="timeline-content">
+    <div id="tc-body"></div>
+    <div class="nav-btns">
+      <button class="btn" id="prev-btn">&larr; Sebelumnya</button>
+      <button class="btn primary" id="next-btn">Berikutnya &rarr;</button>
+    </div>
+  </div>
+
+  <div class="section-title">Eksplorasi: Mengapa "Attack Surface" IoT Begitu Luas?</div>
+  <p style="font-size:0.86rem; color:var(--text-muted); margin-top:-4px;">Klik tiap jenis perangkat untuk melihat mengapa perangkat itu rentan menjadi bagian dari botnet seperti Mirai.</p>
+  <div class="device-grid" id="device-grid"></div>
+  <div class="attack-surface-note">Semakin banyak benda yang terhubung ke internet, semakin luas <strong>attack surface</strong> (permukaan serangan) yang harus diamankan — dan Mirai membuktikan bahwa kelemahan pada perangkat "sederhana" sekalipun dapat berdampak besar bila jumlahnya sangat banyak.</div>
+
+  <footer>Internet of Things (IFE3261331) — media pembelajaran pendamping, dibuat berdasarkan Buku Ajar Bab 3.</footer>
+</div>
+
+<script>
+var STEPS = [
+  { year:'Sebelum 2016', title:'Ribuan Perangkat Terpasang dengan Kata Sandi Bawaan', body:'Kamera CCTV, router rumah, dan perangkat perekam video (DVR) terjual dan terpasang secara luas dengan kata sandi login bawaan pabrik (misalnya "admin/admin") yang jarang diganti pemiliknya — sering kali karena pengguna tidak menyadari perangkat itu bahkan memiliki antarmuka login.' },
+  { year:'Pertengahan 2016', title:'Malware Mirai Memindai Internet', body:'Mirai secara otomatis memindai alamat-alamat di internet, mencoba masuk ke setiap perangkat IoT yang ditemuinya menggunakan daftar sekitar 60 kombinasi nama pengguna/kata sandi bawaan yang sudah dikenal publik.' },
+  { year:'Pertengahan 2016', title:'Perangkat yang Disusupi Bergabung ke "Botnet"', body:'Setiap perangkat yang berhasil ditembus diam-diam dijadikan bagian dari jaringan bot terkoordinasi (botnet) — pemiliknya sama sekali tidak menyadari perangkatnya kini "diperintah" dari jarak jauh.' },
+  { year:'21 Oktober 2016', title:'Serangan DDoS Skala Besar', body:'Ratusan ribu perangkat dalam botnet Mirai diperintahkan membanjiri penyedia layanan DNS (Dyn) dengan trafik secara bersamaan (Distributed Denial of Service) — membuat sejumlah layanan internet besar (termasuk Twitter, Netflix, Reddit) tidak dapat diakses banyak pengguna selama beberapa jam.' },
+  { year:'Pelajaran', title:'Keamanan Dasar Bukan Hal Opsional', body:'Insiden Mirai menjadi pengingat penting: kelemahan sekecil apa pun (kata sandi bawaan yang tidak diganti) pada perangkat "sederhana" sekalipun dapat berdampak pada skala global bila jumlah perangkat yang rentan sangat banyak — inilah mengapa kebiasaan keamanan dasar wajib diterapkan sejak perangkat pertama kali dipasang.' }
+];
+
+var cur = 0;
+var maxSeen = 0;
+
+var nav = document.getElementById('timeline-nav');
+STEPS.forEach(function(s, i){
+  var el = document.createElement('div');
+  el.className = 'tstep';
+  el.id = 'tstep-' + i;
+  el.innerHTML = '<div class="dot">' + (i+1) + '</div>' + s.year;
+  el.addEventListener('click', function(){ cur = i; render(); });
+  nav.appendChild(el);
+});
+
+function render(){
+  if (cur > maxSeen) maxSeen = cur;
+  STEPS.forEach(function(s, i){
+    var el = document.getElementById('tstep-' + i);
+    el.classList.remove('active','done');
+    if (i === cur) el.classList.add('active');
+    else if (i <= maxSeen) el.classList.add('done');
+  });
+  var s = STEPS[cur];
+  document.getElementById('tc-body').innerHTML =
+    '<div class="year-badge">' + s.year + '</div><h3>' + s.title + '</h3><p>' + s.body + '</p>';
+  document.getElementById('prev-btn').disabled = (cur === 0);
+  document.getElementById('next-btn').disabled = (cur === STEPS.length - 1);
+  document.getElementById('next-btn').textContent = (cur === STEPS.length - 1) ? 'Selesai' : 'Berikutnya →';
+}
+document.getElementById('prev-btn').addEventListener('click', function(){ if (cur > 0){ cur--; render(); } });
+document.getElementById('next-btn').addEventListener('click', function(){ if (cur < STEPS.length - 1){ cur++; render(); } });
+render();
+
+// ---- Attack surface device grid ----
+var DEVICES = [
+  { icon:'📷', name:'Kamera CCTV', why:'Sering dipasang oleh teknisi/pemilik toko tanpa mengganti kata sandi bawaan, dan jarang diperiksa ulang setelah terpasang.' },
+  { icon:'📡', name:'Router Rumah', why:'Titik masuk utama ke jaringan rumah — bila kata sandi adminnya masih bawaan, seluruh perangkat di jaringan itu ikut berisiko.' },
+  { icon:'📼', name:'DVR/NVR Perekam', why:'Perangkat "belakang layar" yang jarang disentuh setelah instalasi awal, sehingga pembaruan firmware maupun kata sandi sering terlupakan.' },
+  { icon:'🖨️', name:'Printer Jaringan', why:'Dianggap perangkat "sepele" sehingga pengaturan keamanannya sering diabaikan, padahal tetap terhubung ke jaringan yang sama.' }
+];
+var grid = document.getElementById('device-grid');
+DEVICES.forEach(function(d){
+  var card = document.createElement('div');
+  card.className = 'device-card';
+  card.innerHTML = '<span class="icon">' + d.icon + '</span><div class="name">' + d.name + '</div><div class="reveal">' + d.why + '</div>';
+  card.addEventListener('click', function(){ card.classList.toggle('open'); });
+  grid.appendChild(card);
+});
+</script>
+</body>
+</html>

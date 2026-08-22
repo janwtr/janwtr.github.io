@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Animasi Alur Data IoT — dari Sensor hingga Dashboard</title>
+<style>
+  :root{
+    --navy:#1F3864; --blue-bg:#DCE6F1; --yellow-bg:#FFF2CC; --gray-bg:#F2F2F2;
+    --green:#2E7D32; --text-muted:#595959; --border:#BFBFBF; --white:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  body{ font-family: Arial, Helvetica, sans-serif; margin:0; padding:24px 16px 60px; background:#fafbfc; color:#222; }
+  .wrap{max-width:1000px; margin:0 auto;}
+  h1{color:var(--navy); font-size:1.5rem; margin-bottom:4px;}
+  .subtitle{color:var(--text-muted); margin-top:0; margin-bottom:20px; font-size:0.95rem;}
+
+  .pipeline{display:flex; align-items:center; gap:0; margin-bottom:6px; overflow-x:auto; padding-bottom:6px;}
+  .pnode{
+    flex:1; min-width:140px; border-radius:10px; border:2px solid var(--navy); padding:12px 10px; text-align:center;
+    cursor:pointer; transition:transform 0.2s, box-shadow 0.2s; background:var(--blue-bg);
+  }
+  .pnode:nth-child(4n+2){ background:var(--yellow-bg); }
+  .pnode:nth-child(4n+3){ background:var(--gray-bg); }
+  .pnode .num{font-size:0.72rem; color:var(--text-muted);}
+  .pnode .title{font-weight:bold; color:var(--navy); font-size:0.88rem; margin:2px 0;}
+  .pnode.active{ transform:translateY(-4px); box-shadow:0 4px 14px rgba(31,56,100,0.28); border-color:var(--green); }
+  .arrow-sep{font-size:1.3rem; color:var(--navy); padding:0 6px; flex:0 0 auto;}
+
+  .controls{display:flex; gap:10px; align-items:center; margin:16px 0 22px; flex-wrap:wrap;}
+  .btn{padding:9px 16px; border-radius:6px; border:none; background:var(--navy); color:#fff; font-weight:bold; cursor:pointer; font-size:0.85rem;}
+  .btn.secondary{background:var(--white); color:var(--navy); border:1.5px solid var(--navy);}
+  .btn:disabled{background:#9aa5b5; cursor:default;}
+  .counter{font-size:0.82rem; color:var(--text-muted);}
+
+  .inspector{
+    background:var(--white); border:1.5px solid var(--border); border-radius:10px; padding:20px; min-height:170px;
+  }
+  .inspector h3{margin:0 0 10px; color:var(--navy); font-size:1.05rem;}
+  .data-repr{
+    font-family:Consolas,'Courier New',monospace; background:#1e2530; color:#d6e0f0; border-radius:8px;
+    padding:12px 14px; font-size:0.84rem; line-height:1.6; white-space:pre-wrap; word-break:break-word;
+  }
+  .data-repr .k{color:#7dc4ff;} .data-repr .s{color:#f2c078;}
+  .inspector .plain{font-size:0.9rem; line-height:1.55;}
+  .table-mini{width:100%; border-collapse:collapse; font-size:0.8rem;}
+  .table-mini th, .table-mini td{border:1px solid var(--border); padding:5px 8px; text-align:left;}
+  .table-mini th{background:var(--gray-bg); color:var(--navy);}
+
+  .chart-wrap{margin-top:22px; background:var(--white); border:1.5px solid var(--border); border-radius:10px; padding:16px;}
+  .chart-wrap h3{margin:0 0 10px; color:var(--navy); font-size:1.0rem;}
+  .gauge-row{display:flex; gap:18px; align-items:center; flex-wrap:wrap;}
+  .gauge-val{font-size:2rem; font-weight:bold; color:var(--navy);}
+  .status-pill{display:inline-block; padding:4px 12px; border-radius:14px; font-size:0.78rem; font-weight:bold;}
+  .status-normal{background:#E8F5E9; color:var(--green);}
+  .status-alert{background:#FDECEA; color:#B00020;}
+
+  footer{margin-top:28px; font-size:0.75rem; color:var(--text-muted); text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Animasi Alur Data IoT: dari Sensor hingga Dashboard</h1>
+  <p class="subtitle">Media pembelajaran interaktif — Internet of Things, Bab 9: Integrasi Perangkat IoT dengan Layanan Cloud dan Dashboard. Skenario: sensor suhu ruang kelas.</p>
+
+  <div class="pipeline" id="pipeline"></div>
+
+  <div class="controls">
+    <button class="btn" id="play-btn">▶ Jalankan Satu Siklus Data</button>
+    <button class="btn secondary" id="reset-btn">Reset Riwayat</button>
+    <span class="counter" id="counter">0 pembacaan tercatat</span>
+  </div>
+
+  <div class="inspector" id="inspector">
+    <h3 id="inspector-title">Klik tombol di atas, atau klik langsung salah satu tahap, untuk melihat bentuk data pada tahap itu.</h3>
+    <div id="inspector-body"></div>
+  </div>
+
+  <div class="chart-wrap">
+    <h3>Dashboard (hasil tahap 4-5, terkumpul dari setiap siklus)</h3>
+    <div class="gauge-row">
+      <div>
+        <div style="font-size:0.78rem; color:var(--text-muted);">Suhu terkini</div>
+        <div class="gauge-val" id="gauge-val">—</div>
+      </div>
+      <div id="status-pill-wrap"></div>
+    </div>
+    <svg id="chart-svg" viewBox="0 0 760 140" width="100%" height="140" style="margin-top:10px;"></svg>
+  </div>
+
+  <footer>Internet of Things (IFE3261331) — media pembelajaran pendamping, dibuat berdasarkan Buku Ajar Bab 9.</footer>
+</div>
+
+<script>
+var STAGES = [
+  { id:1, title:'1. Akuisisi', sub:'sensor baca nilai' },
+  { id:2, title:'2. Transmisi', sub:'MQTT / HTTP / CoAP' },
+  { id:3, title:'3. Simpan & Proses', sub:'cloud / server' },
+  { id:4, title:'4. Visualisasi', sub:'dashboard' },
+  { id:5, title:'5. Tindak Lanjut', sub:'aksi pengguna/sistem' }
+];
+
+var pipeline = document.getElementById('pipeline');
+STAGES.forEach(function(s, i){
+  var node = document.createElement('div');
+  node.className = 'pnode';
+  node.id = 'pnode-' + s.id;
+  node.innerHTML = '<div class="num">Tahap ' + s.id + '</div><div class="title">' + s.title.replace(/^\d+\.\s*/,'') + '</div><div style="font-size:0.74rem;color:#595959;">' + s.sub + '</div>';
+  node.addEventListener('click', function(){ showStage(s.id, lastReading); });
+  pipeline.appendChild(node);
+  if (i < STAGES.length - 1){
+    var sep = document.createElement('div');
+    sep.className = 'arrow-sep';
+    sep.textContent = '→';
+    pipeline.appendChild(sep);
+  }
+});
+
+var readings = [];
+var lastReading = null;
+var cycleCount = 0;
+
+function genReading(){
+  cycleCount++;
+  var base = 27;
+  var val = +(base + (Math.sin(cycleCount * 0.7) * 3) + (((cycleCount * 37) % 10) - 5) * 0.3).toFixed(1);
+  var ts = new Date(2026, 7, 22, 8, 0 + cycleCount * 5);
+  var tsStr = ('0'+ts.getHours()).slice(-2) + ':' + ('0'+ts.getMinutes()).slice(-2) + ':00';
+  return { id: cycleCount, value: val, ts: tsStr, alert: val > 30 };
+}
+
+function setActiveNode(id){
+  STAGES.forEach(function(s){ document.getElementById('pnode-' + s.id).classList.remove('active'); });
+  if (id) document.getElementById('pnode-' + id).classList.add('active');
+}
+
+function stageBody(id, r){
+  if (!r) return '<p class="plain">Klik "Jalankan Satu Siklus Data" untuk menghasilkan satu pembacaan sensor contoh, lalu amati bagaimana bentuknya berubah di setiap tahap.</p>';
+  if (id === 1){
+    return '<p class="plain">Sensor suhu pada ruang kelas membaca besaran fisik dan mikrokontroler mengubahnya menjadi nilai numerik:</p>' +
+      '<div class="data-repr">nilai_mentah = <span class="s">' + r.value + '</span>  <span style="color:#8a9bb0;">// derajat Celsius, dari ADC sensor</span></div>';
+  }
+  if (id === 2){
+    return '<p class="plain">Nilai dikemas menjadi pesan dan dikirim lewat protokol yang sesuai (lihat Bab 5), misalnya sebagai pesan MQTT:</p>' +
+      '<div class="data-repr">{\n  <span class="k">"topik"</span>: <span class="s">"kelasA/suhu"</span>,\n  <span class="k">"nilai"</span>: <span class="s">' + r.value + '</span>,\n  <span class="k">"waktu"</span>: <span class="s">"' + r.ts + '"</span>\n}</div>';
+  }
+  if (id === 3){
+    return '<p class="plain">Server/cloud menyimpan pesan sebagai baris data, dan dapat menjalankan logika tambahan (misalnya menandai nilai di luar batas normal):</p>' +
+      '<table class="table-mini"><tr><th>waktu</th><th>ruang</th><th>suhu (°C)</th><th>status</th></tr>' +
+      '<tr><td>' + r.ts + '</td><td>Kelas A</td><td>' + r.value + '</td><td>' + (r.alert ? 'DI LUAR BATAS' : 'normal') + '</td></tr></table>';
+  }
+  if (id === 4){
+    return '<p class="plain">Dashboard menampilkan data dalam bentuk yang mudah dipahami — grafik tren dan indikator status, bukan angka mentah. Lihat panel "Dashboard" di bawah, yang baru saja diperbarui dengan pembacaan ini.</p>';
+  }
+  return '<p class="plain">' + (r.alert
+    ? 'Suhu ' + r.value + '°C melebihi ambang nyaman (30°C) → sistem/pengguna dapat mengambil tindakan, misalnya menyalakan kipas otomatis atau memberi tahu petugas gedung.'
+    : 'Suhu ' + r.value + '°C masih dalam rentang normal → tidak ada tindakan khusus yang perlu diambil saat ini.') + '</p>';
+}
+
+function showStage(id, r){
+  setActiveNode(id);
+  document.getElementById('inspector-title').textContent = STAGES[id-1].title + ' — bentuk data pada tahap ini';
+  document.getElementById('inspector-body').innerHTML = stageBody(id, r);
+}
+
+function updateDashboard(){
+  var gv = document.getElementById('gauge-val');
+  var pillWrap = document.getElementById('status-pill-wrap');
+  if (!lastReading){
+    gv.textContent = '—';
+    pillWrap.innerHTML = '';
+  } else {
+    gv.textContent = lastReading.value + '°C';
+    pillWrap.innerHTML = '<span class="status-pill ' + (lastReading.alert ? 'status-alert' : 'status-normal') + '">' +
+      (lastReading.alert ? 'DI LUAR BATAS NORMAL' : 'NORMAL') + '</span>';
+  }
+  document.getElementById('counter').textContent = readings.length + ' pembacaan tercatat';
+  drawChart();
+}
+
+function drawChart(){
+  var svg = document.getElementById('chart-svg');
+  var w = 760, h = 140, pad = 30;
+  var pts = readings.slice(-12);
+  if (pts.length === 0){ svg.innerHTML = '<text x="380" y="70" text-anchor="middle" fill="#8a9bb0" font-size="12">Belum ada data. Jalankan satu siklus untuk mulai mengisi grafik.</text>'; return; }
+  var minV = 20, maxV = 34;
+  var stepX = pts.length > 1 ? (w - pad*2) / (pts.length - 1) : 0;
+  function xy(i, v){
+    var x = pad + i * stepX;
+    var y = h - pad - ((v - minV) / (maxV - minV)) * (h - pad*2);
+    return [x, y];
+  }
+  var thresholdY = xy(0, 30)[1];
+  var pathD = pts.map(function(r, i){ var p = xy(i, r.value); return (i === 0 ? 'M' : 'L') + p[0] + ',' + p[1]; }).join(' ');
+  var circles = pts.map(function(r, i){
+    var p = xy(i, r.value);
+    return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="3.5" fill="' + (r.alert ? '#B00020' : '#2E7D32') + '"/>';
+  }).join('');
+  svg.innerHTML =
+    '<line x1="' + pad + '" y1="' + thresholdY + '" x2="' + (w-pad) + '" y2="' + thresholdY + '" stroke="#B00020" stroke-dasharray="4,3" stroke-width="1"/>' +
+    '<text x="' + (w-pad) + '" y="' + (thresholdY - 4) + '" text-anchor="end" font-size="9" fill="#B00020">ambang 30°C</text>' +
+    '<path d="' + pathD + '" fill="none" stroke="#1F3864" stroke-width="2"/>' + circles;
+}
+
+document.getElementById('play-btn').addEventListener('click', function(){
+  var btn = this;
+  btn.disabled = true;
+  lastReading = genReading();
+  readings.push(lastReading);
+  var id = 1;
+  function step(){
+    showStage(id, lastReading);
+    if (id === 4) updateDashboard();
+    id++;
+    if (id <= 5){
+      setTimeout(step, 550);
+    } else {
+      btn.disabled = false;
+    }
+  }
+  step();
+});
+
+document.getElementById('reset-btn').addEventListener('click', function(){
+  readings = []; lastReading = null; cycleCount = 0;
+  setActiveNode(null);
+  document.getElementById('inspector-title').textContent = 'Klik tombol di atas, atau klik langsung salah satu tahap, untuk melihat bentuk data pada tahap itu.';
+  document.getElementById('inspector-body').innerHTML = '';
+  updateDashboard();
+});
+
+updateDashboard();
+</script>
+</body>
+</html>

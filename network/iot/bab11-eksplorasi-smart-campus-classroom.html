@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eksplorasi Skenario Smart Campus &amp; Smart Classroom</title>
+<style>
+  :root{
+    --navy:#1F3864; --blue-bg:#DCE6F1; --yellow-bg:#FFF2CC; --gray-bg:#F2F2F2;
+    --green:#2E7D32; --text-muted:#595959; --border:#BFBFBF; --white:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  body{ font-family: Arial, Helvetica, sans-serif; margin:0; padding:24px 16px 60px; background:#fafbfc; color:#222; }
+  .wrap{max-width:1000px; margin:0 auto;}
+  h1{color:var(--navy); font-size:1.5rem; margin-bottom:4px;}
+  .subtitle{color:var(--text-muted); margin-top:0; margin-bottom:20px; font-size:0.95rem;}
+
+  .group-title{font-size:0.82rem; font-weight:bold; color:var(--navy); text-transform:uppercase; letter-spacing:0.03em; margin:18px 0 8px;}
+  .cards{display:grid; grid-template-columns:repeat(3,1fr); gap:12px;}
+  @media (max-width:760px){ .cards{grid-template-columns:1fr 1fr;} }
+  @media (max-width:520px){ .cards{grid-template-columns:1fr;} }
+  .card{
+    border:2px solid var(--border); border-radius:10px; padding:14px; cursor:pointer; background:var(--white);
+    text-align:center; transition:border-color 0.15s, background 0.15s;
+  }
+  .card:hover{ border-color:var(--navy); }
+  .card.sel{ border-color:var(--navy); background:var(--blue-bg); }
+  .card .icon{font-size:1.8rem; display:block; margin-bottom:6px;}
+  .card .title{font-size:0.85rem; font-weight:bold; color:#333;}
+
+  .detail{
+    margin-top:22px; background:var(--white); border:1.5px solid var(--border); border-radius:10px; padding:20px;
+    display:none;
+  }
+  .detail.show{display:block;}
+  .detail h2{margin-top:0; color:var(--navy); font-size:1.15rem;}
+  .detail-grid{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:14px;}
+  @media (max-width:700px){ .detail-grid{grid-template-columns:1fr;} }
+  .detail-block{border-radius:8px; padding:12px 14px; font-size:0.86rem; line-height:1.55;}
+  .detail-block.problem{background:var(--yellow-bg);}
+  .detail-block.sensors{background:var(--blue-bg);}
+  .detail-block h4{margin:0 0 6px; color:var(--navy); font-size:0.85rem;}
+
+  .flow-row{display:flex; align-items:center; gap:4px; margin-top:14px; flex-wrap:wrap;}
+  .flow-node{
+    background:var(--gray-bg); border:1.5px solid var(--navy); border-radius:8px; padding:8px 10px; font-size:0.78rem;
+    text-align:center; min-width:90px; color:var(--navy); font-weight:bold;
+  }
+  .flow-arrow{color:var(--navy); font-size:1.1rem;}
+
+  .kampus-note{margin-top:16px; border-radius:8px; border:1.5px dashed var(--green); background:#E8F5E9; padding:12px 14px; font-size:0.85rem; line-height:1.5;}
+  .kampus-note strong{color:var(--green);}
+
+  .reflect{margin-top:16px;}
+  .reflect label{display:block; font-size:0.82rem; font-weight:bold; color:var(--navy); margin-bottom:6px;}
+  .reflect textarea{width:100%; min-height:70px; border-radius:8px; border:1.5px solid var(--border); padding:10px; font-family:inherit; font-size:0.85rem; resize:vertical;}
+
+  footer{margin-top:28px; font-size:0.75rem; color:var(--text-muted); text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Eksplorasi Skenario Smart Campus &amp; Smart Classroom</h1>
+  <p class="subtitle">Media pembelajaran interaktif — Internet of Things, Bab 11: Studi Kasus Penerapan IoT pada Industri dan Pendidikan</p>
+
+  <div class="group-title">Smart Campus</div>
+  <div class="cards" id="cards-campus"></div>
+  <div class="group-title">Smart Classroom</div>
+  <div class="cards" id="cards-classroom"></div>
+
+  <div class="detail" id="detail">
+    <h2 id="d-title"></h2>
+    <div class="detail-grid">
+      <div class="detail-block problem">
+        <h4>Masalah / Kebutuhan Nyata</h4>
+        <div id="d-problem"></div>
+      </div>
+      <div class="detail-block sensors">
+        <h4>Sensor &amp; Aktuator yang Terlibat</h4>
+        <div id="d-sensors"></div>
+      </div>
+    </div>
+    <h4 style="color:var(--navy); font-size:0.85rem; margin:16px 0 4px;">Alur Data Singkat</h4>
+    <div class="flow-row" id="d-flow"></div>
+    <div class="kampus-note"><strong>Potensi penerapan di kampus UMS:</strong> <span id="d-kampus"></span></div>
+    <div class="reflect">
+      <label>Tulis analisis singkat Anda sendiri (opsional, untuk latihan pribadi — tidak tersimpan setelah halaman ditutup)</label>
+      <textarea placeholder="Menurut Anda, adakah kebutuhan serupa di lingkungan kampus/kelas Anda sendiri? Bagaimana rancangannya?"></textarea>
+    </div>
+  </div>
+
+  <footer>Internet of Things (IFE3261331) — media pembelajaran pendamping, dibuat berdasarkan Buku Ajar Bab 11.</footer>
+</div>
+
+<script>
+var CAMPUS = [
+  {
+    id:'energi', icon:'⚡', title:'Pemantauan Energi Gedung',
+    problem:'Konsumsi listrik gedung kampus sulit dipantau manual, sehingga pemborosan (lampu/AC menyala di ruang kosong) sering tidak terdeteksi hingga tagihan membengkak.',
+    sensors:'Sensor arus/daya listrik pada panel gedung, sensor okupansi ruangan; aktuator berupa relai pemutus daya otomatis.',
+    kampus:'Dapat diuji-coba pada satu gedung fakultas sebagai proyek percontohan sebelum diperluas ke gedung lain.'
+  },
+  {
+    id:'parkir', icon:'🅿️', title:'Sistem Parkir Pintar',
+    problem:'Mahasiswa/dosen kesulitan menemukan slot parkir kosong pada jam sibuk, menyebabkan antrean dan pemborosan waktu di gerbang kampus.',
+    sensors:'Sensor ultrasonik/infra merah per slot parkir atau kamera penghitung; aktuator berupa palang otomatis dan papan indikator slot kosong.',
+    kampus:'Relevan untuk area parkir gedung utama UMS yang padat pada jam kuliah pagi.'
+  },
+  {
+    id:'keamanan', icon:'🛡️', title:'Keamanan Kampus Berbasis Sensor/Kamera',
+    problem:'Area kampus yang luas sulit diawasi petugas keamanan secara menyeluruh sepanjang waktu, terutama di jam malam atau area terpencil.',
+    sensors:'Kamera CCTV pintar, sensor gerak pada pintu/pagar; aktuator berupa alarm otomatis dan lampu sorot yang menyala saat gerak terdeteksi.',
+    kampus:'Bisa difokuskan pada titik rawan seperti area parkir motor atau lorong yang jarang dilalui pada malam hari.'
+  }
+];
+
+var CLASSROOM = [
+  {
+    id:'presensi', icon:'📋', title:'Presensi Otomatis',
+    problem:'Presensi manual (tanda tangan kertas) memakan waktu kelas dan rawan kecurangan (titip absen).',
+    sensors:'Pembaca RFID/kartu mahasiswa atau sensor pengenalan wajah sederhana di pintu kelas; tidak selalu memerlukan aktuator fisik, cukup pencatatan data.',
+    kampus:'Dapat diujicobakan pada satu ruang kelas Program Studi Pendidikan Teknik Informatika sebagai proyek kelompok mahasiswa.'
+  },
+  {
+    id:'okupansi', icon:'🚪', title:'Pemantauan Okupansi Ruang Kelas',
+    problem:'Bagian akademik sulit mengetahui ruang kelas mana yang benar-benar terpakai vs kosong pada jam tertentu, menyulitkan optimalisasi penjadwalan.',
+    sensors:'Sensor PIR (gerak) atau penghitung orang di pintu masuk; aktuator berupa indikator status ruangan (lampu LED merah/hijau di luar pintu).',
+    kampus:'Data okupansi dapat mendukung penjadwalan ruang kelas yang lebih efisien di gedung dengan banyak ruang kosong tak termanfaatkan.'
+  },
+  {
+    id:'kontrol', icon:'🌡️', title:'Kontrol Pencahayaan/Pendingin Otomatis',
+    problem:'Lampu dan AC ruang kelas sering menyala meski ruangan kosong (lupa dimatikan setelah kelas selesai), memboroskan energi.',
+    sensors:'Sensor PIR (keberadaan orang) dan sensor cahaya; aktuator berupa relai lampu dan unit AC yang dapat dikendalikan otomatis.',
+    kampus:'Cocok diterapkan bertahap mulai dari ruang kelas yang paling sering "lupa dimatikan" berdasarkan laporan petugas kebersihan/keamanan.'
+  }
+];
+
+function renderCards(containerId, items){
+  var el = document.getElementById(containerId);
+  items.forEach(function(it){
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = '<span class="icon">' + it.icon + '</span><span class="title">' + it.title + '</span>';
+    card.addEventListener('click', function(){
+      document.querySelectorAll('.card').forEach(function(c){ c.classList.remove('sel'); });
+      card.classList.add('sel');
+      showDetail(it);
+    });
+    el.appendChild(card);
+  });
+}
+renderCards('cards-campus', CAMPUS);
+renderCards('cards-classroom', CLASSROOM);
+
+var FLOW_STEPS = ['Sensor', 'Gateway/Jaringan', 'Cloud/Server', 'Dashboard', 'Aktuator/Tindakan'];
+
+function showDetail(it){
+  document.getElementById('d-title').textContent = it.title;
+  document.getElementById('d-problem').textContent = it.problem;
+  document.getElementById('d-sensors').textContent = it.sensors;
+  document.getElementById('d-kampus').textContent = it.kampus;
+
+  var flowEl = document.getElementById('d-flow');
+  flowEl.innerHTML = '';
+  FLOW_STEPS.forEach(function(s, i){
+    var node = document.createElement('div');
+    node.className = 'flow-node';
+    node.textContent = s;
+    flowEl.appendChild(node);
+    if (i < FLOW_STEPS.length - 1){
+      var arrow = document.createElement('div');
+      arrow.className = 'flow-arrow';
+      arrow.textContent = '→';
+      flowEl.appendChild(arrow);
+    }
+  });
+
+  document.getElementById('detail').classList.add('show');
+  document.querySelector('.reflect textarea').value = '';
+}
+</script>
+</body>
+</html>

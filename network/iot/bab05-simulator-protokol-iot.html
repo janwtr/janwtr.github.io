@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulator Protokol Komunikasi IoT — MQTT, HTTP, CoAP</title>
+<style>
+  :root{
+    --navy:#1F3864; --blue-bg:#DCE6F1; --yellow-bg:#FFF2CC; --gray-bg:#F2F2F2;
+    --green:#2E7D32; --text-muted:#595959; --border:#BFBFBF; --white:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  body{
+    font-family: Arial, Helvetica, sans-serif; margin:0; padding:24px 16px 60px;
+    background:#fafbfc; color:#222;
+  }
+  .wrap{max-width:980px; margin:0 auto;}
+  h1{color:var(--navy); font-size:1.5rem; margin-bottom:4px;}
+  .subtitle{color:var(--text-muted); margin-top:0; margin-bottom:20px; font-size:0.95rem;}
+  .tabs{display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap;}
+  .tab-btn{
+    padding:10px 18px; border-radius:8px 8px 0 0; border:1.5px solid var(--border);
+    background:var(--gray-bg); color:var(--navy); font-weight:bold; cursor:pointer;
+    font-size:0.95rem; border-bottom:none;
+  }
+  .tab-btn.active{background:var(--white); border-bottom:3px solid var(--navy);}
+  .panel{display:none; background:var(--white); border:1.5px solid var(--border); border-radius:0 8px 8px 8px; padding:22px;}
+  .panel.active{display:block;}
+
+  /* --- Animation tab --- */
+  .proto-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:8px;}
+  @media (max-width:800px){ .proto-grid{grid-template-columns:1fr;} }
+  .proto-card{border-radius:10px; border:1.5px solid var(--navy); padding:14px; position:relative; min-height:230px;}
+  .proto-card.mqtt{background:var(--blue-bg);}
+  .proto-card.http{background:var(--yellow-bg);}
+  .proto-card.coap{background:var(--gray-bg);}
+  .proto-card h3{margin:0 0 2px; color:var(--navy); font-size:1.05rem;}
+  .proto-card .desc{font-size:0.82rem; color:var(--text-muted); margin:0 0 12px;}
+  .lane{position:relative; height:110px; background:var(--white); border-radius:6px; border:1px solid var(--border); margin-bottom:10px;}
+  .node{
+    position:absolute; top:50%; transform:translateY(-50%);
+    width:64px; text-align:center; font-size:0.72rem; color:var(--navy); font-weight:bold;
+  }
+  .node .box{
+    width:44px; height:34px; margin:0 auto 4px; border-radius:5px; background:var(--white);
+    border:1.8px solid var(--navy); display:flex; align-items:center; justify-content:center; font-size:0.7rem;
+  }
+  .node.left{left:6px;}
+  .node.mid{left:50%; transform:translate(-50%,-50%);}
+  .node.right{right:6px;}
+  .packet{
+    position:absolute; top:50%; transform:translateY(-50%); left:60px;
+    width:14px; height:14px; border-radius:50%; background:var(--green); opacity:0;
+    box-shadow:0 0 0 3px rgba(46,125,50,0.18);
+  }
+  .send-btn{
+    display:block; width:100%; padding:9px; border-radius:6px; border:none;
+    background:var(--navy); color:#fff; font-weight:bold; cursor:pointer; font-size:0.85rem;
+  }
+  .send-btn:hover{background:#16294a;}
+  .send-btn:disabled{background:#9aa5b5; cursor:default;}
+  .log{font-size:0.74rem; color:var(--text-muted); margin-top:8px; min-height:34px; line-height:1.4;}
+  .badge{display:inline-block; font-size:0.68rem; background:var(--navy); color:#fff; border-radius:4px; padding:1px 6px; margin-left:4px;}
+
+  /* --- Picker tab --- */
+  .picker-grid{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+  @media (max-width:760px){ .picker-grid{grid-template-columns:1fr;} }
+  .field{margin-bottom:18px;}
+  .field label{display:block; font-weight:bold; color:var(--navy); font-size:0.88rem; margin-bottom:6px;}
+  .field input[type=range]{width:100%;}
+  .field .range-labels{display:flex; justify-content:space-between; font-size:0.72rem; color:var(--text-muted);}
+  .field .val{font-size:0.8rem; color:var(--green); font-weight:bold;}
+  .choice-row{display:flex; gap:8px; flex-wrap:wrap;}
+  .choice-btn{
+    padding:7px 12px; border-radius:6px; border:1.5px solid var(--border); background:var(--white);
+    cursor:pointer; font-size:0.82rem; color:#333;
+  }
+  .choice-btn.sel{border-color:var(--navy); background:var(--blue-bg); font-weight:bold; color:var(--navy);}
+  .result-box{
+    border-radius:10px; border:2px solid var(--navy); background:var(--blue-bg); padding:18px;
+    text-align:center;
+  }
+  .result-box .proto-name{font-size:1.6rem; font-weight:bold; color:var(--navy); margin:4px 0;}
+  .result-box .reason{font-size:0.85rem; color:var(--text-muted); text-align:left; margin-top:10px; line-height:1.5;}
+  footer{margin-top:28px; font-size:0.75rem; color:var(--text-muted); text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Simulator Protokol Komunikasi IoT</h1>
+  <p class="subtitle">Media pembelajaran interaktif — Internet of Things, Bab 5: Arsitektur Lanjutan dan Protokol Komunikasi IoT</p>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="anim">1. Animasi Pola Komunikasi</button>
+    <button class="tab-btn" data-tab="pick">2. Pemilih Protokol Sesuai Skenario</button>
+  </div>
+
+  <div class="panel active" id="panel-anim">
+    <p style="color:var(--text-muted); font-size:0.88rem; margin-top:0;">Klik tombol <strong>Kirim Data</strong> pada tiap kartu untuk melihat bagaimana masing-masing protokol mengalirkan data secara berbeda.</p>
+    <div class="proto-grid">
+
+      <div class="proto-card mqtt">
+        <h3>MQTT <span class="badge">Publish–Subscribe</span></h3>
+        <p class="desc">Publisher mengirim ke Broker, lalu Broker meneruskan ke seluruh Subscriber yang berlangganan topik itu — publisher tidak tahu siapa penerimanya.</p>
+        <div class="lane" id="mqtt-lane1">
+          <div class="node left"><div class="box">📡</div>Publisher</div>
+          <div class="node mid"><div class="box">🗂️</div>Broker</div>
+          <div class="packet" id="mqtt-p1"></div>
+        </div>
+        <div class="lane" id="mqtt-lane2">
+          <div class="node left"><div class="box">🗂️</div>Broker</div>
+          <div class="node right"><div class="box">📊</div>Subscriber</div>
+          <div class="packet" id="mqtt-p2"></div>
+        </div>
+        <button class="send-btn" id="mqtt-btn">Kirim Data (Publish)</button>
+        <div class="log" id="mqtt-log">Topik: <code>gudang/suhu</code></div>
+      </div>
+
+      <div class="proto-card http">
+        <h3>HTTP <span class="badge">Request–Response</span></h3>
+        <p class="desc">Klien mengirim permintaan lengkap ke Server dan menunggu jawaban lengkap — pola satu-lawan-satu, relatif "berat" untuk perangkat kecil.</p>
+        <div class="lane" style="margin-top:44px;" id="http-lane">
+          <div class="node left"><div class="box">💻</div>Klien</div>
+          <div class="node right"><div class="box">🖥️</div>Server</div>
+          <div class="packet" id="http-p1"></div>
+          <div class="packet" id="http-p2" style="background:#C9962C; box-shadow:0 0 0 3px rgba(201,150,44,0.18);"></div>
+        </div>
+        <button class="send-btn" id="http-btn">Kirim Permintaan (GET)</button>
+        <div class="log" id="http-log">Menunggu jawaban server sebelum lanjut.</div>
+      </div>
+
+      <div class="proto-card coap">
+        <h3>CoAP <span class="badge">Request–Response ringan (UDP)</span></h3>
+        <p class="desc">Mirip HTTP tetapi pesan jauh lebih kecil dan ringan — cocok untuk sensor baterai kecil yang harus hemat daya bertahun-tahun.</p>
+        <div class="lane" style="margin-top:44px;" id="coap-lane">
+          <div class="node left"><div class="box">🔋</div>Sensor Kecil</div>
+          <div class="node right"><div class="box">🖥️</div>Server</div>
+          <div class="packet" id="coap-p1" style="width:8px; height:8px;"></div>
+          <div class="packet" id="coap-p2" style="width:8px; height:8px; background:#C9962C; box-shadow:0 0 0 2px rgba(201,150,44,0.18);"></div>
+        </div>
+        <button class="send-btn" id="coap-btn">Kirim Permintaan (ringan)</button>
+        <div class="log" id="coap-log">Paket jauh lebih kecil dari HTTP.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="panel" id="panel-pick">
+    <div class="picker-grid">
+      <div>
+        <div class="field">
+          <label>Jumlah perangkat yang mengirim data <span class="val" id="val-n"></span></label>
+          <input type="range" id="n-perangkat" min="0" max="2" step="1" value="1">
+          <div class="range-labels"><span>Sedikit (1-5)</span><span>Sedang (puluhan)</span><span>Banyak (ratusan+)</span></div>
+        </div>
+        <div class="field">
+          <label>Frekuensi pengiriman data <span class="val" id="val-f"></span></label>
+          <input type="range" id="frekuensi" min="0" max="2" step="1" value="1">
+          <div class="range-labels"><span>Jarang</span><span>Sedang</span><span>Sangat sering</span></div>
+        </div>
+        <div class="field">
+          <label>Keterbatasan daya (baterai) <span class="val" id="val-d"></span></label>
+          <input type="range" id="daya" min="0" max="2" step="1" value="1">
+          <div class="range-labels"><span>Tidak terbatas</span><span>Sedang</span><span>Sangat terbatas</span></div>
+        </div>
+        <div class="field">
+          <label>Kebutuhan kompatibilitas dengan layanan web (REST API)</label>
+          <div class="choice-row">
+            <button class="choice-btn sel" data-group="web" data-val="0">Tidak perlu</button>
+            <button class="choice-btn" data-group="web" data-val="1">Perlu</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="result-box">
+          <div style="font-size:0.8rem; color:var(--text-muted);">Protokol yang paling sesuai:</div>
+          <div class="proto-name" id="result-proto">—</div>
+          <div class="reason" id="result-reason"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>Internet of Things (IFE3261331) — media pembelajaran pendamping, dibuat berdasarkan Buku Ajar Bab 5.</footer>
+</div>
+
+<script>
+// ---- Tabs ----
+document.querySelectorAll('.tab-btn').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+    document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ---- Animation helpers ----
+function animatePacket(el, laneEl, fromSide, toSide, duration, onDone){
+  var laneWidth = laneEl.clientWidth;
+  var startX = fromSide === 'left' ? 40 : (laneWidth - 60);
+  var endX = toSide === 'right' ? (laneWidth - 60) : 40;
+  if (fromSide === 'mid') startX = laneWidth/2 - 7;
+  if (toSide === 'mid') endX = laneWidth/2 - 7;
+  el.style.transition = 'none';
+  el.style.left = startX + 'px';
+  el.style.opacity = '1';
+  // force reflow
+  void el.offsetWidth;
+  el.style.transition = 'left ' + duration + 'ms linear';
+  el.style.left = endX + 'px';
+  setTimeout(function(){
+    el.style.opacity = '0';
+    if (onDone) onDone();
+  }, duration + 60);
+}
+
+function setupSingleHop(btnId, packetIds, laneIds, logId, sequence){
+  var btn = document.getElementById(btnId);
+  btn.addEventListener('click', function(){
+    btn.disabled = true;
+    var log = document.getElementById(logId);
+    var step = 0;
+    function runStep(){
+      if (step >= sequence.length){ btn.disabled = false; return; }
+      var s = sequence[step];
+      var el = document.getElementById(packetIds[step]);
+      var lane = document.getElementById(laneIds[step]);
+      log.textContent = s.msg;
+      animatePacket(el, lane, s.from, s.to, s.duration, function(){
+        step++;
+        setTimeout(runStep, 150);
+      });
+    }
+    runStep();
+  });
+}
+
+// MQTT: publisher->broker, then broker->subscriber
+setupSingleHop('mqtt-btn', ['mqtt-p1','mqtt-p2'], ['mqtt-lane1','mqtt-lane2'], 'mqtt-log', [
+  {from:'left', to:'mid', duration:900, msg:'Publisher menerbitkan data suhu ke Broker...'},
+  {from:'left', to:'right', duration:900, msg:'Broker meneruskan ke setiap Subscriber topik "gudang/suhu"...'}
+]);
+
+// HTTP: client->server request, then server->client response (heavier, slower)
+setupSingleHop('http-btn', ['http-p1','http-p2'], ['http-lane','http-lane'], 'http-log', [
+  {from:'left', to:'right', duration:1100, msg:'Klien mengirim permintaan lengkap (header + body) ke Server...'},
+  {from:'right', to:'left', duration:1100, msg:'Server membalas dengan jawaban lengkap. Klien menunggu penuh sebelum lanjut.'}
+]);
+
+// CoAP: sensor->server request, then server->sensor response (lighter/faster)
+setupSingleHop('coap-btn', ['coap-p1','coap-p2'], ['coap-lane','coap-lane'], 'coap-log', [
+  {from:'left', to:'right', duration:450, msg:'Sensor mengirim permintaan ringan berbasis UDP...'},
+  {from:'right', to:'left', duration:450, msg:'Server membalas cepat — overhead jauh lebih kecil dari HTTP.'}
+]);
+
+// ---- Picker tab ----
+var nLabels = ['Sedikit (1-5 perangkat)','Sedang (puluhan perangkat)','Banyak (ratusan+ perangkat)'];
+var fLabels = ['Jarang (mis. sekali sejam)','Sedang (mis. tiap beberapa menit)','Sangat sering (mis. tiap detik)'];
+var dLabels = ['Daya tidak terbatas (listrik PLN)','Daya sedang (baterai isi ulang rutin)','Sangat terbatas (baterai harus bertahan tahunan)'];
+
+var state = { n:1, f:1, d:1, web:0 };
+
+function updatePickerLabels(){
+  document.getElementById('val-n').textContent = nLabels[state.n];
+  document.getElementById('val-f').textContent = fLabels[state.f];
+  document.getElementById('val-d').textContent = dLabels[state.d];
+}
+
+document.getElementById('n-perangkat').addEventListener('input', function(e){ state.n = +e.target.value; updatePickerLabels(); computeResult(); });
+document.getElementById('frekuensi').addEventListener('input', function(e){ state.f = +e.target.value; updatePickerLabels(); computeResult(); });
+document.getElementById('daya').addEventListener('input', function(e){ state.d = +e.target.value; updatePickerLabels(); computeResult(); });
+
+document.querySelectorAll('.choice-btn[data-group="web"]').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('.choice-btn[data-group="web"]').forEach(function(b){ b.classList.remove('sel'); });
+    btn.classList.add('sel');
+    state.web = +btn.dataset.val;
+    computeResult();
+  });
+});
+
+function computeResult(){
+  var proto, reason;
+  // Very constrained power + small payload -> CoAP
+  if (state.d === 2 && state.web === 0){
+    proto = 'CoAP';
+    reason = 'Kombinasi daya sangat terbatas dan tidak perlu kompatibel langsung dengan layanan web membuat CoAP paling cocok: overhead-nya jauh lebih kecil dari HTTP maupun MQTT, sehingga baterai kecil dapat bertahan lebih lama. CoAP berjalan di atas UDP dengan model request-response ringan.';
+  } else if (state.web === 1 && state.n === 0 && state.f === 0){
+    proto = 'HTTP';
+    reason = 'Karena dibutuhkan kompatibilitas langsung dengan layanan web (REST API) dan jumlah perangkat serta frekuensi pengiriman data relatif rendah, HTTP masih masuk akal dipakai meski relatif lebih "berat" dibanding MQTT/CoAP.';
+  } else if (state.n >= 1 && state.f >= 1){
+    proto = 'MQTT';
+    reason = 'Dengan jumlah perangkat yang cukup banyak dan/atau frekuensi pengiriman yang sering, pola publish-subscribe MQTT paling efisien: banyak perangkat kecil dapat mengirim data secara terus-menerus ke satu broker tanpa setiap penerima perlu tahu siapa pengirimnya.';
+  } else if (state.web === 1){
+    proto = 'HTTP';
+    reason = 'Kebutuhan kompatibilitas langsung dengan layanan web (REST API) membuat HTTP menjadi pilihan yang paling kompatibel, meski relatif lebih berat dibanding MQTT/CoAP untuk perangkat berdaya rendah.';
+  } else {
+    proto = 'MQTT';
+    reason = 'Untuk sebagian besar skenario umum IoT dengan lebih dari satu perangkat, MQTT menawarkan keseimbangan terbaik antara efisiensi dan fleksibilitas dibanding HTTP maupun CoAP.';
+  }
+  document.getElementById('result-proto').textContent = proto;
+  document.getElementById('result-reason').textContent = reason;
+}
+
+updatePickerLabels();
+computeResult();
+</script>
+</body>
+</html>

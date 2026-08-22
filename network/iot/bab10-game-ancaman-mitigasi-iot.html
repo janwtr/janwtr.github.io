@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cocokkan Ancaman dan Mitigasi Keamanan IoT</title>
+<style>
+  :root{
+    --navy:#1F3864; --blue-bg:#DCE6F1; --yellow-bg:#FFF2CC; --gray-bg:#F2F2F2;
+    --green:#2E7D32; --red:#B00020; --text-muted:#595959; --border:#BFBFBF; --white:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  body{ font-family: Arial, Helvetica, sans-serif; margin:0; padding:24px 16px 60px; background:#fafbfc; color:#222; }
+  .wrap{max-width:920px; margin:0 auto;}
+  h1{color:var(--navy); font-size:1.5rem; margin-bottom:4px;}
+  .subtitle{color:var(--text-muted); margin-top:0; margin-bottom:8px; font-size:0.95rem;}
+  .instructions{font-size:0.86rem; color:var(--text-muted); margin-bottom:20px;}
+
+  .status-row{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;}
+  .score{font-weight:bold; color:var(--navy); font-size:0.95rem;}
+  .btn{padding:8px 14px; border-radius:6px; border:1.5px solid var(--navy); background:var(--white); color:var(--navy); font-weight:bold; cursor:pointer; font-size:0.82rem;}
+
+  .columns{display:grid; grid-template-columns:1fr 1fr; gap:24px;}
+  @media (max-width:700px){ .columns{grid-template-columns:1fr;} }
+  .col-title{font-size:0.85rem; font-weight:bold; color:var(--navy); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.03em;}
+
+  .card{
+    border:2px solid var(--border); border-radius:8px; padding:12px 14px; margin-bottom:10px; cursor:pointer;
+    background:var(--white); font-size:0.87rem; transition:border-color 0.15s, background 0.15s, transform 0.1s;
+  }
+  .card:hover{ border-color:var(--navy); }
+  .card.selected{ border-color:var(--navy); background:var(--blue-bg); transform:translateX(2px); }
+  .card.matched{ border-color:var(--green); background:#E8F5E9; color:var(--green); cursor:default; opacity:0.85; }
+  .card.matched:hover{ border-color:var(--green); }
+  .card.wrong{ border-color:var(--red); background:#FDECEA; animation:shake 0.35s; }
+  @keyframes shake{ 0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);} }
+
+  .explain-box{
+    margin-top:20px; border-radius:10px; border:1.5px solid var(--border); background:var(--yellow-bg); padding:14px 16px;
+    font-size:0.85rem; display:none; line-height:1.5;
+  }
+  .explain-box.show{ display:block; }
+  .explain-box strong{ color:var(--navy); }
+
+  .win-banner{
+    margin-top:20px; border-radius:10px; border:2px solid var(--green); background:#E8F5E9; padding:16px; text-align:center;
+    font-weight:bold; color:var(--green); display:none;
+  }
+  .win-banner.show{ display:block; }
+
+  footer{margin-top:28px; font-size:0.75rem; color:var(--text-muted); text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Cocokkan Ancaman dan Mitigasi Keamanan IoT</h1>
+  <p class="subtitle">Media pembelajaran interaktif — Internet of Things, Bab 10: Keamanan Sistem IoT — Ancaman dan Mitigasi Dasar</p>
+  <p class="instructions">Klik satu kartu ancaman di kolom kiri, lalu klik satu kartu mitigasi di kolom kanan yang menurut Anda paling tepat. Pasangan yang benar akan berwarna hijau dan terkunci; pasangan yang salah akan berkedip merah dan bisa dicoba lagi.</p>
+
+  <div class="status-row">
+    <span class="score" id="score">0 dari 4 pasangan benar</span>
+    <button class="btn" id="reset-btn">Acak Ulang &amp; Coba Lagi</button>
+  </div>
+
+  <div class="columns">
+    <div>
+      <div class="col-title">Ancaman</div>
+      <div id="col-threat"></div>
+    </div>
+    <div>
+      <div class="col-title">Mitigasi</div>
+      <div id="col-mitigation"></div>
+    </div>
+  </div>
+
+  <div class="explain-box" id="explain-box"></div>
+  <div class="win-banner" id="win-banner">Semua pasangan benar! Anda telah mengenali empat ancaman umum IoT dan mitigasi dasarnya.</div>
+
+  <footer>Internet of Things (IFE3261331) — media pembelajaran pendamping, dibuat berdasarkan Buku Ajar Bab 10.</footer>
+</div>
+
+<script>
+var PAIRS = [
+  { id:'p1', threat:'Kata sandi bawaan pabrik tidak diganti', mitigation:'Ganti kata sandi bawaan segera setelah pemasangan', explain:'Kata sandi bawaan pabrik adalah celah paling umum dieksploitasi — penyerang cukup mencoba daftar kata sandi bawaan yang sudah dikenal publik (lihat kasus botnet Mirai). Mitigasinya sederhana: selalu ganti kata sandi bawaan sesegera mungkin.' },
+  { id:'p2', threat:'Data dikirim tanpa enkripsi', mitigation:'Memakai protokol dengan dukungan enkripsi bila tersedia', explain:'Data yang dikirim tanpa enkripsi dapat disadap dan dibaca pihak tidak berwenang selama transmisi. Memilih protokol dengan dukungan enkripsi mengurangi risiko ini.' },
+  { id:'p3', threat:'Firmware usang, tidak pernah diperbarui', mitigation:'Memperbarui firmware secara berkala', explain:'Firmware usang membiarkan celah keamanan yang sudah ditemukan dan diperbaiki produsen tetap terbuka pada perangkat yang belum diperbarui. Pembaruan berkala menutup celah tersebut.' },
+  { id:'p4', threat:'Akses jaringan yang terlalu terbuka', mitigation:'Memisahkan jaringan IoT dari data sensitif (segmentasi jaringan)', explain:'Perangkat IoT yang ditempatkan pada jaringan yang sama dengan data sensitif memperbesar dampak jika satu perangkat berhasil disusupi. Segmentasi jaringan (konsep dari mata kuliah Jaringan Komputer) membatasi dampak tersebut.' }
+];
+
+function shuffle(arr){
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--){
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+var selectedThreat = null;
+var selectedMitigation = null;
+var matchedCount = 0;
+
+function render(){
+  matchedCount = 0;
+  selectedThreat = null;
+  selectedMitigation = null;
+  document.getElementById('explain-box').classList.remove('show');
+  document.getElementById('win-banner').classList.remove('show');
+
+  var threatOrder = shuffle(PAIRS);
+  var mitigationOrder = shuffle(PAIRS);
+
+  var colT = document.getElementById('col-threat');
+  var colM = document.getElementById('col-mitigation');
+  colT.innerHTML = ''; colM.innerHTML = '';
+
+  threatOrder.forEach(function(p){
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.textContent = p.threat;
+    card.dataset.id = p.id;
+    card.dataset.side = 'threat';
+    card.addEventListener('click', function(){ onSelect(card, p, 'threat'); });
+    colT.appendChild(card);
+  });
+  mitigationOrder.forEach(function(p){
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.textContent = p.mitigation;
+    card.dataset.id = p.id;
+    card.dataset.side = 'mitigation';
+    card.addEventListener('click', function(){ onSelect(card, p, 'mitigation'); });
+    colM.appendChild(card);
+  });
+  updateScore();
+}
+
+function updateScore(){
+  document.getElementById('score').textContent = matchedCount + ' dari ' + PAIRS.length + ' pasangan benar';
+}
+
+function clearSelection(side){
+  var cards = document.querySelectorAll('.card[data-side="' + side + '"]');
+  cards.forEach(function(c){ if (!c.classList.contains('matched')) c.classList.remove('selected'); });
+}
+
+function onSelect(card, pair, side){
+  if (card.classList.contains('matched')) return;
+
+  if (side === 'threat'){
+    clearSelection('threat');
+    card.classList.add('selected');
+    selectedThreat = { card: card, pair: pair };
+  } else {
+    clearSelection('mitigation');
+    card.classList.add('selected');
+    selectedMitigation = { card: card, pair: pair };
+  }
+
+  if (selectedThreat && selectedMitigation){
+    if (selectedThreat.pair.id === selectedMitigation.pair.id){
+      selectedThreat.card.classList.remove('selected');
+      selectedMitigation.card.classList.remove('selected');
+      selectedThreat.card.classList.add('matched');
+      selectedMitigation.card.classList.add('matched');
+      matchedCount++;
+      updateScore();
+      var eb = document.getElementById('explain-box');
+      eb.innerHTML = '<strong>Benar:</strong> ' + selectedThreat.pair.explain;
+      eb.classList.add('show');
+      if (matchedCount === PAIRS.length){
+        document.getElementById('win-banner').classList.add('show');
+      }
+      selectedThreat = null; selectedMitigation = null;
+    } else {
+      var tCard = selectedThreat.card, mCard = selectedMitigation.card;
+      tCard.classList.add('wrong'); mCard.classList.add('wrong');
+      setTimeout(function(){
+        tCard.classList.remove('wrong','selected');
+        mCard.classList.remove('wrong','selected');
+      }, 500);
+      selectedThreat = null; selectedMitigation = null;
+    }
+  }
+}
+
+document.getElementById('reset-btn').addEventListener('click', render);
+render();
+</script>
+</body>
+</html>

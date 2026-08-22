@@ -1,1 +1,133 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Media Pembelajaran Interaktif — Internet of Things</title>
+<style>
+  :root{
+    --navy:#1F3864; --blue-bg:#DCE6F1; --yellow-bg:#FFF2CC; --gray-bg:#F2F2F2;
+    --green:#2E7D32; --text-muted:#595959; --border:#BFBFBF; --white:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  body{ font-family: Arial, Helvetica, sans-serif; margin:0; padding:32px 16px 60px; background:#fafbfc; color:#222; }
+  .wrap{max-width:1000px; margin:0 auto;}
+  header{margin-bottom:28px;}
+  h1{color:var(--navy); font-size:1.7rem; margin-bottom:6px;}
+  .subtitle{color:var(--text-muted); margin-top:0; font-size:0.98rem; line-height:1.5; max-width:760px;}
 
+  .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:16px;}
+  @media (max-width:820px){ .grid{grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:560px){ .grid{grid-template-columns:1fr;} }
+
+  .card{
+    background:var(--white); border:1.5px solid var(--border); border-radius:12px; padding:18px;
+    display:flex; flex-direction:column; transition:box-shadow 0.15s, transform 0.15s;
+  }
+  .card:hover{ box-shadow:0 6px 18px rgba(31,56,100,0.14); transform:translateY(-2px); }
+  .card .bab-tag{
+    display:inline-block; background:var(--blue-bg); color:var(--navy); font-size:0.72rem; font-weight:bold;
+    padding:3px 10px; border-radius:12px; margin-bottom:10px; align-self:flex-start;
+  }
+  .card .icon{font-size:1.7rem; margin-bottom:6px;}
+  .card h2{font-size:1.02rem; color:var(--navy); margin:0 0 8px; line-height:1.3;}
+  .card p{font-size:0.83rem; color:var(--text-muted); line-height:1.5; margin:0 0 14px; flex-grow:1;}
+  .card a.open-btn{
+    display:inline-block; text-align:center; padding:9px 0; border-radius:6px; background:var(--navy); color:#fff;
+    text-decoration:none; font-weight:bold; font-size:0.84rem;
+  }
+  .card a.open-btn:hover{ background:#16294a; }
+
+  footer{margin-top:34px; font-size:0.78rem; color:var(--text-muted); text-align:center; line-height:1.6;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Media Pembelajaran Interaktif — Internet of Things</h1>
+    <p class="subtitle">Kumpulan media pembelajaran interaktif pendamping Buku Ajar Internet of Things (IFE3261331). Setiap alat berdiri sendiri (HTML mandiri, tanpa perlu login atau instalasi) dan dapat dibuka langsung dari tautan di bawah, dari komputer maupun ponsel.</p>
+  </header>
+
+  <div class="grid">
+
+    <div class="card">
+      <span class="bab-tag">Bab 1</span>
+      <div class="icon">🧩</div>
+      <h2>Blok Logika Dasar IoT</h2>
+      <p>Susun logika program (variabel, kondisi, aksi) dan lihat bentuknya secara bersamaan sebagai blok ala Blockly maupun sebagai kode Python — lalu jalankan simulasinya pada 5 contoh pembacaan sensor.</p>
+      <a class="open-btn" href="bab01-blok-logika-dasar-iot.html">Buka Media &rarr;</a>
+    </div>
+
+    <div class="card">
+      <span class="bab-tag">Bab 2</span>
+      <div class="icon">🤖</div>
+      <h2>Automasi: Aturan Sederhana vs Pola (AI/ML)</h2>
+      <p>Bandingkan automasi berbasis aturan "jika-maka" dengan automasi berbasis pengenalan pola — termasuk kasus nyata konsumsi listrik gedung yang luput terdeteksi aturan tetap namun terlihat jelas oleh deteksi berbasis pola.</p>
+      <a class="open-btn" href="bab02-simulator-automasi-aturan-vs-ai.html">Buka Media &rarr;</a>
+    </div>
+
+    <div class="card">
+      <span class="bab-tag">Bab 3</span>
+      <div class="icon">🛡️</div>
+      <h2>Timeline Botnet Mirai &amp; Attack Surface</h2>
+      <p>Jelajahi lini masa insiden botnet Mirai (2016) langkah demi langkah, lalu telusuri mengapa berbagai jenis perangkat IoT sederhana rentan menjadi bagian dari serangan berskala besar.</p>
+      <a class="open-btn" href="bab03-timeline-mirai-botnet.html">Buka Media &rarr;</a>
+    </div>
+
+    <div class="card">
+      <span class="bab-tag">Bab 5</span>
+      <div class="icon">📡</div>
+      <h2>Simulator Protokol MQTT, HTTP, CoAP</h2>
+      <p>Lihat animasi alur data pada pola publish-subscribe (MQTT) dibanding request-response (HTTP/CoAP), lalu coba pemilih protokol berbasis skenario (jumlah perangkat, frekuensi kirim, keterbatasan daya).</p>
+      <a class="open-btn" href="bab05-simulator-protokol-iot.html">Buka Media &rarr;</a>
+    </div>
+
+    <div class="card">
+      <span class="bab-tag">Bab 6</span>
+      <div class="icon">📶</div>
+      <h2>Pemilih Konektivitas IoT</h2>
+      <p>Atur kebutuhan jangkauan dan toleransi daya pada peta interaktif untuk menemukan opsi konektivitas (WiFi, Bluetooth, LoRa, Seluler) paling sesuai, lalu uji pemahaman lewat 4 skenario latihan.</p>
+      <a class="open-btn" href="bab06-pemilih-konektivitas-iot.html">Buka Media &rarr;</a>
+    </div>
+
+    <div class="card">
+      <span class="bab-tag">Bab 7</span>
+      <div class="icon">🔁</div>
+      <h2>Simulator Kalang Kendali Sensor-Aktuator</h2>
+      <p>Geser nilai sensor pada 3 skenario (lampu, penyiram tanaman, kipas otomatis) dan lihat langsung bagaimana kalang kendali baca-putuskan-kendalikan-ulangi bekerja, lengkap kode semu yang tersinkron.</p>
+      <a class="open-btn" href="bab07-simulator-kalang-kendali.html">Buka Media &rarr;</a>
+    </div>
+
+    <div class="card">
+      <span class="bab-tag">Bab 9</span>
+      <div class="icon">📊</div>
+      <h2>Animasi Alur Data Sensor ke Dashboard</h2>
+      <p>Jalankan satu siklus data dan amati bagaimana bentuknya berubah pada tiap dari 5 tahap (akuisisi, transmisi, penyimpanan, visualisasi, tindak lanjut), sambil membangun grafik dashboard secara langsung.</p>
+      <a class="open-btn" href="bab09-animasi-alur-data-dashboard.html">Buka Media &rarr;</a>
+    </div>
+
+    <div class="card">
+      <span class="bab-tag">Bab 10</span>
+      <div class="icon">🎯</div>
+      <h2>Cocokkan Ancaman dan Mitigasi Keamanan IoT</h2>
+      <p>Permainan mencocokkan 4 ancaman keamanan IoT yang umum dengan mitigasi dasarnya masing-masing, lengkap penjelasan singkat setiap pasangan yang benar.</p>
+      <a class="open-btn" href="bab10-game-ancaman-mitigasi-iot.html">Buka Media &rarr;</a>
+    </div>
+
+    <div class="card">
+      <span class="bab-tag">Bab 11</span>
+      <div class="icon">🏫</div>
+      <h2>Eksplorasi Smart Campus &amp; Smart Classroom</h2>
+      <p>Pilih salah satu dari 6 skenario smart campus/classroom untuk melihat rincian masalah, sensor-aktuator yang terlibat, alur data, dan potensi penerapannya di kampus — sekaligus ruang refleksi pribadi.</p>
+      <a class="open-btn" href="bab11-eksplorasi-smart-campus-classroom.html">Buka Media &rarr;</a>
+    </div>
+
+  </div>
+
+  <footer>
+    Media pembelajaran pendamping mata kuliah Internet of Things (IFE3261331).<br>
+    Bukan pengganti modul pembelajaran interaktif resmi maupun praktik langsung di IoT Simulator — gunakan sebagai jembatan konseptual sebelum dan sesudahnya.
+  </footer>
+</div>
+</body>
+</html>

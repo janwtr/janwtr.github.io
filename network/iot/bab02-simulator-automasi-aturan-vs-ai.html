@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulator Automasi: Aturan Sederhana vs Pola (AI/ML)</title>
+<style>
+  :root{
+    --navy:#1F3864; --blue-bg:#DCE6F1; --yellow-bg:#FFF2CC; --gray-bg:#F2F2F2;
+    --green:#2E7D32; --red:#B00020; --text-muted:#595959; --border:#BFBFBF; --white:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  body{ font-family: Arial, Helvetica, sans-serif; margin:0; padding:24px 16px 60px; background:#fafbfc; color:#222; }
+  .wrap{max-width:960px; margin:0 auto;}
+  h1{color:var(--navy); font-size:1.5rem; margin-bottom:4px;}
+  .subtitle{color:var(--text-muted); margin-top:0; margin-bottom:20px; font-size:0.95rem;}
+
+  .tabs{display:flex; gap:8px; margin-bottom:0; flex-wrap:wrap;}
+  .tab-btn{
+    padding:10px 18px; border-radius:8px 8px 0 0; border:1.5px solid var(--border);
+    background:var(--gray-bg); color:var(--navy); font-weight:bold; cursor:pointer; font-size:0.9rem; border-bottom:none;
+  }
+  .tab-btn.active{ background:var(--white); border-bottom:3px solid var(--navy); }
+  .panel{display:none; background:var(--white); border:1.5px solid var(--border); border-radius:0 8px 8px 8px; padding:22px;}
+  .panel.active{display:block;}
+
+  .field{margin-bottom:18px;}
+  .field label{display:block; font-weight:bold; color:var(--navy); font-size:0.9rem; margin-bottom:6px;}
+  .field input[type=range]{width:100%;}
+
+  .actuator-visual{
+    display:flex; align-items:center; gap:14px; padding:14px; border-radius:8px; border:2px solid var(--border);
+    background:var(--gray-bg); transition:background 0.3s, border-color 0.3s; max-width:420px;
+  }
+  .actuator-visual.on{ background:#E8F5E9; border-color:var(--green); }
+  .actuator-icon{font-size:2.2rem;}
+  .rule-box{
+    background:#1e2530; color:#d6e0f0; border-radius:8px; padding:12px 16px; font-family:Consolas,'Courier New',monospace;
+    font-size:0.84rem; margin-top:16px; max-width:420px;
+  }
+  .rule-box .kw{color:#7dc4ff;} .rule-box .num{color:#f2c078;}
+
+  .chart-controls{display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap;}
+  .btn{padding:9px 15px; border-radius:6px; border:1.5px solid var(--navy); background:var(--white); color:var(--navy); font-weight:bold; cursor:pointer; font-size:0.84rem;}
+  .btn.active-mode{ background:var(--navy); color:#fff; }
+  .legend{display:flex; gap:16px; font-size:0.8rem; color:var(--text-muted); margin-bottom:8px; flex-wrap:wrap;}
+  .legend span{display:inline-flex; align-items:center; gap:5px;}
+  .legend .dot{width:10px; height:10px; border-radius:50%; display:inline-block;}
+  .finding-box{
+    margin-top:14px; border-radius:8px; border:1.5px solid var(--border); background:var(--yellow-bg); padding:12px 14px;
+    font-size:0.85rem; line-height:1.5; min-height:20px;
+  }
+
+  footer{margin-top:28px; font-size:0.75rem; color:var(--text-muted); text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Simulator Automasi: Aturan Sederhana vs Pola (AI/ML)</h1>
+  <p class="subtitle">Media pembelajaran interaktif — Internet of Things, Bab 2: Segala Sesuatu Menghasilkan Data dan Menjadi Otomatis</p>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="rule">1. Automasi Aturan "Jika-Maka" Sederhana</button>
+    <button class="tab-btn" data-tab="ai">2. Automasi Berbasis Pola (AI/ML)</button>
+  </div>
+
+  <div class="panel active" id="panel-rule">
+    <p style="color:var(--text-muted); font-size:0.88rem; margin-top:0;">Contoh sederhana: sistem irigasi yang menyiram tanaman hanya ketika sensor kelembapan tanah menunjukkan nilai di bawah ambang tertentu. Aturan ini hanya membandingkan satu nilai saat ini terhadap satu ambang tetap.</p>
+    <div class="field">
+      <label>Kelembapan Tanah Saat Ini: <span id="rule-val">50</span>%</label>
+      <input type="range" id="rule-slider" min="0" max="100" value="50">
+    </div>
+    <div class="actuator-visual" id="rule-actuator">
+      <div class="actuator-icon" id="rule-icon">💧</div>
+      <div>
+        <div id="rule-status" style="font-weight:bold;">—</div>
+        <div id="rule-desc" style="font-size:0.8rem; color:var(--text-muted);">—</div>
+      </div>
+    </div>
+    <div class="rule-box">
+      <span class="kw">jika</span> (kelembapan &lt; <span class="num">35</span>) {<br>&nbsp;&nbsp;nyalakan_pompa()<br>} <span class="kw">lainnya</span> {<br>&nbsp;&nbsp;matikan_pompa()<br>}
+    </div>
+    <p style="font-size:0.82rem; color:var(--text-muted); margin-top:16px; max-width:600px;">Keterbatasannya: aturan ini hanya "buta warna" terhadap konteks — ia tidak tahu apakah nilai saat ini wajar dibanding kebiasaan/pola pada waktu tertentu, cuaca, atau musim. Lihat Tab 2 untuk melihat kasus di mana pendekatan berbasis pola dibutuhkan.</p>
+  </div>
+
+  <div class="panel" id="panel-ai">
+    <p style="color:var(--text-muted); font-size:0.88rem; margin-top:0;">Skenario: pemantauan konsumsi listrik gedung kampus per jam selama satu hari. Salah satu jam menunjukkan <strong>konsumsi tidak wajar</strong> yang bisa mengindikasikan kebocoran atau kerusakan alat — meski nilainya sendiri tidak "ekstrem" secara absolut. Bandingkan dua pendekatan deteksi di bawah.</p>
+
+    <div class="chart-controls">
+      <button class="btn active-mode" id="btn-mode-rule">Deteksi Aturan Sederhana (ambang tetap)</button>
+      <button class="btn" id="btn-mode-ai">Deteksi Berbasis Pola (AI/ML)</button>
+    </div>
+    <div class="legend">
+      <span><span class="dot" style="background:#9aa5b5;"></span> Pola normal (kebiasaan)</span>
+      <span><span class="dot" style="background:#1F3864;"></span> Data aktual</span>
+      <span><span class="dot" style="background:#B00020;"></span> Ditandai sebagai anomali</span>
+    </div>
+    <svg id="chart-svg" viewBox="0 0 780 220" width="100%" height="220"></svg>
+    <div class="finding-box" id="finding-box"></div>
+  </div>
+
+  <footer>Internet of Things (IFE3261331) — media pembelajaran pendamping, dibuat berdasarkan Buku Ajar Bab 2.</footer>
+</div>
+
+<script>
+// ---- Tabs ----
+document.querySelectorAll('.tab-btn').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+    document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ---- Tab 1: rule-based irrigation ----
+var ruleSlider = document.getElementById('rule-slider');
+function updateRule(){
+  var v = +ruleSlider.value;
+  document.getElementById('rule-val').textContent = v;
+  var on = v < 35;
+  var av = document.getElementById('rule-actuator');
+  var status = document.getElementById('rule-status');
+  var desc = document.getElementById('rule-desc');
+  if (on){
+    av.classList.add('on');
+    status.textContent = 'POMPA MENYALA'; status.style.color = 'var(--green)';
+    desc.textContent = 'Kelembapan ' + v + '% < ambang 35% → aturan langsung memicu aksi.';
+  } else {
+    av.classList.remove('on');
+    status.textContent = 'POMPA MATI'; status.style.color = 'var(--text-muted)';
+    desc.textContent = 'Kelembapan ' + v + '% ≥ ambang 35% → tidak ada aksi.';
+  }
+}
+ruleSlider.addEventListener('input', updateRule);
+updateRule();
+
+// ---- Tab 2: pattern-based anomaly detection ----
+// 24-hour typical baseline usage (kWh, illustrative) and actual data with a subtle anomaly at hour 2 (dini hari)
+var baseline = [8,7,6,5,5,5,5,6,10,18,26,32,35,34,30,28,26,24,22,18,15,12,10,9];
+var actual =   [8,7,6,5,28,5,6,6,11,19,27,33,34,35,29,29,25,25,23,17,16,11,11,9];
+// hour 4 (index 4) is anomalous: baseline says ~5 (dini hari, gedung kosong) but actual shows 28 — a big deviation
+// relative to baseline even though 28 is far below the daytime peak of ~35, so a FIXED threshold (e.g. >32) misses it.
+
+var FIXED_THRESHOLD = 38;
+var mode = 'rule'; // 'rule' | 'ai'
+
+document.getElementById('btn-mode-rule').addEventListener('click', function(){
+  mode = 'rule';
+  document.getElementById('btn-mode-rule').classList.add('active-mode');
+  document.getElementById('btn-mode-ai').classList.remove('active-mode');
+  drawChart();
+});
+document.getElementById('btn-mode-ai').addEventListener('click', function(){
+  mode = 'ai';
+  document.getElementById('btn-mode-ai').classList.add('active-mode');
+  document.getElementById('btn-mode-rule').classList.remove('active-mode');
+  drawChart();
+});
+
+function drawChart(){
+  var svg = document.getElementById('chart-svg');
+  var w = 780, h = 220, padL = 34, padR = 14, padT = 14, padB = 26;
+  var n = actual.length;
+  var maxV = 40;
+  var stepX = (w - padL - padR) / (n - 1);
+  function xy(i, v){
+    var x = padL + i * stepX;
+    var y = h - padB - (v / maxV) * (h - padT - padB);
+    return [x, y];
+  }
+  var basePath = baseline.map(function(v,i){ var p = xy(i,v); return (i===0?'M':'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ');
+  var actPath = actual.map(function(v,i){ var p = xy(i,v); return (i===0?'M':'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ');
+
+  var anomalies = [];
+  if (mode === 'rule'){
+    actual.forEach(function(v,i){ if (v > FIXED_THRESHOLD) anomalies.push(i); });
+  } else {
+    actual.forEach(function(v,i){
+      var dev = Math.abs(v - baseline[i]);
+      var relDev = dev / Math.max(baseline[i], 1);
+      if (relDev > 1.2 && dev > 8) anomalies.push(i); // large relative deviation from typical pattern
+    });
+  }
+
+  var dots = actual.map(function(v,i){
+    var p = xy(i,v);
+    var isAnom = anomalies.indexOf(i) !== -1;
+    return '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="' + (isAnom?5:3) + '" fill="' + (isAnom ? '#B00020' : '#1F3864') + '"/>';
+  }).join('');
+
+  var thresholdLine = mode === 'rule' ? ('<line x1="' + padL + '" y1="' + xy(0,FIXED_THRESHOLD)[1].toFixed(1) + '" x2="' + (w-padR) + '" y2="' + xy(0,FIXED_THRESHOLD)[1].toFixed(1) + '" stroke="#B00020" stroke-dasharray="4,3" stroke-width="1"/><text x="' + (w-padR) + '" y="' + (xy(0,FIXED_THRESHOLD)[1]-5).toFixed(1) + '" text-anchor="end" font-size="9" fill="#B00020" font-family="Arial">ambang tetap = ' + FIXED_THRESHOLD + ' kWh</text>') : '';
+
+  var hourLabels = '';
+  [0,4,8,12,16,20].forEach(function(hIdx){
+    var p = xy(hIdx, 0);
+    hourLabels += '<text x="' + p[0].toFixed(1) + '" y="' + (h - 8) + '" text-anchor="middle" font-size="9" fill="#595959" font-family="Arial">' + hIdx + ':00</text>';
+  });
+
+  svg.innerHTML =
+    '<path d="' + basePath + '" fill="none" stroke="#9aa5b5" stroke-width="1.5" stroke-dasharray="5,4"/>' +
+    thresholdLine +
+    '<path d="' + actPath + '" fill="none" stroke="#1F3864" stroke-width="2"/>' +
+    dots + hourLabels;
+
+  var fb = document.getElementById('finding-box');
+  var anomHourVal = actual[4], anomBaseVal = baseline[4], dayPeak = Math.max.apply(null, actual);
+  if (mode === 'rule'){
+    if (anomalies.length === 0){
+      fb.innerHTML = '<strong>Hasil aturan ambang tetap:</strong> tidak ada jam yang ditandai anomali. Ambang tetap ' + FIXED_THRESHOLD + ' kWh diatur cukup tinggi (di atas puncak wajar siang hari, ' + dayPeak + ' kWh), sehingga jam 04:00 (' + anomHourVal + ' kWh) tidak pernah tersentuh ambang itu — padahal pada jam tersebut gedung seharusnya kosong dan pola normalnya hanya sekitar ' + anomBaseVal + ' kWh. <em>Aturan sederhana ini gagal mendeteksi anomali karena hanya melihat nilai mutlak terhadap satu ambang tetap, bukan konteks waktu/pola kebiasaan.</em>';
+    } else {
+      fb.innerHTML = '<strong>Hasil aturan ambang tetap:</strong> jam yang melewati ambang ' + FIXED_THRESHOLD + ' kWh ditandai merah.';
+    }
+  } else {
+    if (anomalies.length > 0){
+      var hourList = anomalies.map(function(i){ return ('0'+i).slice(-2) + ':00'; }).join(', ');
+      fb.innerHTML = '<strong>Hasil deteksi berbasis pola:</strong> jam ' + hourList + ' ditandai anomali — bukan karena nilainya paling tinggi secara absolut, melainkan karena <em>menyimpang jauh dari pola/kebiasaan normal pada jam tersebut</em> (garis putus-putus abu-abu). Inilah keunggulan automasi berbasis AI/ML: mengenali pola konsumsi tidak wajar yang mengindikasikan kemungkinan kebocoran atau kerusakan, tanpa perlu diprogram aturan eksplisit untuk setiap skenario.';
+    } else {
+      fb.innerHTML = 'Tidak ada penyimpangan pola yang signifikan terdeteksi.';
+    }
+  }
+}
+
+drawChart();
+</script>
+</body>
+</html>
