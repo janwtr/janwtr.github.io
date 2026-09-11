@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dari Nama Domain ke Halaman Web: DNS, TCP, dan HTTP</title>
+<style>
+  :root{
+    --navy:#1F3864; --blue-bg:#DCE6F1; --yellow-bg:#FFF2CC; --gray-bg:#F2F2F2;
+    --green:#2E7D32; --red:#B02A2A; --text-muted:#595959; --border:#BFBFBF; --white:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  body{font-family:Arial,Helvetica,sans-serif;margin:0;padding:24px 16px 60px;background:#fafbfc;color:#222;}
+  .wrap{max-width:1000px;margin:0 auto;}
+  h1{color:var(--navy);font-size:1.5rem;margin-bottom:4px;}
+  .subtitle{color:var(--text-muted);margin:0 0 20px;font-size:0.95rem;}
+  .panel{background:var(--white);border:1.5px solid var(--border);border-radius:10px;padding:18px;margin-bottom:20px;}
+  .panel h2{font-size:1.0rem;color:var(--navy);margin:0 0 12px;}
+  .panel h3{font-size:0.92rem;color:var(--navy);margin:0 0 8px;}
+  .ctl{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;}
+  .fld label{display:block;font-size:0.82rem;font-weight:bold;color:var(--navy);margin-bottom:6px;}
+  .row{display:flex;gap:6px;flex-wrap:wrap;}
+  .cbtn{padding:6px 11px;border-radius:6px;border:1.5px solid var(--border);background:var(--white);
+        cursor:pointer;font-size:0.8rem;color:#333;}
+  .cbtn.sel{border-color:var(--navy);background:var(--blue-bg);font-weight:bold;color:var(--navy);}
+  .btn{padding:9px 16px;border-radius:6px;border:none;background:var(--navy);color:#fff;
+       font-weight:bold;cursor:pointer;font-size:0.85rem;}
+  .btn.ghost{background:var(--white);color:var(--navy);border:1.5px solid var(--navy);}
+  .btn:disabled{background:#9aa5b5;color:#fff;border-color:#9aa5b5;}
+  .chk{font-size:0.82rem;color:#333;display:block;margin-top:7px;cursor:pointer;}
+  .chk input{margin-right:6px;}
+  svg{width:100%;height:auto;display:block;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  @media (max-width:820px){.grid2{grid-template-columns:1fr;}}
+  .pesan{font-family:Consolas,'Courier New',monospace;font-size:0.8rem;background:#1e2530;color:#d6e0f0;
+         border-radius:8px;padding:12px 14px;line-height:1.75;min-height:150px;}
+  .pesan .arah{color:#8fa6c4;}
+  .pesan .k{color:#7dc4ff;} .pesan .v{color:#f2c078;} .pesan .ok{color:#7ddc9a;}
+  .narasi{background:var(--gray-bg);border-radius:8px;padding:12px 14px;font-size:0.86rem;
+          line-height:1.65;min-height:110px;}
+  .narasi b{color:var(--navy);}
+  .fase{display:inline-block;font-size:0.72rem;font-weight:bold;border-radius:99px;
+        padding:2px 10px;margin-bottom:7px;}
+  .fase.dns{background:var(--blue-bg);color:var(--navy);}
+  .fase.tcp{background:#E8F5E9;color:var(--green);}
+  .fase.http{background:var(--yellow-bg);color:#8a6d1f;}
+  .steps{font-size:0.8rem;color:var(--text-muted);margin:10px 0 0;}
+  .kunci{background:var(--yellow-bg);border-radius:8px;padding:12px 14px;font-size:0.85rem;line-height:1.6;}
+  .kunci ul{margin:6px 0 0;padding-left:20px;}
+  table{border-collapse:collapse;width:100%;font-size:0.8rem;margin-top:8px;}
+  th,td{border:1px solid var(--border);padding:5px 8px;text-align:left;}
+  th{background:var(--blue-bg);color:var(--navy);}
+  code{background:#eef1f5;border-radius:4px;padding:1px 5px;font-size:0.92em;}
+  footer{margin-top:28px;font-size:0.75rem;color:var(--text-muted);text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Dari Nama Domain ke Halaman Web</h1>
+  <p class="subtitle">Media pembelajaran interaktif &mdash; Pengantar Sistem Jaringan Modern,
+  Bab 16 dan 17: Transport Layer dan Layanan Application Layer (Modul 15&ndash;16)</p>
+
+  <div class="panel">
+    <h2>Atur keadaan awal</h2>
+    <div class="ctl">
+      <div class="fld">
+        <label>Alamat yang diketik</label>
+        <div class="row" id="domain"></div>
+      </div>
+      <div class="fld">
+        <label>Protokol</label>
+        <div class="row" id="proto"></div>
+      </div>
+      <div class="fld">
+        <label>Keadaan singgahan (cache)</label>
+        <label class="chk"><input type="checkbox" id="cacheHit"> Resolver sudah menyimpan jawabannya</label>
+      </div>
+    </div>
+    <div class="row" style="margin-top:16px;">
+      <button class="btn" id="mulai">Mulai</button>
+      <button class="btn ghost" id="lanjut" disabled>Langkah berikutnya</button>
+      <button class="btn ghost" id="auto">Jalankan otomatis</button>
+      <button class="btn ghost" id="ulang">Ulangi</button>
+    </div>
+    <p class="steps" id="steps">Tekan <b>Mulai</b> untuk menelusuri langkah demi langkah.</p>
+  </div>
+
+  <div class="panel">
+    <svg viewBox="0 0 960 250" role="img" aria-label="Alur permintaan dari peramban ke server web melalui DNS">
+      <g id="n-BR"><rect x="20" y="96" width="120" height="54" rx="8" fill="#DCE6F1" stroke="#1F3864" stroke-width="1.5"/>
+        <text x="80" y="118" font-size="13" font-weight="bold" text-anchor="middle" fill="#1F3864">Peramban</text>
+        <text x="80" y="136" font-size="10.5" text-anchor="middle" fill="#444">192.168.1.20</text></g>
+      <g id="n-RS"><rect x="196" y="96" width="128" height="54" rx="8" fill="#FFF2CC" stroke="#1F3864" stroke-width="1.5"/>
+        <text x="260" y="118" font-size="13" font-weight="bold" text-anchor="middle" fill="#1F3864">DNS Resolver</text>
+        <text x="260" y="136" font-size="10.5" text-anchor="middle" fill="#444">10.0.0.53</text></g>
+      <g id="n-RT"><rect x="392" y="14" width="118" height="44" rx="8" fill="#F2F2F2" stroke="#9aa5b5" stroke-width="1.5"/>
+        <text x="451" y="33" font-size="12" font-weight="bold" text-anchor="middle" fill="#1F3864">Root (.)</text>
+        <text x="451" y="49" font-size="10" text-anchor="middle" fill="#444">13 kelompok server</text></g>
+      <g id="n-TL"><rect x="392" y="76" width="118" height="44" rx="8" fill="#F2F2F2" stroke="#9aa5b5" stroke-width="1.5"/>
+        <text x="451" y="95" font-size="12" font-weight="bold" text-anchor="middle" fill="#1F3864">TLD .id</text>
+        <text x="451" y="111" font-size="10" text-anchor="middle" fill="#444">pengelola domain .id</text></g>
+      <g id="n-AU"><rect x="392" y="138" width="118" height="44" rx="8" fill="#F2F2F2" stroke="#9aa5b5" stroke-width="1.5"/>
+        <text x="451" y="157" font-size="12" font-weight="bold" text-anchor="middle" fill="#1F3864">Otoritatif</text>
+        <text x="451" y="173" font-size="10" text-anchor="middle" fill="#444">ns1.ums.ac.id</text></g>
+      <g id="n-WS"><rect x="620" y="96" width="132" height="54" rx="8" fill="#DCE6F1" stroke="#1F3864" stroke-width="1.5"/>
+        <text x="686" y="118" font-size="13" font-weight="bold" text-anchor="middle" fill="#1F3864">Server Web</text>
+        <text x="686" y="136" font-size="10.5" text-anchor="middle" fill="#444">203.0.113.25</text></g>
+      <line x1="140" y1="123" x2="196" y2="123" stroke="#9aa5b5" stroke-width="2.5"/>
+      <line x1="324" y1="116" x2="392" y2="40"  stroke="#9aa5b5" stroke-width="2.5"/>
+      <line x1="324" y1="123" x2="392" y2="98"  stroke="#9aa5b5" stroke-width="2.5"/>
+      <line x1="324" y1="130" x2="392" y2="160" stroke="#9aa5b5" stroke-width="2.5"/>
+      <line x1="140" y1="140" x2="620" y2="140" stroke="#c8d2e0" stroke-width="2.5" stroke-dasharray="6 5"/>
+      <text x="380" y="212" font-size="10.5" fill="#888">garis putus-putus: sambungan langsung peramban ke server web</text>
+      <circle id="pkt" r="8" fill="#2E7D32" opacity="0"/>
+    </svg>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <h3>Isi pesan pada langkah ini</h3>
+      <div class="pesan" id="pesan">&mdash;</div>
+    </div>
+    <div class="panel">
+      <h3>Apa yang sedang terjadi</h3>
+      <div id="faseBox"></div>
+      <div class="narasi" id="narasi">Atur keadaan awal, lalu tekan Mulai.</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Membuktikannya sendiri di komputer Anda</h2>
+    <table>
+      <thead><tr><th>Perintah</th><th>Yang dibuktikannya</th></tr></thead>
+      <tbody>
+        <tr><td><code>nslookup www.ums.ac.id</code></td>
+            <td>Tahap DNS: nama domain berhasil diterjemahkan menjadi alamat IP, dan resolver mana yang menjawab.</td></tr>
+        <tr><td><code>ping 203.0.113.25</code></td>
+            <td>Konektivitas ke alamat IP tujuan, terpisah dari persoalan penerjemahan nama.</td></tr>
+        <tr><td><code>tracert www.ums.ac.id</code></td>
+            <td>Router mana saja yang dilewati paket menuju server tersebut.</td></tr>
+        <tr><td><code>ipconfig /displaydns</code></td>
+            <td>Isi singgahan DNS pada komputer Anda sendiri, lengkap dengan sisa waktu hidupnya.</td></tr>
+      </tbody>
+    </table>
+    <p class="steps">Bila <code>ping</code> ke alamat IP berhasil tetapi <code>ping</code> ke nama domain
+    gagal, yang bermasalah adalah tahap DNS &mdash; bukan jaringannya.</p>
+  </div>
+
+  <div class="panel">
+    <h2>Tiga hal yang perlu Anda perhatikan</h2>
+    <div class="kunci">
+      <ul>
+        <li><b>DNS bekerja berjenjang, bukan sekali tanya.</b> Root tidak mengetahui alamat
+        www.ums.ac.id; ia hanya menunjukkan siapa yang mengurus <code>.id</code>. Begitu seterusnya
+        sampai server otoritatif yang benar-benar menyimpan jawabannya.</li>
+        <li><b>Singgahan memangkas hampir seluruh perjalanan itu.</b> Coba centang
+        &ldquo;Resolver sudah menyimpan jawabannya&rdquo; dan bandingkan jumlah langkahnya.
+        Nilai TTL pada jawabanlah yang menentukan berapa lama jawaban itu boleh disimpan.</li>
+        <li><b>Nomor port menentukan layanan, alamat IP menentukan host.</b> Server yang sama dapat
+        melayani HTTP di port 80 dan HTTPS di port 443 pada satu alamat IP, karena keduanya
+        dibedakan oleh nomor port.</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>Media pembelajaran interaktif Pengantar Sistem Jaringan Modern &middot;
+  berjalan sepenuhnya di peramban Anda, tidak mengirim data ke mana pun.</footer>
+</div>
+
+<script>
+(function(){
+  var DOM = {
+    'www.ums.ac.id': {tld:'.id', level2:'ac.id', ns:'ns1.ums.ac.id', ip:'203.0.113.25'},
+    'spada.ums.ac.id': {tld:'.id', level2:'ac.id', ns:'ns1.ums.ac.id', ip:'203.0.113.40'}
+  };
+  var state = {dom:'www.ums.ac.id', proto:'HTTPS', langkah:[], i:-1, timer:null};
+
+  function tombol(wadah, daftar, kunci){
+    var w = document.getElementById(wadah); w.innerHTML='';
+    daftar.forEach(function(k){
+      var b = document.createElement('button');
+      b.className = 'cbtn' + (state[kunci]===k ? ' sel':'');
+      b.textContent = k;
+      b.onclick = function(){ state[kunci]=k; render(); reset(); };
+      w.appendChild(b);
+    });
+  }
+  function render(){
+    tombol('domain', Object.keys(DOM), 'dom');
+    tombol('proto', ['HTTP','HTTPS'], 'proto');
+  }
+
+  function posisi(id){
+    var b = document.getElementById(id).getBBox();
+    return {x:b.x + b.width/2, y:b.y + b.height/2};
+  }
+  function taruh(id){
+    var p = posisi(id), c = document.getElementById('pkt');
+    c.setAttribute('cx', p.x); c.setAttribute('cy', p.y); c.setAttribute('opacity', 1);
+  }
+  function sorot(id){
+    ['n-BR','n-RS','n-RT','n-TL','n-AU','n-WS'].forEach(function(n){
+      var r = document.getElementById(n).querySelector('rect');
+      r.setAttribute('stroke-width', n===id ? '3.5' : '1.5');
+      r.setAttribute('stroke', n===id ? '#2E7D32' : (n==='n-RT'||n==='n-TL'||n==='n-AU' ? '#9aa5b5' : '#1F3864'));
+    });
+  }
+
+  function susun(){
+    var d = DOM[state.dom], port = (state.proto === 'HTTPS') ? 443 : 80;
+    var cache = document.getElementById('cacheHit').checked;
+    var L = [];
+
+    L.push({n:'n-BR', f:'dns', teks:
+      'Pengguna mengetik <b>' + state.dom + '</b>. Peramban memeriksa singgahannya sendiri lebih '
+      + 'dulu dan tidak menemukan catatan untuk nama ini, sehingga ia perlu bertanya kepada '
+      + '<b>DNS resolver</b> &mdash; alamatnya diperoleh dari DHCP ketika perangkat tersambung.',
+      pesan:'<span class="arah">peramban &rarr; singgahan lokal</span>\n'
+        + '<span class="k">cari</span> <span class="v">' + state.dom + '</span>\n'
+        + '<span class="k">hasil</span> tidak ada (cache miss)'});
+
+    L.push({n:'n-RS', f:'dns', teks:
+      'Peramban mengirim <b>kueri DNS</b> ke resolver di 10.0.0.53, memakai UDP port 53. '
+      + 'Kueri ini menanyakan satu hal: alamat IPv4 (record <b>A</b>) untuk nama tersebut.',
+      pesan:'<span class="arah">peramban &rarr; resolver (UDP 53)</span>\n'
+        + '<span class="k">nama </span> <span class="v">' + state.dom + '</span>\n'
+        + '<span class="k">tipe </span> A (alamat IPv4)\n'
+        + '<span class="k">mode </span> recursive'});
+
+    if (cache){
+      L.push({n:'n-RS', f:'dns', teks:
+        'Resolver menemukan jawabannya <b>masih tersimpan di singgahan</b> dari permintaan pengguna '
+        + 'lain beberapa waktu lalu, dan masa berlakunya belum habis. Seluruh perjalanan ke root, '
+        + 'TLD, dan server otoritatif <b>dilewati</b>. Inilah sebabnya membuka situs yang sama untuk '
+        + 'kedua kalinya terasa jauh lebih cepat.',
+        pesan:'<span class="arah">resolver: periksa singgahan</span>\n'
+          + '<span class="k">nama </span> <span class="v">' + state.dom + '</span>\n'
+          + '<span class="k">A    </span> <span class="ok">' + d.ip + '</span>\n'
+          + '<span class="k">sisa TTL</span> 2140 detik &mdash; masih sah'});
+    } else {
+      L.push({n:'n-RT', f:'dns', teks:
+        'Singgahan resolver kosong untuk nama ini, sehingga ia memulai penelusuran dari puncak. '
+        + 'Resolver bertanya kepada salah satu <b>server root</b>. Root tidak mengetahui alamat '
+        + state.dom + ' &mdash; tugasnya hanya menunjukkan siapa yang mengurus akhiran '
+        + '<b>' + d.tld + '</b>.',
+        pesan:'<span class="arah">resolver &rarr; root (.)</span>\n'
+          + '<span class="k">tanya</span> <span class="v">' + state.dom + '</span>\n'
+          + '<span class="arah">root &rarr; resolver</span>\n'
+          + '<span class="k">rujuk</span> server TLD <span class="v">' + d.tld + '</span>'});
+      L.push({n:'n-TL', f:'dns', teks:
+        'Resolver bertanya kepada <b>server TLD ' + d.tld + '</b>. Server ini pun tidak menyimpan '
+        + 'alamat akhirnya; ia menunjuk ke server yang berwenang atas domain '
+        + '<b>' + d.level2.replace('ac.id', state.dom.split('.').slice(-3).join('.')) + '</b>.',
+        pesan:'<span class="arah">resolver &rarr; TLD ' + d.tld + '</span>\n'
+          + '<span class="k">tanya</span> <span class="v">' + state.dom + '</span>\n'
+          + '<span class="arah">TLD &rarr; resolver</span>\n'
+          + '<span class="k">rujuk</span> <span class="v">' + d.ns + '</span>'});
+      L.push({n:'n-AU', f:'dns', teks:
+        'Resolver bertanya kepada <b>server otoritatif</b> ' + d.ns + '. Server inilah yang '
+        + 'benar-benar menyimpan data domain tersebut, dan ia menjawab dengan alamat IP beserta '
+        + '<b>TTL</b> &mdash; berapa lama jawaban ini boleh disimpan sebelum harus ditanyakan ulang.',
+        pesan:'<span class="arah">resolver &rarr; ' + d.ns + '</span>\n'
+          + '<span class="k">tanya</span> <span class="v">' + state.dom + '</span>\n'
+          + '<span class="arah">otoritatif &rarr; resolver</span>\n'
+          + '<span class="k">A    </span> <span class="ok">' + d.ip + '</span>\n'
+          + '<span class="k">TTL  </span> 3600 detik'});
+    }
+
+    L.push({n:'n-BR', f:'dns', teks:
+      'Resolver menyimpan jawabannya ke singgahan, lalu meneruskannya kepada peramban. '
+      + 'Tahap penerjemahan nama selesai: peramban kini tahu harus menghubungi <b>' + d.ip + '</b>. '
+      + 'Sampai titik ini <b>belum ada satu pun data halaman web yang dikirim</b>.',
+      pesan:'<span class="arah">resolver &rarr; peramban</span>\n'
+        + '<span class="k">nama </span> <span class="v">' + state.dom + '</span>\n'
+        + '<span class="k">A    </span> <span class="ok">' + d.ip + '</span>'});
+
+    L.push({n:'n-WS', f:'tcp', teks:
+      'Peramban membuka sambungan <b>TCP</b> ke ' + d.ip + ' pada <b>port ' + port + '</b> '
+      + '(' + state.proto + '). Langkah pertama jabat tangan tiga arah: peramban mengirim '
+      + '<b>SYN</b>, menandai permintaan membuka sambungan, beserta nomor urut awalnya.',
+      pesan:'<span class="arah">peramban &rarr; server (TCP)</span>\n'
+        + '<span class="k">bendera</span> <span class="v">SYN</span>\n'
+        + '<span class="k">port asal</span> 51514 (acak)\n'
+        + '<span class="k">port tujuan</span> <span class="v">' + port + '</span>\n'
+        + '<span class="k">seq</span> 0'});
+    L.push({n:'n-BR', f:'tcp', teks:
+      'Server menjawab dengan <b>SYN-ACK</b>: ia menyetujui pembukaan sambungan sekaligus '
+      + 'mengirimkan nomor urutnya sendiri. Perhatikan bahwa port asal dan port tujuan kini bertukar.',
+      pesan:'<span class="arah">server &rarr; peramban (TCP)</span>\n'
+        + '<span class="k">bendera</span> <span class="v">SYN, ACK</span>\n'
+        + '<span class="k">port asal</span> <span class="v">' + port + '</span>\n'
+        + '<span class="k">port tujuan</span> 51514\n'
+        + '<span class="k">ack</span> 1'});
+    L.push({n:'n-WS', f:'tcp', teks:
+      'Peramban mengirim <b>ACK</b>. Jabat tangan tiga arah selesai dan sambungan TCP resmi terbentuk. '
+      + 'Inilah yang dimaksud TCP bersifat <b>connection-oriented</b>: sambungan dibangun lebih dulu '
+      + 'sebelum satu byte data pun dikirim.'
+      + (state.proto === 'HTTPS' ? ' Pada HTTPS, sesudah ini masih ada perundingan TLS untuk '
+        + 'menyepakati kunci enkripsi sebelum permintaan dikirim.' : ''),
+      pesan:'<span class="arah">peramban &rarr; server (TCP)</span>\n'
+        + '<span class="k">bendera</span> <span class="v">ACK</span>\n'
+        + '<span class="k">status</span> <span class="ok">sambungan terbentuk</span>'
+        + (state.proto === 'HTTPS' ? '\n<span class="arah">lalu: perundingan TLS</span>' : '')});
+
+    L.push({n:'n-WS', f:'http', teks:
+      'Barulah sekarang peramban mengirim <b>permintaan HTTP</b>: metode GET untuk berkas di jalur '
+      + '<code>/</code>, disertai nama host yang diminta. Nama host tetap dikirim karena satu server '
+      + 'dapat melayani banyak situs pada satu alamat IP.',
+      pesan:'<span class="arah">peramban &rarr; server (' + state.proto + ')</span>\n'
+        + '<span class="k">GET</span> <span class="v">/</span> HTTP/1.1\n'
+        + '<span class="k">Host:</span> <span class="v">' + state.dom + '</span>\n'
+        + '<span class="k">User-Agent:</span> Mozilla/5.0'});
+    L.push({n:'n-BR', f:'http', teks:
+      'Server membalas dengan kode status <b>200 OK</b> dan isi halaman. Peramban lalu mengurai HTML '
+      + 'itu, menemukan rujukan ke gambar, CSS, dan skrip, lalu <b>mengulang seluruh proses ini</b> '
+      + 'untuk tiap berkas &mdash; sering kali ke nama domain yang berbeda pula.',
+      pesan:'<span class="arah">server &rarr; peramban (' + state.proto + ')</span>\n'
+        + 'HTTP/1.1 <span class="ok">200 OK</span>\n'
+        + '<span class="k">Content-Type:</span> text/html\n'
+        + '<span class="k">Content-Length:</span> 18432\n'
+        + '\n&lt;!doctype html&gt; ...'});
+    return L;
+  }
+
+  function namaFase(f){
+    if (f === 'dns') return 'Tahap 1 &mdash; Penerjemahan nama (DNS)';
+    if (f === 'tcp') return 'Tahap 2 &mdash; Pembentukan sambungan (TCP)';
+    return 'Tahap 3 &mdash; Pertukaran data (' + state.proto + ')';
+  }
+
+  function tampil(l){
+    taruh(l.n); sorot(l.n);
+    document.getElementById('pesan').innerHTML = l.pesan.replace(/\n/g, '<br>');
+    document.getElementById('faseBox').innerHTML =
+      '<span class="fase ' + l.f + '">' + namaFase(l.f) + '</span>';
+    document.getElementById('narasi').innerHTML = l.teks;
+    document.getElementById('steps').innerHTML =
+      'Langkah <b>' + (state.i+1) + '</b> dari <b>' + state.langkah.length + '</b>' +
+      (state.i+1 >= state.langkah.length
+        ? ' &mdash; selesai. Coba centang singgahan, lalu bandingkan jumlah langkahnya.' : '');
+  }
+  function berhenti(){ if (state.timer){ clearInterval(state.timer); state.timer = null; } }
+  function reset(){
+    berhenti();
+    state.langkah = []; state.i = -1;
+    document.getElementById('pkt').setAttribute('opacity', 0);
+    sorot(null);
+    document.getElementById('lanjut').disabled = true;
+    document.getElementById('pesan').innerHTML = '&mdash;';
+    document.getElementById('faseBox').innerHTML = '';
+    document.getElementById('narasi').textContent = 'Atur keadaan awal, lalu tekan Mulai.';
+    document.getElementById('steps').innerHTML = 'Tekan <b>Mulai</b> untuk menelusuri langkah demi langkah.';
+  }
+  function mulai(){
+    berhenti();
+    state.langkah = susun(); state.i = 0; tampil(state.langkah[0]);
+    document.getElementById('lanjut').disabled = (state.langkah.length <= 1);
+  }
+  function maju(){
+    if (state.i + 1 < state.langkah.length){
+      state.i++; tampil(state.langkah[state.i]);
+      if (state.i + 1 >= state.langkah.length){
+        document.getElementById('lanjut').disabled = true; berhenti();
+      }
+    } else berhenti();
+  }
+  document.getElementById('mulai').onclick = mulai;
+  document.getElementById('lanjut').onclick = maju;
+  document.getElementById('ulang').onclick = reset;
+  document.getElementById('auto').onclick = function(){
+    if (state.timer){ berhenti(); this.textContent = 'Jalankan otomatis'; return; }
+    if (state.i < 0) mulai();
+    this.textContent = 'Jeda';
+    var b = this;
+    state.timer = setInterval(function(){
+      if (state.i + 1 >= state.langkah.length){ berhenti(); b.textContent = 'Jalankan otomatis'; }
+      else maju();
+    }, 2600);
+  };
+  document.getElementById('cacheHit').onchange = reset;
+
+  render(); reset();
+})();
+</script>
+</body>
+</html>
